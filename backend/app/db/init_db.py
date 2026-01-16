@@ -11,6 +11,9 @@ from app.models import (  # noqa: F401
     chat_session,
     chat_message,
     skill_suggestion,
+    memory_item,
+    notification,
+    report,
 )
 
 
