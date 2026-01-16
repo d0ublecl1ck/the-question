@@ -47,6 +47,10 @@ def test_market_flow():
         )
         assert rating.status_code == 200
 
+        my_rating = client.get(f"/api/v1/market/ratings/me/{skill_id}", headers=headers)
+        assert my_rating.status_code == 200
+        assert my_rating.json()['rating'] == 4
+
         summary = client.get(f"/api/v1/market/ratings/{skill_id}")
         assert summary.status_code == 200
         assert summary.json()['average'] == 4.0
@@ -62,3 +66,8 @@ def test_market_flow():
         comments = client.get(f"/api/v1/market/comments/{skill_id}")
         assert comments.status_code == 200
         assert len(comments.json()) == 1
+
+        stats = client.get(f"/api/v1/market/skills/{skill_id}/stats")
+        assert stats.status_code == 200
+        assert stats.json()['favorites_count'] == 0
+        assert stats.json()['comments_count'] == 1

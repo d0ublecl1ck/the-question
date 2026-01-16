@@ -12,5 +12,11 @@ class IDModel(SQLModel):
 
 
 class TimestampModel(SQLModel):
-    created_at: datetime = Field(default_factory=_utc_now)
-    updated_at: datetime = Field(default_factory=_utc_now)
+    created_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column_kwargs={"nullable": False},
+    )
+    updated_at: datetime = Field(
+        default_factory=_utc_now,
+        sa_column_kwargs={"nullable": False, "onupdate": _utc_now},
+    )

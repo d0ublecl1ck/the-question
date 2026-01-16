@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from app.models.report import Report
+from app.models.enums import ReportStatus
 from app.schemas.report import ReportCreate, ReportUpdate
 
 
@@ -11,8 +12,20 @@ def create_report(session: Session, user_id: str, payload: ReportCreate) -> Repo
     return record
 
 
-def list_reports(session: Session, user_id: str) -> list[Report]:
+def list_reports(
+    session: Session,
+    user_id: str,
+    status: ReportStatus | None = None,
+    limit: int | None = 50,
+    offset: int = 0,
+) -> list[Report]:
     statement = select(Report).where(Report.user_id == user_id)
+    if status is not None:
+        statement = statement.where(Report.status == status)
+    if offset:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
     return list(session.exec(statement).all())
 
 
@@ -26,3 +39,8 @@ def update_report(session: Session, record: Report, payload: ReportUpdate) -> Re
     session.commit()
     session.refresh(record)
     return record
+
+
+def delete_report(session: Session, record: Report) -> None:
+    session.delete(record)
+    session.commit()

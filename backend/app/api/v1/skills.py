@@ -10,8 +10,10 @@ from app.schemas.skill import (
     SkillOut,
     SkillUpdate,
     SkillVersionCreate,
+    SkillVersionNode,
     SkillVersionOut,
 )
+from app.models.enums import SkillVisibility
 from app.services.auth_service import get_current_user
 from app.services.skill_service import (
     create_skill,
@@ -23,6 +25,7 @@ from app.services.skill_service import (
     import_skill,
     list_skills,
     list_versions,
+    soft_delete_skill,
     skill_tags_to_list,
     update_skill,
 )
@@ -40,6 +43,8 @@ def _to_skill_out(skill) -> SkillOut:
         owner_id=skill.owner_id,
         created_at=skill.created_at,
         updated_at=skill.updated_at,
+        deleted=skill.deleted,
+        deleted_at=skill.deleted_at,
     )
 
 
@@ -64,13 +69,23 @@ def create_skill_endpoint(
 @router.get('', response_model=list[SkillOut])
 def list_skills_endpoint(
     q: str | None = None,
-    visibility: str | None = None,
+    visibility: SkillVisibility | None = None,
+    tags: str | None = None,
     owner_id: str | None = None,
     limit: int = 50,
     offset: int = 0,
     session: Session = Depends(get_session),
 ) -> list[SkillOut]:
-    skills = list_skills(session, q=q, visibility=visibility, owner_id=owner_id, limit=limit, offset=offset)
+    tag_list = [item.strip() for item in tags.split(',')] if tags else None
+    skills = list_skills(
+        session,
+        q=q,
+        visibility=visibility,
+        tags=tag_list,
+        owner_id=owner_id,
+        limit=limit,
+        offset=offset,
+    )
     return [_to_skill_out(skill) for skill in skills]
 
 
@@ -101,6 +116,22 @@ def update_skill_endpoint(
     return _to_skill_out(skill)
 
 
+@router.delete('/{skill_id}')
+def delete_skill_endpoint(
+    skill_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    skill = get_skill(session, skill_id, include_deleted=True)
+    if not skill:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
+    if skill.owner_id and skill.owner_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Not allowed')
+    if not skill.deleted:
+        skill = soft_delete_skill(session, skill)
+    return {'status': 'ok', 'deleted_at': skill.deleted_at}
+
+
 @router.post('/{skill_id}/versions', response_model=SkillVersionOut, status_code=status.HTTP_201_CREATED)
 def create_version_endpoint(
     skill_id: str,
@@ -113,7 +144,7 @@ def create_version_endpoint(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
     if skill.owner_id and skill.owner_id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Not allowed')
-    version = create_version(session, skill_id, payload.content, user.id)
+    version = create_version(session, skill_id, payload.content, user.id, payload.parent_version_id)
     return SkillVersionOut(
         id=version.id,
         skill_id=version.skill_id,
@@ -121,15 +152,21 @@ def create_version_endpoint(
         content=version.content,
         created_by=version.created_by,
         created_at=version.created_at,
+        parent_version_id=version.parent_version_id,
     )
 
 
 @router.get('/{skill_id}/versions', response_model=list[SkillVersionOut])
-def list_versions_endpoint(skill_id: str, session: Session = Depends(get_session)) -> list[SkillVersionOut]:
+def list_versions_endpoint(
+    skill_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+) -> list[SkillVersionOut]:
     skill = get_skill(session, skill_id)
     if not skill:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
-    versions = list_versions(session, skill_id)
+    versions = list_versions(session, skill_id, limit=limit, offset=offset)
     return [
         SkillVersionOut(
             id=version.id,
@@ -138,6 +175,23 @@ def list_versions_endpoint(skill_id: str, session: Session = Depends(get_session
             content=version.content,
             created_by=version.created_by,
             created_at=version.created_at,
+            parent_version_id=version.parent_version_id,
+        )
+        for version in versions
+    ]
+
+
+@router.get('/{skill_id}/versions/tree', response_model=list[SkillVersionNode])
+def list_version_tree(skill_id: str, session: Session = Depends(get_session)) -> list[SkillVersionNode]:
+    skill = get_skill(session, skill_id)
+    if not skill:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
+    versions = list_versions(session, skill_id, limit=None)
+    return [
+        SkillVersionNode(
+            id=version.id,
+            version=version.version,
+            parent_version_id=version.parent_version_id,
         )
         for version in versions
     ]
@@ -155,6 +209,7 @@ def get_version_endpoint(skill_id: str, version: int, session: Session = Depends
         content=record.content,
         created_by=record.created_by,
         created_at=record.created_at,
+        parent_version_id=record.parent_version_id,
     )
 
 
@@ -174,6 +229,7 @@ def export_skill_endpoint(skill_id: str, session: Session = Depends(get_session)
                 content=version.content,
                 created_by=version.created_by,
                 created_at=version.created_at,
+                parent_version_id=version.parent_version_id,
             )
             for version in versions
         ],

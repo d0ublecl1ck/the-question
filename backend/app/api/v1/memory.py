@@ -4,7 +4,7 @@ from app.db.session import get_session
 from app.models.user import User
 from app.schemas.memory import MemoryCreate, MemoryOut, MemoryUpdate
 from app.services.auth_service import get_current_user
-from app.services.memory_service import get_memory, list_memories, update_memory, upsert_memory
+from app.services.memory_service import delete_memory, get_memory, list_memories, update_memory, upsert_memory
 
 router = APIRouter(prefix='/memory', tags=['memory'])
 
@@ -34,10 +34,12 @@ def upsert_memory_endpoint(
 @router.get('', response_model=list[MemoryOut])
 def list_memory_endpoint(
     scope: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[MemoryOut]:
-    memories = list_memories(session, user.id, scope=scope)
+    memories = list_memories(session, user.id, scope=scope, limit=limit, offset=offset)
     return [
         MemoryOut(
             id=record.id,
@@ -91,3 +93,17 @@ def update_memory_endpoint(
         created_at=record.created_at,
         updated_at=record.updated_at,
     )
+
+
+@router.delete('/{memory_id}')
+def delete_memory_endpoint(
+    memory_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    record = get_memory(session, memory_id)
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Memory not found')
+    _ensure_owner(record, user)
+    delete_memory(session, record)
+    return {'status': 'ok'}

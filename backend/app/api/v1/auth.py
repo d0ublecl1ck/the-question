@@ -23,7 +23,7 @@ def register(payload: RegisterRequest, session: Session = Depends(get_session)) 
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email already registered')
     user = create_user(session, payload.email, payload.password)
-    return UserOut(id=user.id, email=user.email, is_active=user.is_active)
+    return UserOut(id=user.id, email=user.email, is_active=user.is_active, role=user.role)
 
 
 @router.post('/login', response_model=TokenResponse)

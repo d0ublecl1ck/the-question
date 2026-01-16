@@ -34,6 +34,14 @@ def test_chat_flow():
         assert session.status_code == 201
         session_id = session.json()['id']
 
+        updated_session = client.patch(
+            f"/api/v1/chats/{session_id}",
+            json={'title': 'updated'},
+            headers=headers,
+        )
+        assert updated_session.status_code == 200
+        assert updated_session.json()['title'] == 'updated'
+
         message = client.post(
             f"/api/v1/chats/{session_id}/messages",
             json={'role': 'user', 'content': 'hi'},
@@ -61,9 +69,19 @@ def test_chat_flow():
         assert rejected.status_code == 200
         assert rejected.json()['status'] == 'rejected'
 
+        filtered = client.get(
+            f"/api/v1/chats/{session_id}/suggestions?status=rejected",
+            headers=headers,
+        )
+        assert filtered.status_code == 200
+        assert len(filtered.json()) == 1
+
         suppressed = client.post(
             f"/api/v1/chats/{session_id}/suggestions",
             json={'skill_id': skill_id},
             headers=headers,
         )
         assert suppressed.status_code == 409
+
+        deleted = client.delete(f"/api/v1/chats/{session_id}", headers=headers)
+        assert deleted.status_code == 200

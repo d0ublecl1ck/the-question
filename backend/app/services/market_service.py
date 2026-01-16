@@ -31,9 +31,19 @@ def remove_favorite(session: Session, user_id: str, skill_id: str) -> None:
         session.commit()
 
 
-def list_favorites(session: Session, user_id: str) -> list[SkillFavorite]:
+def list_favorites(session: Session, user_id: str, limit: int | None = 50, offset: int = 0) -> list[SkillFavorite]:
     statement = select(SkillFavorite).where(SkillFavorite.user_id == user_id)
+    if offset:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
     return list(session.exec(statement).all())
+
+
+def count_favorites(session: Session, skill_id: str) -> int:
+    statement = select(func.count(SkillFavorite.id)).where(SkillFavorite.skill_id == skill_id)
+    result = session.exec(statement).one()
+    return int(result or 0)
 
 
 def upsert_rating(session: Session, user_id: str, skill_id: str, rating: int) -> SkillRating:
@@ -55,6 +65,14 @@ def upsert_rating(session: Session, user_id: str, skill_id: str, rating: int) ->
     return record
 
 
+def get_user_rating(session: Session, user_id: str, skill_id: str) -> SkillRating | None:
+    return session.exec(
+        select(SkillRating).where(
+            (SkillRating.user_id == user_id) & (SkillRating.skill_id == skill_id)
+        )
+    ).first()
+
+
 def get_rating_summary(session: Session, skill_id: str) -> tuple[float, int]:
     statement = select(func.avg(SkillRating.rating), func.count(SkillRating.id)).where(
         SkillRating.skill_id == skill_id
@@ -72,8 +90,25 @@ def add_comment(session: Session, user_id: str, skill_id: str, content: str) -> 
     return record
 
 
-def list_comments(session: Session, skill_id: str) -> list[SkillComment]:
-    statement = select(SkillComment).where(SkillComment.skill_id == skill_id).order_by(
-        SkillComment.created_at.desc()
+def count_comments(session: Session, skill_id: str) -> int:
+    statement = select(func.count(SkillComment.id)).where(SkillComment.skill_id == skill_id)
+    result = session.exec(statement).one()
+    return int(result or 0)
+
+
+def list_comments(
+    session: Session,
+    skill_id: str,
+    limit: int | None = 50,
+    offset: int = 0,
+) -> list[SkillComment]:
+    statement = (
+        select(SkillComment)
+        .where(SkillComment.skill_id == skill_id)
+        .order_by(SkillComment.created_at.desc())
     )
+    if offset:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
     return list(session.exec(statement).all())

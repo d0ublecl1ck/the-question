@@ -7,6 +7,7 @@ from app.schemas.market import (
     CommentOut,
     FavoriteCreate,
     FavoriteOut,
+    MarketStats,
     RatingCreate,
     RatingOut,
     RatingSummary,
@@ -15,7 +16,10 @@ from app.services.auth_service import get_current_user
 from app.services.market_service import (
     add_comment,
     add_favorite,
+    count_comments,
+    count_favorites,
     get_rating_summary,
+    get_user_rating,
     list_comments,
     list_favorites,
     remove_favorite,
@@ -60,10 +64,12 @@ def delete_favorite(
 
 @router.get('/favorites', response_model=list[FavoriteOut])
 def list_favorites_endpoint(
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[FavoriteOut]:
-    favorites = list_favorites(session, user.id)
+    favorites = list_favorites(session, user.id, limit=limit, offset=offset)
     return [
         FavoriteOut(
             id=favorite.id,
@@ -99,6 +105,25 @@ def rating_summary(skill_id: str, session: Session = Depends(get_session)) -> Ra
     return RatingSummary(skill_id=skill_id, average=average, count=count)
 
 
+@router.get('/ratings/me/{skill_id}', response_model=RatingOut)
+def get_my_rating(
+    skill_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> RatingOut:
+    _ensure_skill(session, skill_id)
+    record = get_user_rating(session, user.id, skill_id)
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Rating not found')
+    return RatingOut(
+        id=record.id,
+        skill_id=record.skill_id,
+        user_id=record.user_id,
+        rating=record.rating,
+        created_at=record.created_at,
+    )
+
+
 @router.post('/comments', response_model=CommentOut, status_code=status.HTTP_201_CREATED)
 def create_comment(
     payload: CommentCreate,
@@ -117,9 +142,14 @@ def create_comment(
 
 
 @router.get('/comments/{skill_id}', response_model=list[CommentOut])
-def list_comments_endpoint(skill_id: str, session: Session = Depends(get_session)) -> list[CommentOut]:
+def list_comments_endpoint(
+    skill_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+) -> list[CommentOut]:
     _ensure_skill(session, skill_id)
-    comments = list_comments(session, skill_id)
+    comments = list_comments(session, skill_id, limit=limit, offset=offset)
     return [
         CommentOut(
             id=comment.id,
@@ -130,3 +160,17 @@ def list_comments_endpoint(skill_id: str, session: Session = Depends(get_session
         )
         for comment in comments
     ]
+
+
+@router.get('/skills/{skill_id}/stats', response_model=MarketStats)
+def skill_market_stats(skill_id: str, session: Session = Depends(get_session)) -> MarketStats:
+    _ensure_skill(session, skill_id)
+    favorites_count = count_favorites(session, skill_id)
+    average, count = get_rating_summary(session, skill_id)
+    comments_count = count_comments(session, skill_id)
+    return MarketStats(
+        skill_id=skill_id,
+        favorites_count=favorites_count,
+        rating=RatingSummary(skill_id=skill_id, average=average, count=count),
+        comments_count=comments_count,
+    )

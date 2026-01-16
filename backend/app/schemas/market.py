@@ -33,6 +33,13 @@ class RatingSummary(BaseModel):
     count: int
 
 
+class MarketStats(BaseModel):
+    skill_id: str
+    favorites_count: int
+    rating: RatingSummary
+    comments_count: int
+
+
 class CommentCreate(BaseModel):
     skill_id: str
     content: str

@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel
 from app.db.session import engine
+from app.core.config import settings
 from app.models import (  # noqa: F401
     user,
     skill,
@@ -20,4 +21,5 @@ from app.models import (  # noqa: F401
 def init_db(drop_all: bool = False) -> None:
     if drop_all:
         SQLModel.metadata.drop_all(engine)
-    SQLModel.metadata.create_all(engine)
+    if settings.ENV != 'production':
+        SQLModel.metadata.create_all(engine)

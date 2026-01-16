@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
+from app.models.enums import ChatRole, SkillSuggestionStatus
 
 
 class ChatSessionCreate(BaseModel):
@@ -15,7 +16,7 @@ class ChatSessionOut(BaseModel):
 
 
 class ChatMessageCreate(BaseModel):
-    role: str
+    role: ChatRole
     content: str
     skill_id: Optional[str] = None
 
@@ -23,7 +24,7 @@ class ChatMessageCreate(BaseModel):
 class ChatMessageOut(BaseModel):
     id: str
     session_id: str
-    role: str
+    role: ChatRole
     content: str
     skill_id: Optional[str] = None
     created_at: datetime
@@ -35,7 +36,7 @@ class SkillSuggestionCreate(BaseModel):
 
 
 class SkillSuggestionUpdate(BaseModel):
-    status: str
+    status: SkillSuggestionStatus
 
 
 class SkillSuggestionOut(BaseModel):
@@ -43,5 +44,5 @@ class SkillSuggestionOut(BaseModel):
     session_id: str
     skill_id: str
     message_id: Optional[str] = None
-    status: str
+    status: SkillSuggestionStatus
     created_at: datetime

@@ -16,14 +16,17 @@ from app.services.chat_service import (
     create_message,
     create_session,
     create_suggestion,
+    delete_session,
     get_session as get_chat_session,
     get_suggestion,
     has_rejection,
     list_messages,
     list_sessions,
     list_suggestions,
+    update_session_title,
     update_suggestion,
 )
+from app.models.enums import SkillSuggestionStatus
 from app.services.skill_service import get_skill
 
 router = APIRouter(prefix='/chats', tags=['chats'])
@@ -60,10 +63,12 @@ def create_chat_session(
 
 @router.get('', response_model=list[ChatSessionOut])
 def list_chat_sessions(
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[ChatSessionOut]:
-    sessions = list_sessions(session, user.id)
+    sessions = list_sessions(session, user.id, limit=limit, offset=offset)
     return [
         ChatSessionOut(
             id=record.id,
@@ -73,6 +78,34 @@ def list_chat_sessions(
         )
         for record in sessions
     ]
+
+
+@router.patch('/{session_id}', response_model=ChatSessionOut)
+def update_chat_session(
+    session_id: str,
+    payload: ChatSessionCreate,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> ChatSessionOut:
+    record = _ensure_session(session, session_id, user)
+    record = update_session_title(session, record, payload.title)
+    return ChatSessionOut(
+        id=record.id,
+        title=record.title,
+        created_at=record.created_at,
+        updated_at=record.updated_at,
+    )
+
+
+@router.delete('/{session_id}')
+def delete_chat_session(
+    session_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    record = _ensure_session(session, session_id, user)
+    delete_session(session, record)
+    return {'status': 'ok'}
 
 
 @router.post('/{session_id}/messages', response_model=ChatMessageOut, status_code=status.HTTP_201_CREATED)
@@ -99,11 +132,13 @@ def create_chat_message(
 @router.get('/{session_id}/messages', response_model=list[ChatMessageOut])
 def list_chat_messages(
     session_id: str,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[ChatMessageOut]:
     _ensure_session(session, session_id, user)
-    messages = list_messages(session, session_id)
+    messages = list_messages(session, session_id, limit=limit, offset=offset)
     return [
         ChatMessageOut(
             id=record.id,
@@ -142,11 +177,12 @@ def create_skill_suggestion(
 @router.get('/{session_id}/suggestions', response_model=list[SkillSuggestionOut])
 def list_skill_suggestions(
     session_id: str,
+    status: SkillSuggestionStatus | None = None,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[SkillSuggestionOut]:
     _ensure_session(session, session_id, user)
-    suggestions = list_suggestions(session, session_id)
+    suggestions = list_suggestions(session, session_id, status=status)
     return [
         SkillSuggestionOut(
             id=record.id,

@@ -8,6 +8,8 @@ from app.services.notification_service import (
     create_notification,
     get_notification,
     list_notifications,
+    mark_all_read,
+    delete_notification,
     update_notification,
 )
 
@@ -38,10 +40,18 @@ def create_notification_endpoint(
 @router.get('', response_model=list[NotificationOut])
 def list_notifications_endpoint(
     unread_only: bool = False,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[NotificationOut]:
-    notifications = list_notifications(session, user.id, unread_only=unread_only)
+    notifications = list_notifications(
+        session,
+        user.id,
+        unread_only=unread_only,
+        limit=limit,
+        offset=offset,
+    )
     return [
         NotificationOut(
             id=record.id,
@@ -73,3 +83,26 @@ def update_notification_endpoint(
         read=record.read,
         created_at=record.created_at,
     )
+
+
+@router.post('/read-all')
+def mark_all_notifications_read(
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    count = mark_all_read(session, user.id)
+    return {'status': 'ok', 'updated': count}
+
+
+@router.delete('/{notification_id}')
+def delete_notification_endpoint(
+    notification_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    record = get_notification(session, notification_id)
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Notification not found')
+    _ensure_owner(record, user)
+    delete_notification(session, record)
+    return {'status': 'ok'}

@@ -11,10 +11,20 @@ def create_notification(session: Session, user_id: str, payload: NotificationCre
     return record
 
 
-def list_notifications(session: Session, user_id: str, unread_only: bool = False) -> list[Notification]:
+def list_notifications(
+    session: Session,
+    user_id: str,
+    unread_only: bool = False,
+    limit: int | None = 50,
+    offset: int = 0,
+) -> list[Notification]:
     statement = select(Notification).where(Notification.user_id == user_id)
     if unread_only:
         statement = statement.where(Notification.read.is_(False))
+    if offset:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
     return list(session.exec(statement).all())
 
 
@@ -28,3 +38,19 @@ def update_notification(session: Session, record: Notification, payload: Notific
     session.commit()
     session.refresh(record)
     return record
+
+
+def mark_all_read(session: Session, user_id: str) -> int:
+    notifications = session.exec(
+        select(Notification).where((Notification.user_id == user_id) & (Notification.read.is_(False)))
+    ).all()
+    for record in notifications:
+        record.read = True
+        session.add(record)
+    session.commit()
+    return len(notifications)
+
+
+def delete_notification(session: Session, record: Notification) -> None:
+    session.delete(record)
+    session.commit()

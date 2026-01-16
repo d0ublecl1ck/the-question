@@ -29,10 +29,20 @@ def upsert_memory(session: Session, user_id: str, payload: MemoryCreate) -> Memo
     return record
 
 
-def list_memories(session: Session, user_id: str, scope: str | None = None) -> list[MemoryItem]:
+def list_memories(
+    session: Session,
+    user_id: str,
+    scope: str | None = None,
+    limit: int | None = 50,
+    offset: int = 0,
+) -> list[MemoryItem]:
     statement = select(MemoryItem).where(MemoryItem.user_id == user_id)
     if scope is not None:
         statement = statement.where(MemoryItem.scope == scope)
+    if offset:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
     return list(session.exec(statement).all())
 
 
@@ -47,3 +57,8 @@ def update_memory(session: Session, record: MemoryItem, payload: MemoryUpdate) -
     session.commit()
     session.refresh(record)
     return record
+
+
+def delete_memory(session: Session, record: MemoryItem) -> None:
+    session.delete(record)
+    session.commit()

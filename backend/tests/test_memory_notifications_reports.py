@@ -37,6 +37,9 @@ def test_memory_notifications_reports_flow():
         assert updated.status_code == 200
         assert updated.json()['value'] == 'detailed'
 
+        deleted_memory = client.delete(f"/api/v1/memory/{memory_id}", headers=headers)
+        assert deleted_memory.status_code == 200
+
         notification = client.post(
             '/api/v1/notifications',
             json={'type': 'system', 'content': 'hello'},
@@ -57,6 +60,15 @@ def test_memory_notifications_reports_flow():
         assert marked.status_code == 200
         assert marked.json()['read'] is True
 
+        read_all = client.post('/api/v1/notifications/read-all', headers=headers)
+        assert read_all.status_code == 200
+
+        removed_notification = client.delete(
+            f"/api/v1/notifications/{notification_id}",
+            headers=headers,
+        )
+        assert removed_notification.status_code == 200
+
         report = client.post(
             '/api/v1/reports',
             json={'title': 'Bug', 'content': 'Something broke'},
@@ -76,3 +88,6 @@ def test_memory_notifications_reports_flow():
         )
         assert resolved.status_code == 200
         assert resolved.json()['status'] == 'resolved'
+
+        deleted_report = client.delete(f"/api/v1/reports/{report_id}", headers=headers)
+        assert deleted_report.status_code == 200

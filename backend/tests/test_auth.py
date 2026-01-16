@@ -10,6 +10,7 @@ def test_register_login_refresh():
         email = f"{uuid4()}@b.com"
         r = client.post('/api/v1/auth/register', json={'email': email, 'password': 'secret123'})
         assert r.status_code == 201
+        assert r.json()['role'] == 'user'
 
         login = client.post('/api/v1/auth/login', json={'email': email, 'password': 'secret123'})
         assert login.status_code == 200

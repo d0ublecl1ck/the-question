@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
+from app.models.enums import ReportStatus
 
 
 class ReportCreate(BaseModel):
@@ -8,12 +9,12 @@ class ReportCreate(BaseModel):
 
 
 class ReportUpdate(BaseModel):
-    status: str
+    status: ReportStatus
 
 
 class ReportOut(BaseModel):
     id: str
     title: str
     content: str
-    status: str
+    status: ReportStatus
     created_at: datetime

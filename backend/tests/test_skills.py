@@ -34,13 +34,22 @@ def test_skill_flow():
         assert listed.status_code == 200
         assert any(item['id'] == skill_id for item in listed.json())
 
+        tagged = client.get('/api/v1/skills?tags=tag1')
+        assert tagged.status_code == 200
+        assert any(item['id'] == skill_id for item in tagged.json())
+
+        versions = client.get(f"/api/v1/skills/{skill_id}/versions")
+        assert versions.status_code == 200
+        v1_id = versions.json()[0]['id']
+
         v2 = client.post(
             f"/api/v1/skills/{skill_id}/versions",
-            json={'content': 'v2 content'},
+            json={'content': 'v2 content', 'parent_version_id': v1_id},
             headers=headers,
         )
         assert v2.status_code == 201
         assert v2.json()['version'] == 2
+        assert v2.json()['parent_version_id'] == v1_id
 
         detail = client.get(f"/api/v1/skills/{skill_id}")
         assert detail.status_code == 200
@@ -50,6 +59,10 @@ def test_skill_flow():
         versions = client.get(f"/api/v1/skills/{skill_id}/versions")
         assert versions.status_code == 200
         assert len(versions.json()) == 2
+
+        tree = client.get(f"/api/v1/skills/{skill_id}/versions/tree")
+        assert tree.status_code == 200
+        assert len(tree.json()) == 2
 
         exported = client.get(f"/api/v1/skills/{skill_id}/export")
         assert exported.status_code == 200
@@ -66,3 +79,8 @@ def test_skill_flow():
         imported = client.post('/api/v1/skills/import', json=import_payload, headers=headers)
         assert imported.status_code == 201
         assert imported.json()['latest_version'] == 1
+
+        deleted = client.delete(f"/api/v1/skills/{skill_id}", headers=headers)
+        assert deleted.status_code == 200
+        missing = client.get(f"/api/v1/skills/{skill_id}")
+        assert missing.status_code == 404

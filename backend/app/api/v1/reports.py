@@ -3,8 +3,9 @@ from sqlmodel import Session
 from app.db.session import get_session
 from app.models.user import User
 from app.schemas.report import ReportCreate, ReportOut, ReportUpdate
+from app.models.enums import ReportStatus
 from app.services.auth_service import get_current_user
-from app.services.report_service import create_report, get_report, list_reports, update_report
+from app.services.report_service import create_report, delete_report, get_report, list_reports, update_report
 
 router = APIRouter(prefix='/reports', tags=['reports'])
 
@@ -32,10 +33,13 @@ def create_report_endpoint(
 
 @router.get('', response_model=list[ReportOut])
 def list_reports_endpoint(
+    status: ReportStatus | None = None,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[ReportOut]:
-    reports = list_reports(session, user.id)
+    reports = list_reports(session, user.id, status=status, limit=limit, offset=offset)
     return [
         ReportOut(
             id=record.id,
@@ -67,3 +71,17 @@ def update_report_endpoint(
         status=record.status,
         created_at=record.created_at,
     )
+
+
+@router.delete('/{report_id}')
+def delete_report_endpoint(
+    report_id: str,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    record = get_report(session, report_id)
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Report not found')
+    _ensure_owner(record, user)
+    delete_report(session, record)
+    return {'status': 'ok'}
