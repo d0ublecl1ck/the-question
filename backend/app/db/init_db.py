@@ -8,6 +8,9 @@ from app.models import (  # noqa: F401
     skill_favorite,
     skill_rating,
     skill_comment,
+    chat_session,
+    chat_message,
+    skill_suggestion,
 )
 
 

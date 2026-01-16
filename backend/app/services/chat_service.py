@@ -1,0 +1,99 @@
+from sqlmodel import Session, select
+from app.models.chat_session import ChatSession
+from app.models.chat_message import ChatMessage
+from app.models.skill_suggestion import SkillSuggestion
+
+
+def create_session(session: Session, user_id: str, title: str | None) -> ChatSession:
+    record = ChatSession(user_id=user_id, title=title)
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def list_sessions(session: Session, user_id: str) -> list[ChatSession]:
+    statement = select(ChatSession).where(ChatSession.user_id == user_id).order_by(ChatSession.created_at.desc())
+    return list(session.exec(statement).all())
+
+
+def get_session(session: Session, session_id: str) -> ChatSession | None:
+    return session.exec(select(ChatSession).where(ChatSession.id == session_id)).first()
+
+
+def create_message(
+    session: Session,
+    session_id: str,
+    role: str,
+    content: str,
+    skill_id: str | None,
+) -> ChatMessage:
+    record = ChatMessage(
+        session_id=session_id,
+        role=role,
+        content=content,
+        skill_id=skill_id,
+    )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def list_messages(session: Session, session_id: str) -> list[ChatMessage]:
+    statement = select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.created_at.asc())
+    return list(session.exec(statement).all())
+
+
+def list_suggestions(session: Session, session_id: str) -> list[SkillSuggestion]:
+    statement = (
+        select(SkillSuggestion)
+        .where(SkillSuggestion.session_id == session_id)
+        .order_by(SkillSuggestion.created_at.asc())
+    )
+    return list(session.exec(statement).all())
+
+
+def has_rejection(session: Session, session_id: str) -> bool:
+    record = session.exec(
+        select(SkillSuggestion).where(
+            (SkillSuggestion.session_id == session_id) & (SkillSuggestion.status == 'rejected')
+        )
+    ).first()
+    return record is not None
+
+
+def create_suggestion(
+    session: Session,
+    session_id: str,
+    skill_id: str,
+    message_id: str | None,
+) -> SkillSuggestion:
+    existing = session.exec(
+        select(SkillSuggestion).where(
+            (SkillSuggestion.session_id == session_id) & (SkillSuggestion.skill_id == skill_id)
+        )
+    ).first()
+    if existing:
+        return existing
+    record = SkillSuggestion(
+        session_id=session_id,
+        skill_id=skill_id,
+        message_id=message_id,
+    )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def get_suggestion(session: Session, suggestion_id: str) -> SkillSuggestion | None:
+    return session.exec(select(SkillSuggestion).where(SkillSuggestion.id == suggestion_id)).first()
+
+
+def update_suggestion(session: Session, suggestion: SkillSuggestion, status: str) -> SkillSuggestion:
+    suggestion.status = status
+    session.add(suggestion)
+    session.commit()
+    session.refresh(suggestion)
+    return suggestion
