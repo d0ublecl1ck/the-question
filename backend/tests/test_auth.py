@@ -5,7 +5,7 @@ from app.main import app
 
 
 def test_register_login_refresh():
-    init_db()
+    init_db(drop_all=True)
     with TestClient(app) as client:
         email = f"{uuid4()}@b.com"
         r = client.post('/api/v1/auth/register', json={'email': email, 'password': 'secret123'})

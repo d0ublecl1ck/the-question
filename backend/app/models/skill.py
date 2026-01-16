@@ -9,4 +9,5 @@ class Skill(IDModel, TimestampModel, SQLModel, table=True):
     name: str
     description: str
     owner_id: Optional[str] = Field(default=None, index=True)
+    tags: Optional[str] = Field(default=None)
     visibility: str = 'public'
