@@ -1,0 +1,8 @@
+# Ralph Progress Log
+Started: $(date)
+---
+
+## Codebase Patterns
+- API 统一前缀为 /api/v1，主路由在 backend/app/api/v1/router.py
+- 前端 UI 组件优先使用 shadcn/ui，缺失组件再用 Radix UI
+- 对话页技能选择使用 Command + Dialog 组合
