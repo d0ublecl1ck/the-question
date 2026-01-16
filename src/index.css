@@ -1,25 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #0f172a;
-  background-color: #f8fafc;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background: 38 40% 96%;
+  --foreground: 222 30% 12%;
+  --card: 40 55% 98%;
+  --card-foreground: 222 30% 12%;
+  --popover: 38 45% 98%;
+  --popover-foreground: 222 30% 12%;
+  --primary: 18 82% 48%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 196 62% 32%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 35 28% 90%;
+  --muted-foreground: 215 15% 35%;
+  --accent: 84 74% 56%;
+  --accent-foreground: 222 30% 12%;
+  --destructive: 0 72% 52%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 35 18% 78%;
+  --input: 35 18% 78%;
+  --ring: 18 82% 48%;
+  --radius: 18px;
 }
 
 * {
-  box-sizing: border-box;
+  @apply border-border;
 }
 
 body {
+  @apply bg-background text-foreground font-sans antialiased;
   margin: 0;
   min-height: 100vh;
-  background: #f8fafc;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 181, 110, 0.25), transparent 50%),
+    radial-gradient(circle at 80% 10%, rgba(80, 200, 185, 0.2), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 245, 240, 0.96) 100%);
+  background-attachment: fixed;
 }
 
-button {
-  font-family: inherit;
+code,
+pre {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+}
+
+::selection {
+  background: rgba(255, 130, 70, 0.35);
 }
