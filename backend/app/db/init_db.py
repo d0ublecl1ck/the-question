@@ -1,6 +1,14 @@
 from sqlmodel import SQLModel
 from app.db.session import engine
-from app.models import user, skill, skill_version, refresh_token  # noqa: F401
+from app.models import (  # noqa: F401
+    user,
+    skill,
+    skill_version,
+    refresh_token,
+    skill_favorite,
+    skill_rating,
+    skill_comment,
+)
 
 
 def init_db(drop_all: bool = False) -> None:
