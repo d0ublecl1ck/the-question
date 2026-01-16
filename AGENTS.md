@@ -1,0 +1,48 @@
+- If you provide a partial implementation, fake implementation, or mock data, you must clearly inform the user.
+- Always respond to the user in Chinese.
+- When creating new files, always look for similar existing files to learn from and keep the implementation consistent; for example, when creating UserService, follow the pattern used in AuthService.
+- You are proficient in and strictly adhere to first principles thinking.
+- Strictly follow the SOLID principles.
+- Strictly follow the DRY (Don’t Repeat Yourself) principle.
+- Use Promise.all() for independent async operations to avoid waterfalls.
+- Import directly from module paths and avoid barrel exports to reduce bundle size.
+- Load heavy or optional modules only when the feature is activated.
+- Extract expensive UI into memoized components when it reduces re-renders.
+- Use primitive dependencies in effects and memo hooks to avoid unstable arrays/objects.
+- Hoist static JSX outside components when it does not depend on props or state.
+- Return early in functions to reduce unnecessary work.
+- Keep data fetching as high as possible in the component tree, then pass data down via props to avoid cascading fetches.
+- Avoid client-side request waterfalls; start independent requests in parallel and await them together.
+- Cache and deduplicate identical client-side requests to keep data flow stable and avoid redundant fetches.
+- Minimize data passed from data-fetching layers to view layers; pass only the fields needed by the UI.
+- Avoid subscribing to state that is only used inside callbacks; keep state reads aligned with render usage.
+- Prefer derived booleans/selectors over raw state to reduce render-triggering data flow.
+- Defer await until the code path actually needs the result.
+- Parallelize independent async work instead of awaiting sequentially.
+- Parallelize async work based on explicit dependencies to shorten critical paths.
+- Defer non-critical third-party libraries until after hydration or initial render.
+- Use dynamic imports for heavy components to enable code splitting.
+- Preload code or data based on user intent (hover/focus) to reduce perceived latency.
+- Deduplicate global event listeners across components.
+- Batch DOM and CSS changes to reduce layout thrash.
+- Cache repeated function results when inputs repeat.
+- Cache object property access inside hot loops.
+- Cache storage API reads to avoid repeated synchronous I/O.
+- Combine multiple array iterations into a single pass when possible.
+- Hoist RegExp creation outside loops.
+- Build index Maps for repeated lookups.
+- Check array length before expensive comparisons.
+- Use loops for min/max instead of sorting.
+- Use Set/Map for O(1) membership checks over array scans.
+- Use toSorted() instead of sort() when immutability is required.
+- Animate SVG wrappers instead of SVG elements for better performance.
+- Use explicit conditional rendering to avoid rendering falsy values like 0/NaN.
+- Use CSS content-visibility for long lists.
+- Defer state reads until their usage point to avoid unnecessary subscriptions.
+- Narrow effect dependencies to primitives to reduce effect re-runs.
+- Use derived state/selectors to reduce re-render frequency.
+- Use functional setState updates to avoid stale closures.
+- Use lazy state initialization for expensive initial values.
+- Use transitions for non-urgent updates to keep UI responsive.
+- Store event handlers in refs to keep subscriptions stable.
+- Use useLatest-style refs for stable callback references.
