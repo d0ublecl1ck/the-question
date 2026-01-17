@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/command'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sparkles, Tag } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useAppSelector } from '@/store/hooks'
 import { useNavigate } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
@@ -490,10 +490,6 @@ export default function ChatPage() {
 
             <div className="mt-8 rounded-[24px] border border-border/40 bg-white/70 p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="gap-1">
-                  <Tag className="h-3 w-3" />
-                  使用 $ 快捷触发
-                </Badge>
                 {selectedSkill && (
                   <Badge variant="secondary" className="gap-1">
                     <Sparkles className="h-3 w-3" />
@@ -549,10 +545,6 @@ export default function ChatPage() {
             </ScrollArea>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-white/80 p-4">
-              <Button variant="secondary" className="gap-2" onClick={() => setOpen(true)}>
-                <Sparkles className="h-4 w-4" />
-                选择技能
-              </Button>
               <Button
                 variant="outline"
                 className="rounded-full"

@@ -14,7 +14,7 @@ import {
 
 export type AiModelOption = {
   id: string
-  label: string
+  name: string
 }
 
 interface UseAutoResizeTextareaProps {
@@ -130,11 +130,6 @@ export function AI_Prompt({
   }, [safeModels, selectedModelId])
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === '$' && onTriggerSkill) {
-      event.preventDefault()
-      onTriggerSkill()
-      return
-    }
     if (event.key === 'Enter' && !event.shiftKey && value.trim()) {
       event.preventDefault()
       onSend()
@@ -153,7 +148,7 @@ export function AI_Prompt({
               <Textarea
                 id="ai-input-15"
                 value={value}
-                placeholder="输入内容，按 $ 触发技能选择"
+                placeholder="输入内容，回车发送"
                 className={cn(
                   'w-full resize-none rounded-lg rounded-b-none border-none bg-black/5 px-4 py-3 placeholder:text-black/70 focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-white/5 dark:text-white dark:placeholder:text-white/70',
                   'min-h-[72px]',
@@ -187,7 +182,7 @@ export function AI_Prompt({
                             className="flex items-center gap-1"
                           >
                             {MODEL_ICONS[selectedModel?.id ?? ''] ?? <Bot className="h-4 w-4 opacity-50" />}
-                            <span>{selectedModel?.label ?? '选择模型'}</span>
+                            <span>{selectedModel?.name ?? '选择模型'}</span>
                             <ChevronDown className="h-3 w-3 opacity-50" />
                           </motion.div>
                         </AnimatePresence>
@@ -208,7 +203,7 @@ export function AI_Prompt({
                         >
                           <div className="flex items-center gap-2">
                             {MODEL_ICONS[model.id] ?? <Bot className="h-4 w-4 opacity-50" />}
-                            <span>{model.label}</span>
+                            <span>{model.name}</span>
                           </div>
                           {selectedModel?.id === model.id && <Check className="h-4 w-4 text-blue-500" />}
                         </DropdownMenuItem>
@@ -218,7 +213,7 @@ export function AI_Prompt({
                   <div className="mx-0.5 h-4 w-px bg-black/10 dark:bg-white/10" />
                   <label
                     className={cn(
-                      'cursor-pointer rounded-lg bg-black/5 p-2',
+                      'cursor-pointer flex h-9 w-9 items-center justify-center rounded-[16px] bg-black/5',
                       'text-black/40 hover:bg-black/10 hover:text-black focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0',
                       'dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white',
                     )}
@@ -227,11 +222,37 @@ export function AI_Prompt({
                     <input type="file" className="hidden" />
                     <Paperclip className="h-4 w-4 transition-colors" />
                   </label>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-[16px] bg-black/5',
+                      'text-black/40 hover:bg-black/10 hover:text-black focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0',
+                      'disabled:cursor-not-allowed disabled:opacity-40',
+                      'dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white',
+                    )}
+                    aria-label="选择技能"
+                    disabled={!onTriggerSkill}
+                    onClick={() => onTriggerSkill?.()}
+                  >
+                    <svg
+                      t="1768649262498"
+                      className="h-4 w-4 transition-colors"
+                      viewBox="0 0 1024 1024"
+                      version="1.1"
+                      xmlns="http://www.w3.org/2000/svg"
+                      p-id="3369"
+                    >
+                      <path
+                        d="M476.736 51.2a152 152 0 0 1 137.408 133.952l0.832 13.184h107.392c23.68 0 46.592 7.296 65.728 20.672l7.936 6.08 7.488 6.784c18.816 18.816 30.4 43.392 33.024 69.632l0.576 11.264-0.064 107.008 9.6 0.512a152.128 152.128 0 0 1 93.952 43.328l8.192 8.768 6.912 8.64a151.232 151.232 0 0 1 0 180.48c-24.128 32.448-59.456 53.12-97.536 59.264l-11.52 1.472-9.6 0.448v106.88c0.128 23.68-7.168 46.592-20.48 65.728l-6.144 7.936-6.848 7.488c-18.816 18.816-43.52 30.4-69.824 33.024l-11.392 0.576H555.904a32 32 0 0 1-30.144-42.752l4.096-11.52a70.144 70.144 0 0 0-24.448-79.872 70.528 70.528 0 0 0-83.84 0 70.144 70.144 0 0 0-26.752 71.872l2.304 8.064 4.096 11.52a32 32 0 0 1-30.08 42.688H204.288a114.88 114.88 0 0 1-114.24-103.36l-0.512-11.264v-165.568a32 32 0 0 1 42.56-30.208l11.648 4.096c29.056 10.176 61.376 0.192 79.616-24.512a69.824 69.824 0 0 0 0-83.136c-16.64-22.4-44.8-32.64-71.616-26.752l-8 2.304-11.648 4.032a32 32 0 0 1-42.56-30.208V313.6a114.56 114.56 0 0 1 105.344-114.048l9.408-0.384H311.68l0.704-11.648a151.04 151.04 0 0 1 14.528-50.816l6.4-11.84 6.208-9.408a151.68 151.68 0 0 1 62.336-50.88L412.608 60.16l3.2-1.024c10.752-3.2 19.968-5.312 27.712-6.4C451.2 51.712 462.336 51.2 476.736 51.2z m-1.6 96.64l-4.352-0.64-12.032 0.512a36.608 36.608 0 0 0-2.048 0.192l-7.04 1.472-4.992 1.344a58.496 58.496 0 0 0-21.504 13.44l-3.328 3.84-4.288 6.4a60.8 60.8 0 0 0-6.592 15.36l-0.768 3.968-4.672 71.424a32 32 0 0 1-31.936 29.888H204.352a18.688 18.688 0 0 0-18.24 14.272l-0.512 4.224V407.04l7.872 1.024c38.08 6.144 73.6 25.472 99.648 55.808l7.488 9.408a165.824 165.824 0 0 1-107.136 262.528l-7.872 1.024v93.056c0 3.2 0.832 6.336 2.432 9.088l2.944 3.84a18.816 18.816 0 0 0 9.6 5.12l3.776 0.384 93.76-0.064 1.024-7.68a166.144 166.144 0 0 1 55.936-100.096l9.536-7.552a166.528 166.528 0 0 1 263.232 107.712l0.96 7.616 93.568 0.064a26.24 26.24 0 0 0 9.28-1.92l1.152-0.512 4.032-4.288a18.176 18.176 0 0 0 3.776-7.616l0.512-4.352-0.064-167.808a32 32 0 0 1 30.4-32l67.008-3.2a55.936 55.936 0 0 0 40.192-22.4 55.616 55.616 0 0 0 5.824-57.216l-3.648-5.952-4.736-5.952a57.472 57.472 0 0 0-27.392-17.664l-7.04-1.28-70.272-3.648a32 32 0 0 1-30.336-32v-167.68a25.472 25.472 0 0 0-1.792-8.96l-0.512-1.088-4.288-4.032a18.816 18.816 0 0 0-7.68-3.84l-4.48-0.576H545.6a32 32 0 0 1-31.872-34.56l4.992-62.528-0.448-4.8a55.168 55.168 0 0 0-5.12-15.296l-4.224-7.04a55.936 55.936 0 0 0-33.792-22.208z"
+                        p-id="3370"
+                      />
+                    </svg>
+                  </button>
                 </div>
                 <button
                   type="button"
                   className={cn(
-                    'rounded-lg bg-black/5 p-2',
+                    'flex h-9 w-9 items-center justify-center rounded-[16px] bg-black/5',
                     'hover:bg-black/10 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-white/5 dark:hover:bg-white/10',
                   )}
                   aria-label="Send message"

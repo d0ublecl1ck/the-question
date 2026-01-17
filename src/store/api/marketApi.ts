@@ -21,7 +21,7 @@ export const marketApi = baseApi.injectEndpoints({
         if (favoritesResult.error) {
           return { error: favoritesResult.error }
         }
-        const favorites = (favoritesResult.data ?? []) as { skill_id: string }[]
+        const favorites = (favoritesResult.data ?? []) as { skill_id: string; created_at?: string }[]
         if (favorites.length === 0) {
           return { data: [] }
         }
@@ -32,9 +32,35 @@ export const marketApi = baseApi.injectEndpoints({
         if (firstError?.error) {
           return { error: firstError.error }
         }
-        return { data: detailResults.map((result) => result.data as MarketSkill) }
+        const favoritesById = new Map(
+          favorites.map((favorite) => [favorite.skill_id, favorite.created_at]),
+        )
+        return {
+          data: detailResults.map((result) => {
+            const skill = result.data as MarketSkill
+            return {
+              ...skill,
+              favorited_at: favoritesById.get(skill.id),
+            }
+          }),
+        }
       },
       providesTags: ['Favorites'],
+    }),
+    createFavorite: build.mutation<unknown, { skill_id: string }>({
+      query: (payload) => ({
+        url: '/api/v1/market/favorites',
+        method: 'POST',
+        body: payload,
+      }),
+      invalidatesTags: ['Favorites', 'MarketSkill', 'MarketSkills'],
+    }),
+    deleteFavorite: build.mutation<unknown, { skill_id: string }>({
+      query: ({ skill_id }) => ({
+        url: `/api/v1/market/favorites/${skill_id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Favorites', 'MarketSkill', 'MarketSkills'],
     }),
     createSkillReport: build.mutation<unknown, { targetId: string; title: string; content: string }>({
       query: ({ targetId, title, content }) => ({
@@ -56,5 +82,7 @@ export const {
   useGetMarketSkillDetailQuery,
   useGetFavoriteSkillsQuery,
   useGetFavoriteSkillDetailsQuery,
+  useCreateFavoriteMutation,
+  useDeleteFavoriteMutation,
   useCreateSkillReportMutation,
 } = marketApi

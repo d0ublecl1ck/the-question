@@ -37,7 +37,7 @@ beforeEach(() => {
   store.dispatch(setAuth({ token: 'token', user: { id: 'u1', email: 'a@b.com' } }))
 })
 
-it('opens skill picker when pressing $', async () => {
+it('opens skill picker when clicking skill icon', async () => {
   vi.mocked(useCreateChatSessionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
     { isLoading: false },
@@ -72,7 +72,7 @@ it('opens skill picker when pressing $', async () => {
     isError: false,
   } as ReturnType<typeof useListSkillsQuery>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
-    data: [{ id: 'gpt-5.2-2025-12-11', label: 'GPT-5.2' }],
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2' }],
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useListAiModelsQuery>)
@@ -85,8 +85,7 @@ it('opens skill picker when pressing $', async () => {
       </MemoryRouter>
     </Provider>,
   )
-  const input = screen.getByPlaceholderText(/输入内容/)
-  await user.click(input)
-  await user.keyboard('$')
+  const skillButton = screen.getByRole('button', { name: '选择技能' })
+  await user.click(skillButton)
   expect(await screen.findByRole('heading', { name: '选择技能' })).toBeInTheDocument()
 })

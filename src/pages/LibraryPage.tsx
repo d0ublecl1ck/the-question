@@ -1,36 +1,81 @@
-import { useMemo, useState } from 'react'
-import { useGetFavoriteSkillDetailsQuery } from '@/store/api/marketApi'
+import { useEffect, useMemo, useState } from 'react'
+import { useDeleteFavoriteMutation, useGetFavoriteSkillDetailsQuery } from '@/store/api/marketApi'
+import { useGetMeQuery } from '@/store/api/settingsApi'
+import { useDeleteSkillMutation, useListSkillsQuery } from '@/store/api/skillsApi'
 import type { MarketSkill } from '@/store/api/types'
 import MarketToolbar from '@/components/market/MarketToolbar'
 import MarketList from '@/components/market/MarketList'
 import MarketTable from '@/components/market/MarketTable'
+import SkillFormDialog from '@/components/library/SkillFormDialog'
+import SkillImportDialog from '@/components/library/SkillImportDialog'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
+import { useAppDispatch } from '@/store/hooks'
+import { enqueueToast } from '@/store/slices/toastSlice'
 
 export default function LibraryPage() {
-  const { data: items = [], isLoading, isError } = useGetFavoriteSkillDetailsQuery()
+  const dispatch = useAppDispatch()
+  const { data: favorites = [], isLoading, isError } = useGetFavoriteSkillDetailsQuery()
+  const { data: me } = useGetMeQuery()
+  const {
+    data: mySkills = [],
+    isLoading: isMySkillsLoading,
+    isError: isMySkillsError,
+    refetch: refetchMySkills,
+  } = useListSkillsQuery(me?.id ? { owner_id: me.id } : undefined, {
+    skip: !me?.id,
+  })
+  const [deleteFavorite] = useDeleteFavoriteMutation()
+  const [deleteSkill] = useDeleteSkillMutation()
   const status: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
+  const myStatus: 'loading' | 'ready' | 'error' =
+    isMySkillsError ? 'error' : isMySkillsLoading ? 'loading' : 'ready'
   const [query, setQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [view, setView] = useState<'list' | 'grid'>('list')
   const [sort, setSort] = useState<'recent' | 'rating' | 'favorites'>('recent')
+  const [tab, setTab] = useState<'favorites' | 'mine'>('favorites')
+
+  useEffect(() => {
+    setQuery('')
+    setSelectedTags([])
+  }, [tab])
+
+  const normalizedMine = useMemo<MarketSkill[]>(
+    () =>
+      mySkills.map((skill) => ({
+        id: skill.id,
+        name: skill.name,
+        description: skill.description,
+        tags: skill.tags ?? [],
+        favorites_count: 0,
+        rating: { average: 0, count: 0 },
+        comments_count: 0,
+        visibility: skill.visibility,
+        avatar: skill.avatar ?? null,
+        updated_at: skill.updated_at,
+      })),
+    [mySkills],
+  )
+
+  const activeItems = tab === 'favorites' ? favorites : normalizedMine
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>()
-    items.forEach((skill) =>
+    activeItems.forEach((skill) =>
       skill.tags.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1)),
     )
     return Array.from(counts.entries())
       .map(([tag, count]) => ({ tag, count }))
       .toSorted((a, b) => b.count - a.count)
-  }, [items])
+  }, [activeItems])
 
   const tags = useMemo(() => categories.map((item) => item.tag), [categories])
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
-    const filteredItems = items.filter((skill) => {
+    const filteredItems = activeItems.filter((skill) => {
       const matchesQuery =
         normalizedQuery.length === 0 ||
         skill.name.toLowerCase().includes(normalizedQuery) ||
@@ -44,8 +89,22 @@ export default function LibraryPage() {
     const sorters: Record<typeof sort, (items: MarketSkill[]) => MarketSkill[]> = {
       recent: (list) =>
         list.toSorted((a, b) => {
-          const aTime = a.updated_at ? Date.parse(a.updated_at) : 0
-          const bTime = b.updated_at ? Date.parse(b.updated_at) : 0
+          const aTime =
+            tab === 'favorites'
+              ? a.favorited_at
+                ? Date.parse(a.favorited_at)
+                : 0
+              : a.updated_at
+                ? Date.parse(a.updated_at)
+                : 0
+          const bTime =
+            tab === 'favorites'
+              ? b.favorited_at
+                ? Date.parse(b.favorited_at)
+                : 0
+              : b.updated_at
+                ? Date.parse(b.updated_at)
+                : 0
           return bTime - aTime
         }),
       rating: (list) => list.toSorted((a, b) => b.rating.average - a.rating.average),
@@ -53,20 +112,65 @@ export default function LibraryPage() {
     }
 
     return sorters[sort](filteredItems)
-  }, [items, query, selectedTags, sort])
+  }, [activeItems, query, selectedTags, sort, tab])
 
   const selectedSummary =
     selectedTags.length === 0 ? '全部标签' : `已选 ${selectedTags.length} 个标签`
 
-  const renderLibraryActions = (item: MarketSkill) => (
+  const handleRemoveFavorite = async (skillId: string) => {
+    try {
+      await deleteFavorite({ skill_id: skillId }).unwrap()
+      dispatch(enqueueToast('已取消收藏'))
+    } catch {
+      dispatch(enqueueToast('取消收藏失败'))
+    }
+  }
+
+  const handleDeleteSkill = async (skillId: string) => {
+    try {
+      await deleteSkill(skillId).unwrap()
+      dispatch(enqueueToast('已删除技能'))
+    } catch {
+      dispatch(enqueueToast('删除失败'))
+    }
+  }
+
+  const renderFavoriteActions = (item: MarketSkill) => (
     <div className="flex items-center gap-2">
       <Button asChild variant="outline" size="sm" className="rounded-full">
         <Link to={`/skills/${item.id}`}>查看</Link>
       </Button>
-      <Button variant="outline" size="sm" className="rounded-full" disabled>
-        编辑
+      <Button
+        variant="outline"
+        size="sm"
+        className="rounded-full"
+        onClick={() => handleRemoveFavorite(item.id)}
+      >
+        取消收藏
       </Button>
-      <Button variant="outline" size="sm" className="rounded-full" disabled>
+    </div>
+  )
+
+  const renderMineActions = (item: MarketSkill) => (
+    <div className="flex items-center gap-2">
+      <Button asChild variant="outline" size="sm" className="rounded-full">
+        <Link to={`/skills/${item.id}`}>查看</Link>
+      </Button>
+      <SkillFormDialog
+        mode="edit"
+        skillId={item.id}
+        triggerLabel="编辑"
+        triggerVariant="outline"
+        triggerSize="sm"
+        triggerClassName="rounded-full"
+        onCompleted={refetchMySkills}
+      />
+      <Button
+        variant="outline"
+        size="sm"
+        className="rounded-full"
+        onClick={() => handleDeleteSkill(item.id)}
+      >
         删除
       </Button>
     </div>
@@ -90,6 +194,25 @@ export default function LibraryPage() {
       </header>
 
       <section className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-white/70 p-2">
+          <Button
+            variant={tab === 'favorites' ? 'default' : 'ghost'}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setTab('favorites')}
+          >
+            收藏
+          </Button>
+          <Button
+            variant={tab === 'mine' ? 'default' : 'ghost'}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setTab('mine')}
+          >
+            我创建的
+          </Button>
+        </div>
+
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-white/70 p-3 backdrop-blur">
           <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">标签</span>
           <Button
@@ -143,18 +266,21 @@ export default function LibraryPage() {
           onSortChange={setSort}
         />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button className="rounded-full">新建技能</Button>
-          <Button variant="outline" className="rounded-full">
-            导入 SKILL.md
-          </Button>
-          <Button variant="outline" className="rounded-full">
-            导出选中
-          </Button>
-          <Button variant="outline" className="rounded-full" disabled>
-            批量删除
-          </Button>
-        </div>
+        {tab === 'mine' ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <SkillFormDialog mode="create" triggerLabel="新建技能" onCompleted={refetchMySkills} />
+            <SkillImportDialog triggerLabel="导入 SKILL.md / JSON" onCompleted={refetchMySkills} />
+            <Button variant="outline" className="rounded-full" disabled>
+              批量删除
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" className="rounded-full" disabled>
+              批量取消收藏
+            </Button>
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">
@@ -162,18 +288,24 @@ export default function LibraryPage() {
           <h3 className="text-base font-semibold">技能列表</h3>
           <span className="text-xs text-muted-foreground">共 {filtered.length} 项</span>
         </div>
-        {status === 'loading' ? (
+        {(tab === 'favorites' ? status : myStatus) === 'loading' ? (
           <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             正在加载中...
           </div>
-        ) : status === 'error' ? (
+        ) : (tab === 'favorites' ? status : myStatus) === 'error' ? (
           <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
             加载失败，请稍后重试
           </div>
         ) : view === 'grid' ? (
-          <MarketTable items={filtered} renderActions={renderLibraryActions} />
+          <MarketTable
+            items={filtered}
+            renderActions={tab === 'favorites' ? renderFavoriteActions : renderMineActions}
+          />
         ) : (
-          <MarketList items={filtered} renderActions={renderLibraryActions} />
+          <MarketList
+            items={filtered}
+            renderActions={tab === 'favorites' ? renderFavoriteActions : renderMineActions}
+          />
         )}
       </section>
     </section>

@@ -8,10 +8,13 @@ export type MarketSkill = {
   name: string
   description: string
   tags: string[]
+  visibility?: string
+  avatar?: string | null
   favorites_count: number
   rating: { average: number; count: number }
   comments_count: number
   updated_at?: string
+  favorited_at?: string
 }
 
 export type SearchSkill = {
@@ -61,7 +64,26 @@ export type SkillItem = {
   tags: string[]
 }
 
+export type SkillOut = {
+  id: string
+  name: string
+  description: string
+  tags: string[]
+  visibility: string
+  avatar?: string | null
+  owner_id?: string | null
+  created_at?: string
+  updated_at?: string
+  deleted?: boolean
+  deleted_at?: string | null
+}
+
+export type SkillDetail = SkillOut & {
+  latest_version: number
+  content: string
+}
+
 export type AiModelOption = {
   id: string
-  label: string
+  name: string
 }

@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core.config import settings
+from app.core.ai_models import _parse_models
 from app.db.init_db import init_db
 
 
@@ -24,6 +25,7 @@ def test_ai_models():
         assert isinstance(data, list)
         assert data
         assert data[0]['id']
+        assert data[0]['name']
 
 
 def test_ai_stream_missing_key_returns_error():
@@ -45,3 +47,15 @@ def test_ai_stream_missing_key_returns_error():
             assert '"type": "error"' in response.text
     finally:
         settings.OPENAI_API_KEY = previous_key
+
+
+def test_parse_models_supports_name_and_code():
+    models = _parse_models('GPT-5.2|gpt-5.2-2025-12-11')
+    assert models == [
+        {'id': 'gpt-5.2-2025-12-11', 'name': 'GPT-5.2'},
+    ]
+
+
+def test_parse_models_skips_invalid_entries():
+    models = _parse_models('gpt-5.2-2025-12-11, |gpt-5.2-2025-12-11, GPT-5.2|')
+    assert models == []
