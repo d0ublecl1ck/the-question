@@ -1,0 +1,118 @@
+{
+  "project": "Skill Chatbot MVP",
+  "branchName": "feature/backend-fastapi",
+  "description": "细化 PRD 到前后端完全就绪并联调验收通过",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "认证/账号 API 与 /me 别名对齐",
+      "description": "作为开发者，我需要 /me 系列接口对齐 PRD，便于前端接入。",
+      "acceptanceCriteria": [
+        "新增 /api/v1/me GET 与 PATCH（与 /users/me 行为一致）",
+        "新增 /api/v1/me/memory GET 与 PATCH（映射 memory 读写）",
+        "保持 /api/v1/auth/* 兼容并用 cURL 验证"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "保持 /api/v1 前缀不变。"
+    },
+    {
+      "id": "US-002",
+      "title": "聊天与技能建议 API 别名对齐",
+      "description": "作为开发者，我需要 /chat 与 /skill-suggestions 对齐 PRD。",
+      "acceptanceCriteria": [
+        "新增 /api/v1/chat/sessions, /api/v1/chat/sessions/:id, /api/v1/chat/sessions/:id/messages",
+        "新增 /api/v1/skill-suggestions（复用 session suggestion 逻辑）",
+        "拒绝抑制策略保持：同会话同技能拒绝后不再提示",
+        "使用 cURL 验证完整流程"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "内部仍复用现有 /chats 实现。"
+    },
+    {
+      "id": "US-003",
+      "title": "技能市场列表/详情与筛选对齐",
+      "description": "作为用户，我需要在市场中浏览与筛选官方技能。",
+      "acceptanceCriteria": [
+        "新增 /api/v1/market/skills 列表接口（支持 q/tags/sort/limit/offset）",
+        "新增 /api/v1/market/skills/:id 详情接口（含评分/收藏/评论统计）",
+        "列表与详情字段覆盖 name/description/tags/visibility/updated",
+        "使用 cURL 验证列表与详情返回符合预期"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "暂用 Skill 作为市场实体。"
+    },
+    {
+      "id": "US-004",
+      "title": "搜索技能接口对齐",
+      "description": "作为用户，我需要在搜索中用关键词查找技能。",
+      "acceptanceCriteria": [
+        "新增 /api/v1/search/skills?q=... 关键词搜索接口",
+        "搜索范围覆盖 name/description/tags/versions content",
+        "支持 limit/offset",
+        "使用 cURL 验证搜索结果"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "向量检索后续接入，先关键词匹配。"
+    },
+    {
+      "id": "US-005",
+      "title": "评论回复/点赞与举报阈值",
+      "description": "作为用户，我需要评论互动与举报机制。",
+      "acceptanceCriteria": [
+        "新增 /api/v1/comments/:id/replies, /api/v1/comments/:id/like",
+        "新增 /api/v1/reports 去重用户计数，达到阈值自动下架技能",
+        "技能下架后默认不展示",
+        "使用 cURL 验证举报阈值行为"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "阈值默认 3。"
+    },
+    {
+      "id": "US-006",
+      "title": "版本树与文本 diff",
+      "description": "作为用户，我需要看到技能版本树与文本差异。",
+      "acceptanceCriteria": [
+        "新增 /api/v1/skills/:id/versions/diff?from=&to=",
+        "版本树接口可用并返回 parent 关系",
+        "diff 返回 unified 或 split 文本格式",
+        "使用 cURL 验证 diff 输出"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "后续可切换更强 diff 引擎。"
+    },
+    {
+      "id": "US-007",
+      "title": "前端页面结构对齐 PRD",
+      "description": "作为用户，我需要 PRD 定义的页面与入口。",
+      "acceptanceCriteria": [
+        "市场/技能库/详情/设置/搜索/登录页面结构对齐 PRD 文案",
+        "新增技能编辑入口（SKILL.md 直接编辑 + AI 协助占位）",
+        "组件优先使用 shadcn/ui，缺失再用 Radix UI",
+        "使用 Chrome MCP 验证布局与交互"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "保持整体视觉一致性。"
+    },
+    {
+      "id": "US-008",
+      "title": "前后端联调与验收",
+      "description": "作为项目负责人，我需要前后端联调完成并通过验证。",
+      "acceptanceCriteria": [
+        "前端接入真实 API，替换 mock",
+        "cURL 完成 API 验收清单并记录结果",
+        "Chrome MCP 验证关键用户路径（登录→对话→技能→收藏/评分→编辑→导出）",
+        "所有验证调通且符合预期"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "联调完成后补充验收记录。"
+    }
+  ]
+}
