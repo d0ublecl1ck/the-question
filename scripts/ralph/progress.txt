@@ -4,5 +4,17 @@ Started: $(date)
 
 ## Codebase Patterns
 - API 统一前缀为 /api/v1，主路由在 backend/app/api/v1/router.py
+- 用户信息输出统一使用 backend/app/services/user_service.py 的 to_user_out 映射
 - 前端 UI 组件优先使用 shadcn/ui，缺失组件再用 Radix UI
 - 对话页技能选择使用 Command + Dialog 组合
+## 2026-01-17 03:36 - US-001
+- 已新增 /users/me PATCH 与 /me、/me/memory 别名接口，并复用 user_service/memory_service 逻辑
+- 新增用户自更新与统一映射（user_service）
+- 新增 /me 相关测试覆盖 GET/PATCH 与记忆读写
+- cURL 验证输出已记录在 /tmp/ralph_me_curl.log
+- Files changed: backend/app/api/v1/me.py, backend/app/api/v1/router.py, backend/app/api/v1/users.py, backend/app/schemas/user.py, backend/app/services/user_service.py, backend/tests/test_me_aliases.py, docs/plans/2026-01-16-me-alias-endpoints-implementation.md, prd.json, scripts/ralph/progress.txt
+- **Learnings for future iterations:**
+  - Patterns discovered: /me 别名路由集中在 backend/app/api/v1/me.py
+  - Gotchas encountered: 后端测试需使用 `uv run pytest` 才会加载依赖
+  - Useful context: 用户信息输出通过 to_user_out 保持字段一致
+---

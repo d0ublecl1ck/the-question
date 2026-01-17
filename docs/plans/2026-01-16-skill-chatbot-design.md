@@ -172,6 +172,7 @@
 - API 调试与验收使用 cURL 进行测试，直到调通且符合预期。
 - 前端调试使用 Chrome MCP，直到调通且符合预期。
 - 前端使用 Tailwind CSS 与 shadcn/ui；组件优先使用 shadcn/ui，若不存在对应组件才允许使用 Radix UI。
+- 禁止任何假实现或 mock 实现，除非是 PRD 明确标注的 MVP 不做范围。
 
 ## 10. 里程碑（建议）
 

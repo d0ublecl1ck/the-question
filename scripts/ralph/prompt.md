@@ -102,3 +102,4 @@ If there are still stories with `passes: false`, end your response normally (ano
 - Commit frequently
 - Keep CI green
 - Read the Codebase Patterns section in progress.txt before starting
+- If you have multiple implementation options, pick the recommended option automatically and do not ask the user to choose
