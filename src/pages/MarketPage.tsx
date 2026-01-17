@@ -76,7 +76,7 @@ export default function MarketPage() {
   }, [query, selectedTags, skills, sort])
 
   return (
-    <section className="space-y-8 rounded-3xl border border-border/70 bg-gradient-to-br from-card/80 via-card/40 to-muted/20 p-6 shadow-glow backdrop-blur">
+    <section className="space-y-8 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Market</p>
         <h2 className="text-3xl font-semibold">市场</h2>

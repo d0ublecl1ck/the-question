@@ -16,13 +16,13 @@ export default function AppShell() {
   return (
     <div className="min-h-screen">
       <div className="relative flex min-h-screen">
-        <aside className="hidden w-64 flex-col border-r border-border/70 bg-card/70 px-6 py-8 backdrop-blur lg:flex">
+        <aside className="hidden w-72 flex-col border-r border-border/60 bg-white/70 px-6 py-8 backdrop-blur lg:flex">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background shadow-md">
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-lg font-semibold">Skill Chatbot</p>
+              <p className="text-lg font-semibold tracking-tight">Skill Chatbot</p>
               <p className="text-xs text-muted-foreground">对话驱动的技能中枢</p>
             </div>
           </div>
@@ -40,9 +40,9 @@ export default function AppShell() {
                   to={item.to}
                   className={({ isActive }) =>
                     [
-                      'group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition',
+                      'group flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition',
                       isActive
-                        ? 'bg-foreground text-background shadow-sm'
+                        ? 'bg-foreground text-background shadow'
                         : 'text-foreground/80 hover:bg-muted/60',
                     ].join(' ')
                   }
@@ -53,20 +53,20 @@ export default function AppShell() {
               )
             })}
           </nav>
-          <div className="mt-auto rounded-2xl border border-border bg-background/80 p-4">
+          <div className="mt-auto rounded-2xl border border-border/60 bg-white/80 p-4 shadow-sm">
             <p className="text-xs text-muted-foreground">今日状态</p>
             <p className="mt-1 text-sm font-semibold">技能匹配 92%</p>
-            <Button className="mt-4 w-full" size="sm">
+            <Button className="mt-4 w-full rounded-full" size="sm">
               新建会话
             </Button>
           </div>
         </aside>
 
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/70 bg-background/80 px-6 py-4 backdrop-blur">
+          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/60 bg-white/80 px-6 py-4 backdrop-blur">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Workspace</p>
-              <h1 className="text-xl font-semibold">技能驱动对话</h1>
+              <h1 className="text-xl font-semibold tracking-tight">技能驱动对话</h1>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline">已连接本地后端</Badge>
@@ -81,7 +81,7 @@ export default function AppShell() {
         </div>
       </div>
 
-      <nav className="fixed bottom-4 left-1/2 z-40 flex w-[92%] -translate-x-1/2 items-center justify-between rounded-2xl border border-border bg-background/90 px-4 py-3 shadow-glow backdrop-blur lg:hidden">
+      <nav className="fixed bottom-4 left-1/2 z-40 flex w-[92%] -translate-x-1/2 items-center justify-between rounded-2xl border border-border/60 bg-white/90 px-4 py-3 shadow-lg backdrop-blur lg:hidden">
         {navItems.map((item) => {
           const Icon = item.icon
           return (
@@ -91,7 +91,7 @@ export default function AppShell() {
               className={({ isActive }) =>
                 [
                   'flex flex-col items-center gap-1 text-xs font-medium',
-                  isActive ? 'text-primary' : 'text-muted-foreground',
+                  isActive ? 'text-foreground' : 'text-muted-foreground',
                 ].join(' ')
               }
             >

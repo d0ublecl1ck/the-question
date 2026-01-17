@@ -27,7 +27,17 @@ export default function LoginPage() {
       if (!response.ok) {
         throw new Error('Request failed')
       }
-      const data = (await response.json()) as { access_token?: string; user?: { id: string; email: string } }
+      const data = (await response.json()) as { access_token?: string }
+      const resolveUser = async (token: string) => {
+        const meResponse = await fetch('/api/v1/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!meResponse.ok) {
+          throw new Error('Fetch me failed')
+        }
+        return (await meResponse.json()) as { id: string; email: string }
+      }
+
       if (mode === 'register') {
         const loginResponse = await fetch('/api/v1/auth/login', {
           method: 'POST',
@@ -37,10 +47,12 @@ export default function LoginPage() {
         if (!loginResponse.ok) {
           throw new Error('Login failed')
         }
-        const loginData = (await loginResponse.json()) as { access_token: string; user: { id: string; email: string } }
-        setAuth({ token: loginData.access_token, user: loginData.user })
-      } else if (data.access_token && data.user) {
-        setAuth({ token: data.access_token, user: data.user })
+        const loginData = (await loginResponse.json()) as { access_token: string }
+        const user = await resolveUser(loginData.access_token)
+        setAuth({ token: loginData.access_token, user })
+      } else if (data.access_token) {
+        const user = await resolveUser(data.access_token)
+        setAuth({ token: data.access_token, user })
       }
       navigate('/')
     } catch (err) {
@@ -53,7 +65,7 @@ export default function LoginPage() {
 
   return (
     <section className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-card/80 p-8 shadow-glow">
+      <div className="w-full max-w-md rounded-3xl border border-border/60 bg-white/85 p-8 shadow-xl backdrop-blur">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">{mode === 'login' ? '登录' : '注册'}</h1>
           <Button

@@ -94,7 +94,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <section className="space-y-8 rounded-3xl border border-border/70 bg-gradient-to-br from-card/80 via-card/40 to-muted/20 p-6 shadow-glow backdrop-blur">
+    <section className="space-y-8 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Settings</p>
         <h2 className="text-3xl font-semibold">设置</h2>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
         </div>
       ) : (
         <>
-          <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-5">
+          <section className="space-y-4 rounded-2xl border border-border/60 bg-white/70 p-5">
             <h3 className="text-lg font-semibold">账号信息</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -126,7 +126,7 @@ export default function SettingsPage() {
 
           <Separator />
 
-          <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-5">
+          <section className="space-y-4 rounded-2xl border border-border/60 bg-white/70 p-5">
             <h3 className="text-lg font-semibold">偏好记忆</h3>
             <p className="text-sm text-muted-foreground">
               用自然语言描述你的语气、常用技能、背景偏好等。
@@ -144,7 +144,7 @@ export default function SettingsPage() {
 
           <Separator />
 
-          <section className="space-y-3 rounded-2xl border border-border/60 bg-background/60 p-5">
+          <section className="space-y-3 rounded-2xl border border-border/60 bg-white/70 p-5">
             <h3 className="text-lg font-semibold">默认技能</h3>
             <p className="text-sm text-muted-foreground">
               选择默认注入的技能（即将接入）。

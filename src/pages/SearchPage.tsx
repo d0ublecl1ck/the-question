@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { searchSkills } from '@/services/search'
+import { Link } from 'react-router-dom'
 
 export type SearchSkill = {
   id: string
@@ -47,7 +48,7 @@ export default function SearchPage() {
   }
 
   return (
-    <section className="space-y-8 rounded-3xl border border-border/70 bg-gradient-to-br from-card/80 via-card/40 to-muted/20 p-6 shadow-glow backdrop-blur">
+    <section className="space-y-8 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Search</p>
         <h2 className="text-3xl font-semibold">搜索</h2>
@@ -56,7 +57,7 @@ export default function SearchPage() {
         </p>
       </header>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background/60 p-4 backdrop-blur lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-white/70 p-4 backdrop-blur lg:flex-row lg:items-center">
         <Input
           placeholder="搜索技能，例如：日报总结"
           value={query}
@@ -80,7 +81,7 @@ export default function SearchPage() {
         </Button>
       </div>
 
-      <section className="space-y-3 rounded-2xl border border-border/60 bg-background/60 p-4">
+      <section className="space-y-3 rounded-2xl border border-border/60 bg-white/70 p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">筛选标签</h3>
           <span className="text-xs text-muted-foreground">{filteredResults.length} 条结果</span>
@@ -117,11 +118,11 @@ export default function SearchPage() {
           <span className="text-xs text-muted-foreground">{filteredResults.length} 条</span>
         </div>
         {status === 'idle' ? (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             输入关键词开始搜索
           </div>
         ) : status === 'loading' ? (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             搜索中...
           </div>
         ) : status === 'error' ? (
@@ -129,7 +130,7 @@ export default function SearchPage() {
             搜索失败，请稍后重试
           </div>
         ) : filteredResults.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             没有匹配结果
           </div>
         ) : (
@@ -137,7 +138,7 @@ export default function SearchPage() {
             {filteredResults.map((item) => (
               <article
                 key={item.id}
-                className="rounded-2xl border border-border/70 bg-background/70 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="rounded-2xl border border-border/60 bg-white/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="space-y-2">
@@ -151,8 +152,8 @@ export default function SearchPage() {
                       ))}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    查看详情
+                  <Button asChild variant="outline" size="sm" className="rounded-full">
+                    <Link to={`/skills/${item.id}`}>查看详情</Link>
                   </Button>
                 </div>
               </article>

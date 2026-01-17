@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Sparkles, Tag, Wand2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { createChatMessage, createChatSession, createSkillSuggestion, listChatMessages } from '@/services/chat'
+import { useNavigate } from 'react-router-dom'
 
 export type SkillItem = {
   id: string
@@ -32,6 +33,7 @@ type ChatMessage = {
 
 export default function ChatPage() {
   const token = useAuthStore((state) => state.token)
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
   const [draft, setDraft] = useState('')
@@ -109,16 +111,19 @@ export default function ChatPage() {
 
   if (!token) {
     return (
-      <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-glow">
+      <section className="rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg">
         <h2 className="text-2xl font-semibold">Chat</h2>
         <p className="mt-2 text-sm text-muted-foreground">请先登录以同步技能与对话。</p>
+        <Button variant="outline" className="mt-4 rounded-full" onClick={() => navigate('/login')}>
+          去登录
+        </Button>
       </section>
     )
   }
 
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="flex flex-col gap-6 rounded-3xl border border-border/70 bg-gradient-to-br from-card/80 via-card/40 to-muted/20 p-6 shadow-glow backdrop-blur">
+      <div className="flex flex-col gap-6 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">对话</h2>
@@ -132,10 +137,10 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <ScrollArea className="h-[420px] rounded-2xl border border-border/60 bg-background/60 p-4">
+        <ScrollArea className="h-[420px] rounded-2xl border border-border/60 bg-white/70 p-4">
           <div className="flex flex-col gap-4">
             {messages.length === 0 && status === 'ready' && (
-              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
                 还没有消息，开始你的第一条对话。
               </div>
             )}
@@ -167,7 +172,7 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+        <div className="rounded-2xl border border-border/60 bg-white/80 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="gap-1">
@@ -206,7 +211,7 @@ export default function ChatPage() {
       </div>
 
       <aside className="flex flex-col gap-4">
-        <div className="rounded-3xl border border-border/70 bg-card/80 p-5">
+        <div className="rounded-3xl border border-border/60 bg-white/80 p-5">
           <h3 className="text-sm uppercase tracking-[0.3em] text-muted-foreground">实时提示</h3>
           <p className="mt-3 text-base font-semibold">技能建议</p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -228,11 +233,11 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-border/70 bg-card/70 p-5">
+        <div className="rounded-3xl border border-border/60 bg-white/80 p-5">
           <h3 className="text-sm uppercase tracking-[0.3em] text-muted-foreground">技能库快照</h3>
           <div className="mt-4 space-y-3">
             {skills.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-3 text-xs text-muted-foreground">
                 暂无可用技能
               </div>
             ) : (

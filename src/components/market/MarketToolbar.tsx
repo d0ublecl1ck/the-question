@@ -33,14 +33,14 @@ export default function MarketToolbar({
   onSortChange,
 }: MarketToolbarProps) {
   return (
-    <div className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4 backdrop-blur">
+    <div className="space-y-4 rounded-2xl border border-border/60 bg-white/70 p-4 backdrop-blur">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <Input
             placeholder="搜索技能"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            className="h-10 max-w-xl rounded-full bg-background"
+            className="h-10 max-w-xl rounded-full bg-white"
           />
           <div className="flex items-center gap-2">
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">排序</span>

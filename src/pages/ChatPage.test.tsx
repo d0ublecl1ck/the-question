@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { expect, it, vi, beforeEach } from 'vitest'
 import ChatPage from './ChatPage'
 import { useAuthStore } from '@/stores/authStore'
@@ -25,7 +26,21 @@ it('renders chat page with composer', async () => {
     return new Response(JSON.stringify({}), { status: 200 })
   }))
 
-  render(<ChatPage />)
+  render(
+    <MemoryRouter>
+      <ChatPage />
+    </MemoryRouter>,
+  )
   expect(await screen.findByText('对话')).toBeInTheDocument()
   expect(await screen.findByPlaceholderText('输入内容，按 $ 触发技能选择')).toBeInTheDocument()
+})
+
+it('renders login entry when unauthenticated', () => {
+  useAuthStore.setState({ status: 'anonymous', token: undefined, user: undefined })
+  render(
+    <MemoryRouter>
+      <ChatPage />
+    </MemoryRouter>,
+  )
+  expect(screen.getByRole('button', { name: '去登录' })).toBeInTheDocument()
 })

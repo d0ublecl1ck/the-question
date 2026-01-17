@@ -1,11 +1,22 @@
-# Skill Chatbot Backend
+# WenDui · 问对（后端）
 
 ## 快速开始
 
 ```bash
-cd backend
+cd /Users/d0ublecl1ck/the-question/.worktrees/backend-fastapi/backend
 uv sync
 cp .env.example .env
+```
+
+`.env` 中 `CORS_ORIGINS` 必须是 JSON 数组，例如：
+
+```
+CORS_ORIGINS=["http://localhost:5174","http://127.0.0.1:5174"]
+```
+
+启动：
+
+```bash
 uv run uvicorn app.main:app --reload
 ```
 
