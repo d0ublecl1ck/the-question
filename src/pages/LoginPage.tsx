@@ -5,11 +5,12 @@ import { useAppDispatch } from '@/store/hooks'
 import { setAuth } from '@/store/slices/authSlice'
 import { enqueueToast } from '@/store/slices/toastSlice'
 import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import logoUrl from '@/assets/logo.svg'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const dispatch = useAppDispatch()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -46,7 +47,23 @@ export default function LoginPage() {
           ? await loginWithProfile({ email, password }).unwrap()
           : await registerWithProfile({ email, password }).unwrap()
       dispatch(setAuth({ token: result.token, user: result.user }))
-      navigate('/')
+      const redirectTarget =
+        location.state && typeof location.state === 'object' && 'from' in location.state
+          ? (location.state as { from?: { pathname?: string; search?: string; hash?: string; state?: unknown } })
+              .from
+          : null
+      if (redirectTarget?.pathname) {
+        navigate(
+          {
+            pathname: redirectTarget.pathname,
+            search: redirectTarget.search ?? '',
+            hash: redirectTarget.hash ?? '',
+          },
+          { replace: true, state: redirectTarget.state },
+        )
+      } else {
+        navigate('/', { replace: true })
+      }
     } catch (err) {
       setStatus('error')
       const fallback = mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试'

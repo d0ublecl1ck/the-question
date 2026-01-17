@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Rating } from '@/components/ui/rating'
+import { HeartButton } from '@/components/ui/heart-button'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import type { MarketSkill } from '@/store/api/types'
@@ -58,12 +59,10 @@ export default function MarketTable({ items, renderActions }: MarketTableProps) 
               </div>
               <div className="mt-5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span>评分</span>
                   <Rating rating={item.rating.average} showValue size="sm" />
-                  <span className="text-[10px] text-muted-foreground">({item.rating.count})</span>
                 </div>
-                <span>收藏 {item.favorites_count}</span>
-                {renderActions ? renderActions(item) : <span className="text-muted-foreground">打开</span>}
+                <HeartButton initialCount={item.favorites_count} label="收藏" />
+                {renderActions ? renderActions(item) : null}
               </div>
             </div>
           </>

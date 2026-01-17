@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 
+import json
+
+from loguru import logger
+
 from app.core.env import get_env_value
 from app.core.providers import ProviderConfig, get_provider_registry
 
@@ -29,6 +33,16 @@ class LLMGateway:
         model: str,
         messages: list[dict[str, str]],
     ) -> AsyncGenerator[str, None]:
+        logger.info(
+            json.dumps(
+                {
+                    'event': 'llm_gateway.request',
+                    'model': model,
+                    'messages': messages,
+                },
+                ensure_ascii=False,
+            )
+        )
         provider = self._registry.provider_for_model(model)
         client = self._build_client(provider)
         stream = await client.chat.completions.create(

@@ -49,3 +49,4 @@
 - Centralize user response mapping via `backend/app/services/user_service.py` helpers when adding user-related endpoints.
 - Add Python dependencies with `uv add --default-index https://mirrors.aliyun.com/pypi/simple/`.
 - Run Python scripts with `uv run xx.py`.
+- Run `uv add --default-index https://mirrors.aliyun.com/pypi/simple/` and `uv run` only from the backend directory.

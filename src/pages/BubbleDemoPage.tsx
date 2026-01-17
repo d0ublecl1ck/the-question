@@ -1,5 +1,6 @@
+import ChatBubble from '@/components/chat/ChatBubble'
 import { Conversation, ConversationContent } from '@/components/ui/conversation'
-import { Message, MessageContent } from '@/components/ui/message'
+import { Message } from '@/components/ui/message'
 
 const demoBubbles = [
   {
@@ -27,6 +28,32 @@ const demoBubbles = [
     role: 'assistant' as const,
     content:
       '这是一个长内容的助手气泡示例，用于展示多行文本与更长段落在布局中的表现。建议信息可以写在气泡里，避免额外的操作条。',
+    name: 'AI',
+  },
+  {
+    id: 'assistant-clarify-chain',
+    role: 'assistant' as const,
+    content: `<!-- Clarification chain -->
+\`\`\`json
+{
+  "clarify_chain": [
+    {
+      "type": "single_choice",
+      "question": "你买香蕉是要今天就吃吗？",
+      "choices": ["是", "否", "其他"]
+    },
+    {
+      "type": "ranking",
+      "question": "请按重要性排序：",
+      "options": ["更甜更软口感", "耐放不易熟过头", "外观好看少斑点", "性价比/更便宜"]
+    },
+    {
+      "type": "free_text",
+      "question": "补充说明（打算买多少、预计几天内吃完、是直接吃还是做奶昔/烘焙、在哪买：超市/菜市场）？"
+    }
+  ]
+}
+\`\`\``,
     name: 'AI',
   },
   {
@@ -63,14 +90,7 @@ export default function BubbleDemoPage() {
         <ConversationContent className="flex flex-col gap-4">
           {demoBubbles.map((bubble) => (
             <Message key={bubble.id} from={bubble.role}>
-              <div className="flex flex-col items-start gap-2">
-                <MessageContent>{bubble.content}</MessageContent>
-                {bubble.skillName && (
-                  <span className="rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground">
-                    {bubble.skillName}
-                  </span>
-                )}
-              </div>
+              <ChatBubble role={bubble.role} content={bubble.content} skillName={bubble.skillName} />
             </Message>
           ))}
         </ConversationContent>

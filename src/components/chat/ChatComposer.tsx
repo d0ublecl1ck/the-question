@@ -27,7 +27,7 @@ export default function ChatComposer({
 }: ChatComposerProps) {
   return (
     <div className="mt-6">
-      <div className="mx-auto w-[75%]">
+      <div className="mx-auto w-full">
         <div className="flex flex-wrap items-center gap-2">
         {selectedSkillName && (
           <Badge variant="secondary" className="gap-1">

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import LoginPage from './LoginPage'
 import { store } from '@/store/appStore'
@@ -11,6 +11,16 @@ vi.mock('@/store/api/authApi', () => ({
   useLoginWithProfileMutation: vi.fn(),
   useRegisterWithProfileMutation: vi.fn(),
 }))
+
+const LocationDisplay = () => {
+  const location = useLocation()
+  const draft = (location.state as { draft?: string } | null)?.draft ?? ''
+  return (
+    <div data-testid="location-display" data-draft={draft}>
+      {location.pathname}
+    </div>
+  )
+}
 
 it('renders login page', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
@@ -78,6 +88,49 @@ it('shows email validation error on submit', async () => {
   await user.type(screen.getByPlaceholderText('密码'), 'secret123')
   await user.click(screen.getByRole('button', { name: '邮箱登录' }))
   expect(screen.getByText('请输入有效的邮箱地址')).toBeInTheDocument()
+})
+
+it('redirects back to chat with draft after login', async () => {
+  const user = userEvent.setup()
+  const unwrap = vi.fn().mockResolvedValue({
+    token: 'token',
+    user: { id: 'u1', email: 'a@b.com' },
+  })
+  const loginMutation = vi.fn().mockReturnValue({ unwrap })
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    loginMutation,
+    { isLoading: false },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/login',
+            state: {
+              from: { pathname: '/chat', state: { draft: '想聊的内容' } },
+            },
+          },
+        ]}
+      >
+        <LocationDisplay />
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  await user.type(screen.getByPlaceholderText('邮箱'), 'a@b.com')
+  await user.type(screen.getByPlaceholderText('密码'), 'secret123')
+  await user.click(screen.getByRole('button', { name: '邮箱登录' }))
+
+  const location = await screen.findByTestId('location-display')
+  expect(location).toHaveTextContent('/chat')
+  expect(location).toHaveAttribute('data-draft', '想聊的内容')
 })
 
 it('centers login content within the page', () => {

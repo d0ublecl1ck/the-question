@@ -88,6 +88,18 @@ def list_messages(
     return list(session.exec(statement).all())
 
 
+def get_message(session: Session, message_id: str) -> Optional[ChatMessage]:
+    return session.exec(select(ChatMessage).where(ChatMessage.id == message_id)).first()
+
+
+def update_message_content(session: Session, record: ChatMessage, content: str) -> ChatMessage:
+    record.content = content
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
 def list_suggestions(
     session: Session,
     session_id: str,

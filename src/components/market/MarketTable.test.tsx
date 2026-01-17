@@ -45,7 +45,21 @@ it('renders rating value and count', () => {
       <MarketTable items={items} />
     </MemoryRouter>,
   )
-  expect(screen.getByText('评分')).toBeInTheDocument()
   expect(screen.getByText('4.5')).toBeInTheDocument()
-  expect(screen.getByText('(12)')).toBeInTheDocument()
+})
+
+it('renders favorites heart button with count', () => {
+  const items: MarketSkill[] = [
+    {
+      ...baseSkill,
+      favorites_count: 42,
+    },
+  ]
+  render(
+    <MemoryRouter>
+      <MarketTable items={items} />
+    </MemoryRouter>,
+  )
+  expect(screen.getByText('收藏')).toBeInTheDocument()
+  expect(screen.getByText('42')).toBeInTheDocument()
 })
