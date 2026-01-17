@@ -7,8 +7,8 @@ import avatarUrl from '@/assets/avatar.jpg'
 
 const publicNavItems = [
   { to: '/', label: '首页' },
-  { to: '/about', label: 'About' },
-  { to: '/price', label: 'Price' },
+  { to: '/about', label: '关于' },
+  { to: '/price', label: '定价' },
 ]
 
 const authedNavItems = [
@@ -97,7 +97,7 @@ export default function AppShell() {
                 >
                   {({ isActive }) => (
                     <>
-                      <span>Login</span>
+                      <span>登录</span>
                       <span
                         className={[
                           'absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-foreground transition',

@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useGetMarketSkillsQuery } from '@/store/api/marketApi'
+import {
+  useCreateFavoriteMutation,
+  useDeleteFavoriteMutation,
+  useGetFavoriteSkillsQuery,
+  useGetMarketSkillsQuery,
+} from '@/store/api/marketApi'
 import type { MarketSkill } from '@/store/api/types'
 import MarketToolbar from '@/components/market/MarketToolbar'
 import MarketList from '@/components/market/MarketList'
@@ -16,11 +21,16 @@ export default function MarketPage() {
   const authStatus = useAppSelector((state) => state.auth.status)
   const navigate = useNavigate()
   const { data: skills = [], isLoading, isError } = useGetMarketSkillsQuery()
+  const isAuthed = authStatus === 'authenticated'
+  const { data: favoriteSkills = [] } = useGetFavoriteSkillsQuery(undefined, { skip: !isAuthed })
+  const [createFavorite] = useCreateFavoriteMutation()
+  const [deleteFavorite] = useDeleteFavoriteMutation()
   const status: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
   const [query, setQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [view, setView] = useState<'list' | 'grid'>('grid')
   const [sort, setSort] = useState<'recent' | 'rating' | 'favorites'>('recent')
+  const [pendingFavoriteIds, setPendingFavoriteIds] = useState<string[]>([])
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>()
@@ -64,7 +74,33 @@ export default function MarketPage() {
   const selectedSummary =
     selectedTags.length === 0 ? '全部分类' : `已选 ${selectedTags.length} 个分类`
 
-  const isAuthed = authStatus === 'authenticated'
+  const favoriteIds = favoriteSkills.map((item) => item.skill_id)
+  const favoriteSet = new Set(favoriteIds)
+  const pendingFavoriteSet = new Set(pendingFavoriteIds)
+
+  const handleToggleFavorite = async (skill: MarketSkill) => {
+    if (!isAuthed) {
+      dispatch(enqueueToast('登录后才可以收藏'))
+      navigate('/login')
+      return
+    }
+    if (pendingFavoriteSet.has(skill.id)) return
+    setPendingFavoriteIds((prev) => (prev.includes(skill.id) ? prev : [...prev, skill.id]))
+    try {
+      if (favoriteSet.has(skill.id)) {
+        await deleteFavorite({ skill_id: skill.id }).unwrap()
+        dispatch(enqueueToast('已取消收藏'))
+      } else {
+        await createFavorite({ skill_id: skill.id }).unwrap()
+        dispatch(enqueueToast('已收藏'))
+      }
+    } catch {
+      dispatch(enqueueToast('收藏操作失败'))
+    } finally {
+      setPendingFavoriteIds((prev) => prev.filter((id) => id !== skill.id))
+    }
+  }
+
   const handleUnauthorizedLibraryClick = () => {
     dispatch(enqueueToast('本功能登录才可以使用'))
     navigate('/login')
@@ -160,7 +196,12 @@ export default function MarketPage() {
               加载失败，请稍后重试
             </div>
           ) : view === 'grid' ? (
-            <MarketTable items={filtered} />
+            <MarketTable
+              items={filtered}
+              favoriteIds={favoriteSet}
+              pendingFavoriteIds={pendingFavoriteSet}
+              onToggleFavorite={handleToggleFavorite}
+            />
           ) : (
             <MarketList items={filtered} />
           )}
