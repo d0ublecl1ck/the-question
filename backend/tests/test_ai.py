@@ -3,6 +3,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.core.config import settings
 from app.db.init_db import init_db
 
 
@@ -23,3 +24,24 @@ def test_ai_models():
         assert isinstance(data, list)
         assert data
         assert data[0]['id']
+
+
+def test_ai_stream_missing_key_returns_error():
+    init_db(drop_all=True)
+    previous_key = settings.OPENAI_API_KEY
+    settings.OPENAI_API_KEY = ''
+    try:
+        with TestClient(app) as client:
+            headers = _auth_headers(client)
+            session = client.post('/api/v1/chats', json={'title': 'test'}, headers=headers)
+            assert session.status_code == 201
+            model = client.get('/api/v1/ai/models').json()[0]['id']
+            response = client.post(
+                '/api/v1/ai/chat/stream',
+                json={'session_id': session.json()['id'], 'content': 'hello', 'model': model},
+                headers=headers,
+            )
+            assert response.status_code == 200
+            assert '"type": "error"' in response.text
+    finally:
+        settings.OPENAI_API_KEY = previous_key

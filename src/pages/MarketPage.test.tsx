@@ -26,3 +26,14 @@ it('loads market skills', async () => {
   const placeholders = await screen.findAllByText('暂无内容')
   expect(placeholders).toHaveLength(2)
 })
+
+it('does not wrap sections in cards', async () => {
+  vi.spyOn(marketApi, 'fetchMarketSkills').mockResolvedValue([])
+  const { container } = render(
+    <MemoryRouter>
+      <MarketPage />
+    </MemoryRouter>,
+  )
+  await screen.findByText('市场')
+  expect(container.querySelector('.page-card')).toBeNull()
+})

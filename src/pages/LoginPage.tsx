@@ -96,7 +96,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">WenDui</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === 'login' ? '问对问题，遇见专家' : '创建账号，开始你的智能工作流'}
+            {'问对问题，遇见专家'}
           </p>
         </div>
 

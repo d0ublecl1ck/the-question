@@ -8,10 +8,10 @@ beforeEach(() => {
   useAuthStore.getState().clearAuth()
 })
 
-it('redirects to login when unauthenticated at root', () => {
+it('renders home page at root when unauthenticated', () => {
   const router = createMemoryRouter(routes, { initialEntries: ['/'] })
   render(<RouterProvider router={router} />)
-  expect(screen.getByRole('heading', { name: 'WenDui' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '首页' })).toBeInTheDocument()
 })
 
 it('renders home page at root when authenticated', () => {

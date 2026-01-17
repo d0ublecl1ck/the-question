@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     SKILL_CONTENT_MAX_LEN: int = 20000
     OPENAI_API_KEY: str = ''
     OPENAI_BASE_URL: str = 'https://api.openai.com/v1'
+    OPENAI_MODEL: str = 'gpt-4o-mini'
+    OPENAI_MODELS: str = ''
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod

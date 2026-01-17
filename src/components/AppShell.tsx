@@ -2,13 +2,19 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 
-const navItems = [
-  { to: '/', label: '首页' },
-  { to: '/chat', label: '对话' },
-  { to: '/market', label: '市场' },
-  { to: '/library', label: '技能库' },
-  { to: '/search', label: '搜索' },
-  { to: '/settings', label: '设置' },
+const publicNavItems = [
+  { to: '/', label: 'Home' },
+  { to: '/about', label: 'About' },
+  { to: '/price', label: 'Price' },
+]
+
+const authedNavItems = [
+  { to: '/', label: 'Home' },
+  { to: '/chat', label: 'Chat' },
+  { to: '/market', label: 'Market' },
+  { to: '/library', label: 'Library' },
+  { to: '/search', label: 'Search' },
+  { to: '/settings', label: 'Settings' },
 ]
 
 export default function AppShell() {
@@ -17,6 +23,8 @@ export default function AppShell() {
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const navigate = useNavigate()
   const [panelOpen, setPanelOpen] = useState(false)
+  const isAuthed = status === 'authenticated'
+  const navItems = isAuthed ? authedNavItems : publicNavItems
   const email = user?.email ?? ''
   const avatarSeed = email || 'anonymous'
   const accent = Array.from(avatarSeed).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360
@@ -31,11 +39,35 @@ export default function AppShell() {
           </Link>
           <div className="flex items-center gap-6">
             <nav className="flex h-14 items-end gap-8 text-sm font-medium text-muted-foreground">
-            {navItems.map((item) => {
-              return (
+              {navItems.map((item) => {
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      [
+                        'group relative flex items-center pb-3 transition',
+                        isActive ? 'text-foreground' : 'hover:text-foreground',
+                      ].join(' ')
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <span>{item.label}</span>
+                        <span
+                          className={[
+                            'absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-foreground transition',
+                            isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-60',
+                          ].join(' ')}
+                        />
+                      </>
+                    )}
+                  </NavLink>
+                )
+              })}
+              {!isAuthed && (
                 <NavLink
-                  key={item.to}
-                  to={item.to}
+                  to="/login"
                   className={({ isActive }) =>
                     [
                       'group relative flex items-center pb-3 transition',
@@ -45,7 +77,7 @@ export default function AppShell() {
                 >
                   {({ isActive }) => (
                     <>
-                      <span>{item.label}</span>
+                      <span>Login</span>
                       <span
                         className={[
                           'absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-foreground transition',
@@ -55,9 +87,8 @@ export default function AppShell() {
                     </>
                   )}
                 </NavLink>
-              )
-            })}
-          </nav>
+              )}
+            </nav>
             <div
               className="relative"
               onMouseEnter={() => setPanelOpen(true)}
