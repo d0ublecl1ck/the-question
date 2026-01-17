@@ -105,6 +105,7 @@ def seed_market_skills(
     updated = 0
     skipped = 0
     for preset in presets:
+        visibility = SkillVisibility.PUBLIC
         name_result = ensure_skill_name(preset.name)
         tags = clean_tags(preset.tags)
         content = ensure_skill_content(
@@ -125,7 +126,7 @@ def seed_market_skills(
                 SkillCreate(
                     name=name_result.name,
                     description=preset.description,
-                    visibility=preset.visibility,
+                    visibility=visibility,
                     tags=tags,
                     avatar=preset.avatar,
                     content=content,
@@ -141,7 +142,7 @@ def seed_market_skills(
             SkillUpdate(
                 name=name_result.name,
                 description=preset.description,
-                visibility=preset.visibility,
+                visibility=visibility,
                 tags=tags,
                 avatar=preset.avatar,
             ),

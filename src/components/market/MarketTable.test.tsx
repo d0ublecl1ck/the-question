@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import MarketTable from './MarketTable'
 import type { MarketSkill } from '@/store/api/types'
@@ -14,6 +14,11 @@ const baseSkill: MarketSkill = {
   favorites_count: 0,
   rating: { average: 0, count: 0 },
   comments_count: 0,
+}
+
+function LocationDisplay() {
+  const location = useLocation()
+  return <div data-testid="location">{location.pathname}</div>
 }
 
 it('renders avatar cover when provided', () => {
@@ -62,4 +67,25 @@ it('renders favorites heart button with count', () => {
   )
   expect(screen.getByText('收藏')).toBeInTheDocument()
   expect(screen.getByText('42')).toBeInTheDocument()
+})
+
+it('navigates to skill detail when card is clicked', () => {
+  render(
+    <MemoryRouter initialEntries={['/market']}>
+      <LocationDisplay />
+      <Routes>
+        <Route
+          path="/market"
+          element={
+            <>
+              <MarketTable items={[baseSkill]} />
+            </>
+          }
+        />
+        <Route path="/skills/:id" element={<div>detail</div>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+  fireEvent.click(screen.getByRole('link', { name: '查看技能 Skill One' }))
+  expect(screen.getByTestId('location')).toHaveTextContent('/skills/skill-1')
 })

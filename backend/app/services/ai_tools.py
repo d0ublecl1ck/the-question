@@ -112,7 +112,9 @@ async def generate_skill_data(
     model = build_openai_chat_model(deps.model_id)
     agent = _get_skill_generator_agent()
     result = await agent.run(prompt, model=model)
-    payload: GeneratedSkill = result.output
+    payload: GeneratedSkill | None = getattr(result, 'output', None) or getattr(result, 'data', None)
+    if payload is None:
+        raise AttributeError('skill generator result missing output')
 
     name_result = ensure_skill_name(payload.name)
     tags = clean_tags(payload.tags)[:6]
