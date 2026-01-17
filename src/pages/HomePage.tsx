@@ -4,18 +4,22 @@ import skillHubCard from '@/assets/skill-hub-card.png'
 
 const roleHighlights = [
   {
+    label: 'Skill Flow',
     title: '技能化工作流',
     description: '把重复流程沉淀成 Skill，随时复用并持续优化。',
   },
   {
+    label: 'Dialogue Ops',
     title: '对话式执行',
     description: '在一个对话里完成拆解、推进、复盘与交付。',
   },
   {
+    label: 'Market & Ecosystem',
     title: '市场与生态',
     description: '浏览官方技能，快速对接成熟的解决方案。',
   },
   {
+    label: 'Collaboration',
     title: '协作与治理',
     description: '团队共享、权限控制与数据可追溯。',
   },
@@ -107,11 +111,28 @@ export default function HomePage() {
             <span>知识治理</span>
           </div>
         </div>
-        <div
-          className="relative aspect-[4/3] w-full overflow-hidden rounded-[36px] bg-cover bg-center shadow-[0_40px_90px_-40px_rgba(15,23,42,0.4)]"
-          style={{ backgroundImage: `url(${skillHubCard})` }}
+        <Link
+          to="/market"
+          aria-label="进入技能市场"
+          className="group block"
           data-testid="skill-hub-hero"
-        />
+        >
+          <div className="relative flex aspect-[4/3] w-full flex-col overflow-hidden rounded-[36px] border border-slate-200/80 bg-white shadow-[0_40px_90px_-40px_rgba(15,23,42,0.4)] transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_50px_110px_-50px_rgba(15,23,42,0.5)]">
+            <div
+              className="flex-1 bg-cover bg-center transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+              style={{ backgroundImage: `url(${skillHubCard})` }}
+            />
+            <div className="bg-white/95 px-8 py-6">
+              <div className="max-w-sm space-y-2 text-sm text-slate-700">
+                <div className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                  Skill Hub
+                </div>
+                <div className="text-lg font-semibold text-slate-700">对话即执行</div>
+                <div>对话、技能、知识统一在一个可控的工作台里。</div>
+              </div>
+            </div>
+          </div>
+        </Link>
       </header>
 
       <section className="space-y-6">
@@ -123,7 +144,7 @@ export default function HomePage() {
           {roleHighlights.map((item) => (
             <div key={item.title} className="space-y-3">
               <div className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
-                {item.title}
+                {item.label}
               </div>
               <div className="text-lg font-semibold text-foreground">{item.title}</div>
               <p className="text-sm text-muted-foreground">{item.description}</p>
