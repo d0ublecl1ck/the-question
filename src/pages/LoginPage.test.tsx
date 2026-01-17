@@ -38,7 +38,9 @@ it('centers login content within the page', () => {
     </MemoryRouter>,
   )
   const container = screen.getByTestId('login-page')
+  const card = screen.getByTestId('login-card')
   expect(container).toHaveClass('flex-1')
   expect(container).toHaveClass('items-center')
   expect(container).toHaveClass('justify-center')
+  expect(card).toHaveClass('max-w-sm')
 })
