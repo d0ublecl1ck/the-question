@@ -74,5 +74,7 @@ it('centers page content within the shell', () => {
     </MemoryRouter>
   )
 
-  expect(screen.getByRole('main')).toHaveClass('justify-center')
+  const main = screen.getByRole('main')
+  expect(main).toHaveClass('justify-center')
+  expect(main).toHaveClass('w-full', 'px-[5%]')
 })
