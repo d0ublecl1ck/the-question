@@ -8,7 +8,6 @@ import { store } from '@/store/appStore'
 import { clearAuth, setAuth } from '@/store/slices/authSlice'
 import {
   useCreateChatSessionMutation,
-  useCreateSkillSuggestionMutation,
   useDeleteChatSessionMutation,
   useLazyListChatMessagesQuery,
   useListChatMessagesQuery,
@@ -20,7 +19,6 @@ import { useListAiModelsQuery } from '@/store/api/aiApi'
 
 vi.mock('@/store/api/chatApi', () => ({
   useCreateChatSessionMutation: vi.fn(),
-  useCreateSkillSuggestionMutation: vi.fn(),
   useDeleteChatSessionMutation: vi.fn(),
   useLazyListChatMessagesQuery: vi.fn(),
   useListChatMessagesQuery: vi.fn(),
@@ -50,10 +48,6 @@ it('renders chat page with composer', async () => {
     vi.fn().mockResolvedValue({}),
     { isLoading: false },
   ] as ReturnType<typeof useDeleteChatSessionMutation>)
-  vi.mocked(useCreateSkillSuggestionMutation).mockReturnValue([
-    vi.fn().mockResolvedValue({}),
-    { isLoading: false },
-  ] as ReturnType<typeof useCreateSkillSuggestionMutation>)
   vi.mocked(useListChatSessionsQuery).mockReturnValue({
     data: [{ id: 's1', title: '历史对话' }],
     isLoading: false,
@@ -105,10 +99,6 @@ it('asks for confirmation before deleting a session', async () => {
     deleteMutation,
     { isLoading: false },
   ] as ReturnType<typeof useDeleteChatSessionMutation>)
-  vi.mocked(useCreateSkillSuggestionMutation).mockReturnValue([
-    vi.fn().mockResolvedValue({}),
-    { isLoading: false },
-  ] as ReturnType<typeof useCreateSkillSuggestionMutation>)
   vi.mocked(useListChatSessionsQuery).mockReturnValue({
     data: [{ id: 's1', title: '历史对话' }],
     isLoading: false,
@@ -164,10 +154,6 @@ it('renders login entry when unauthenticated', () => {
     vi.fn().mockResolvedValue({}),
     { isLoading: false },
   ] as ReturnType<typeof useDeleteChatSessionMutation>)
-  vi.mocked(useCreateSkillSuggestionMutation).mockReturnValue([
-    vi.fn().mockResolvedValue({}),
-    { isLoading: false },
-  ] as ReturnType<typeof useCreateSkillSuggestionMutation>)
   vi.mocked(useListChatSessionsQuery).mockReturnValue({
     data: [],
     isLoading: false,

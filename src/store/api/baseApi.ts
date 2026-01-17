@@ -19,6 +19,13 @@ const rawBaseQuery = fetchBaseQuery({
   },
 })
 
+const authExemptPaths = new Set(['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/refresh'])
+
+const getRequestPath = (input: string | FetchArgs) => {
+  if (typeof input === 'string') return input
+  return input.url
+}
+
 const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
@@ -26,17 +33,21 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
 ) => {
   const result = await rawBaseQuery(args, api, extraOptions)
   if (result.error) {
+    const path = getRequestPath(args)
+    const isAuthExempt = authExemptPaths.has(path)
     if (result.error.status === 401) {
-      api.dispatch(clearAuth())
-      api.dispatch(enqueueToast('登录已过期，请重新登录'))
-      if (typeof window !== 'undefined' && !redirectedOnAuth) {
-        redirectedOnAuth = true
-        if (window.location.pathname !== '/login') {
-          window.location.assign('/login')
+      if (!isAuthExempt) {
+        api.dispatch(clearAuth())
+        api.dispatch(enqueueToast('登录已过期，请重新登录'))
+        if (typeof window !== 'undefined' && !redirectedOnAuth) {
+          redirectedOnAuth = true
+          if (window.location.pathname !== '/login') {
+            window.location.assign('/login')
+          }
+          window.setTimeout(() => {
+            redirectedOnAuth = false
+          }, 2000)
         }
-        window.setTimeout(() => {
-          redirectedOnAuth = false
-        }, 2000)
       }
     } else {
       api.dispatch(enqueueToast('请求失败，请稍后重试'))

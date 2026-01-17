@@ -25,7 +25,6 @@ import { AI_Prompt } from '@/components/ui/animated-ai-input'
 import { streamAiChat } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
-  useCreateSkillSuggestionMutation,
   useDeleteChatSessionMutation,
   useLazyListChatMessagesQuery,
   useListChatMessagesQuery,
@@ -35,6 +34,7 @@ import {
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import type { ChatMessage as ApiChatMessage, ChatSession } from '@/store/api/types'
+import ChatBubble from '@/components/chat/ChatBubble'
 
 export type SkillItem = {
   id: string
@@ -132,14 +132,12 @@ export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionQuery, setSessionQuery] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
-  const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
   const isRootChat = location.pathname === '/chat'
 
   const [createChatSession, { isLoading: isCreatingSession }] = useCreateChatSessionMutation()
   const [updateChatSessionTitle] = useUpdateChatSessionTitleMutation()
   const [deleteChatSession] = useDeleteChatSessionMutation()
-  const [createSkillSuggestion] = useCreateSkillSuggestionMutation()
   const [triggerPreview] = useLazyListChatMessagesQuery()
 
   const { data: skills = [], isLoading: isSkillsLoading, isError: isSkillsError } = useListSkillsQuery(undefined, {
@@ -335,17 +333,6 @@ export default function ChatPage() {
   const handlePick = (skill: SkillItem) => {
     setSelectedSkill(skill)
     setOpen(false)
-  }
-
-  const requestSuggestion = async () => {
-    if (!sessionId || !selectedSkill) return
-    setSuggestionStatus('loading')
-    try {
-      await createSkillSuggestion({ session_id: sessionId, skill_id: selectedSkill.id }).unwrap()
-      setSuggestionStatus('success')
-    } catch {
-      setSuggestionStatus('error')
-    }
   }
 
   const handleCreateSession = async () => {
@@ -555,33 +542,19 @@ export default function ChatPage() {
                         还没有消息，开始你的第一条对话。
                       </div>
                     )}
-                    {messages.map((message) => {
-                      const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
-                      return (
-                        <div
-                          key={message.id}
-                          className={
-                            message.role === 'assistant'
-                              ? 'max-w-[78%] rounded-2xl border border-border/60 bg-white/80 p-4 text-foreground'
-                              : 'ml-auto max-w-[78%] rounded-2xl border border-foreground/10 bg-foreground text-background p-4'
-                          }
-                        >
-                          <p className="text-sm leading-relaxed">{message.content}</p>
-                          {badgeSkill && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <Badge
-                                variant={message.role === 'assistant' ? 'secondary' : 'outline'}
-                                className={message.role === 'assistant' ? '' : 'border-white/40 text-white'}
-                              >
-                                {badgeSkill.name}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </ScrollArea>
+                  {messages.map((message) => {
+                    const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
+                    return (
+                      <ChatBubble
+                        key={message.id}
+                        role={message.role}
+                        content={message.content}
+                        skillName={badgeSkill?.name}
+                      />
+                    )
+                  })}
+                </div>
+              </ScrollArea>
 
                 <div className="mt-6 rounded-[24px] border border-border/40 bg-white/70 p-4">
                   <div className="flex flex-wrap items-center gap-2">
@@ -605,23 +578,6 @@ export default function ChatPage() {
                 </div>
               </>
             )}
-
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-white/80 p-4">
-              <Button
-                variant="outline"
-                className="rounded-full"
-                onClick={requestSuggestion}
-                disabled={!selectedSkill || suggestionStatus === 'loading'}
-              >
-                {suggestionStatus === 'loading' ? '生成中...' : '触发建议'}
-              </Button>
-              {suggestionStatus === 'success' && (
-                <span className="text-xs text-emerald-600">已生成建议</span>
-              )}
-              {suggestionStatus === 'error' && (
-                <span className="text-xs text-destructive">生成失败，请稍后重试</span>
-              )}
-            </div>
           </div>
         </div>
       </div>
