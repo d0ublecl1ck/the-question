@@ -11,7 +11,7 @@ it('renders about headline and contact section', () => {
   )
 
   expect(
-    screen.getByRole('heading', { name: '我们在构建面向团队的对话式技能平台' }),
+    screen.getByRole('heading', { name: '让科技不再高高在上，真正服务每一个人' }),
   ).toBeInTheDocument()
   expect(screen.getByText('Contact')).toBeInTheDocument()
 })

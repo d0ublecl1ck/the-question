@@ -1,30 +1,30 @@
 const highlights = [
   {
-    title: '研究与实践结合',
-    description: '深耕对话式 AI 与流程自动化，把复杂任务变成可复用技能。',
+    title: '科技服务人民',
+    description: '让新技术不再高高在上，而是触手可及、立刻可用。',
   },
   {
-    title: '跨域团队协作',
-    description: '产品、工程与设计协同推进，确保交付和体验一致。',
+    title: '人人都是专家',
+    description: 'Skill 不只是技术党的专利，每个人都能沉淀自己的经验。',
   },
   {
-    title: '企业级落地',
-    description: '面向真实业务场景，强调稳定性、可控性与持续迭代。',
+    title: '社区式成长',
+    description: '分享、交流、共创，让好用的技能被更多人使用。',
   },
 ]
 
 const pillars = [
   {
-    title: '对话式技能',
-    detail: '把业务流程拆解为可复用的 Skill，减少重复劳动。',
+    title: '自动识别流程',
+    detail: '自动发现重复的工作流，把高频动作沉淀成技能。',
   },
   {
-    title: '技能市场',
-    detail: '官方技能市场提供高质量模板，帮助团队快速启动。',
+    title: '可复用可分享',
+    detail: '技能可以被保存、复用、共享，减少重复劳动与信息断层。',
   },
   {
-    title: '知识治理',
-    detail: '数据可追溯、权限可控，确保团队协作稳定可持续。',
+    title: '交流型社区',
+    detail: '围绕技能建立社区，让经验被复盘、迭代与放大。',
   },
 ]
 
@@ -35,12 +35,13 @@ export default function AboutPage() {
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">About</p>
           <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
-            我们在构建面向团队的对话式技能平台
+            让科技不再高高在上，真正服务每一个人
           </h1>
         </div>
         <p className="max-w-2xl text-base text-muted-foreground">
-          问对专注于把对话与技能系统融合在一起，让团队能够在真实业务场景中把流程沉淀为可复用
-          的 Skill。我们相信对话只是入口，真正的价值来自于可复制、可验证、可演进的执行能力。
+          问对面向普罗大众，让人人都能感受到新技术的便利。我们会自动识别你日常重复的工作流，
+          把它们积累成可复用、可分享的 Skill 专家，方便以后直接使用，并支持分享与交流社区的
+          共同成长。
         </p>
       </header>
 
@@ -74,9 +75,9 @@ export default function AboutPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Contact</div>
-            <p className="mt-2 text-lg font-semibold text-foreground">让我们一起定义你的 Skill 体系。</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">让更多人感受到新技术的便利。</p>
           </div>
-          <div className="text-sm text-muted-foreground">support@wendui.ai · partnerships@wendui.ai</div>
+          <div className="text-sm text-muted-foreground">d0ublecl1ckhpx@gmail.com</div>
         </div>
       </section>
     </section>

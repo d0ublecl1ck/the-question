@@ -30,3 +30,15 @@ it('shows email validation error on submit', async () => {
   await user.click(screen.getByRole('button', { name: '邮箱登录' }))
   expect(screen.getByText('请输入有效的邮箱地址')).toBeInTheDocument()
 })
+
+it('centers login content within the page', () => {
+  render(
+    <MemoryRouter>
+      <LoginPage />
+    </MemoryRouter>,
+  )
+  const container = screen.getByTestId('login-page')
+  expect(container).toHaveClass('flex-1')
+  expect(container).toHaveClass('items-center')
+  expect(container).toHaveClass('justify-center')
+})
