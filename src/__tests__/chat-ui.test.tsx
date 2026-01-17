@@ -12,6 +12,18 @@ beforeEach(() => {
 it('opens skill picker when pressing $', async () => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo) => {
     const url = typeof input === 'string' ? input : input.url
+    if (url.includes('/api/v1/chats')) {
+      if (url.includes('/messages')) {
+        return new Response(JSON.stringify([]), { status: 200 })
+      }
+      if (input instanceof Request && input.method === 'PATCH') {
+        return new Response(JSON.stringify({ id: 's1', title: '历史对话' }), { status: 200 })
+      }
+      if (input instanceof Request && input.method === 'DELETE') {
+        return new Response(JSON.stringify({ status: 'ok' }), { status: 200 })
+      }
+      return new Response(JSON.stringify([{ id: 's1', title: '历史对话' }]), { status: 200 })
+    }
     if (url.includes('/api/v1/chat/sessions')) {
       return new Response(JSON.stringify({ id: 's1', title: '对话' }), { status: 201 })
     }
@@ -23,9 +35,6 @@ it('opens skill picker when pressing $', async () => {
     }
     if (url.includes('/api/v1/ai/models')) {
       return new Response(JSON.stringify([{ id: 'gpt-5.2-2025-12-11', label: 'GPT-5.2' }]), { status: 200 })
-    }
-    if (url.includes('/api/v1/chats/')) {
-      return new Response(JSON.stringify([]), { status: 200 })
     }
     return new Response(JSON.stringify({}), { status: 200 })
   }))

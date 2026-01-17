@@ -3,6 +3,8 @@ import { authFetch } from '@/services/http'
 export type ChatSession = {
   id: string
   title?: string | null
+  created_at?: string | null
+  updated_at?: string | null
 }
 
 export type ChatMessage = {
@@ -25,12 +27,53 @@ export async function createChatSession(title?: string): Promise<ChatSession> {
   return response.json()
 }
 
-export async function listChatMessages(sessionId: string): Promise<ChatMessage[]> {
-  const response = await authFetch(`/api/v1/chats/${sessionId}/messages`)
+export async function listChatMessages(
+  sessionId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<ChatMessage[]> {
+  const searchParams = new URLSearchParams()
+  if (typeof params?.limit === 'number') {
+    searchParams.set('limit', params.limit.toString())
+  }
+  if (typeof params?.offset === 'number') {
+    searchParams.set('offset', params.offset.toString())
+  }
+  const query = searchParams.toString()
+  const response = await authFetch(`/api/v1/chats/${sessionId}/messages${query ? `?${query}` : ''}`)
   if (!response.ok) {
     throw new Error(`Request failed with ${response.status}`)
   }
   return response.json()
+}
+
+export async function listChatSessions(): Promise<ChatSession[]> {
+  const response = await authFetch('/api/v1/chats')
+  if (!response.ok) {
+    throw new Error(`Request failed with ${response.status}`)
+  }
+  return response.json()
+}
+
+export async function updateChatSessionTitle(
+  sessionId: string,
+  title: string,
+): Promise<ChatSession> {
+  const response = await authFetch(`/api/v1/chats/${sessionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  })
+  if (!response.ok) {
+    throw new Error(`Request failed with ${response.status}`)
+  }
+  return response.json()
+}
+
+export async function deleteChatSession(sessionId: string): Promise<void> {
+  const response = await authFetch(`/api/v1/chats/${sessionId}`, { method: 'DELETE' })
+  if (!response.ok) {
+    throw new Error(`Request failed with ${response.status}`)
+  }
 }
 
 export async function createChatMessage(
