@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuthStore } from '@/stores/authStore'
+import { useAppDispatch } from '@/store/hooks'
+import { setAuth } from '@/store/slices/authSlice'
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const setAuth = useAuthStore((state) => state.setAuth)
+  const dispatch = useAppDispatch()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -73,10 +74,10 @@ export default function LoginPage() {
         }
         const loginData = (await loginResponse.json()) as { access_token: string }
         const user = await resolveUser(loginData.access_token)
-        setAuth({ token: loginData.access_token, user })
+        dispatch(setAuth({ token: loginData.access_token, user }))
       } else if (data.access_token) {
         const user = await resolveUser(data.access_token)
-        setAuth({ token: data.access_token, user })
+        dispatch(setAuth({ token: data.access_token, user }))
       }
       navigate('/')
     } catch (err) {

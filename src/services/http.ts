@@ -1,12 +1,13 @@
-import { useAuthStore } from '@/stores/authStore'
-import { useToastStore } from '@/stores/toastStore'
+import { store } from '@/store/appStore'
+import { clearAuth } from '@/store/slices/authSlice'
+import { enqueueToast } from '@/store/slices/toastSlice'
 
 type FetchOptions = Omit<RequestInit, 'headers'> & { headers?: Record<string, string> }
 
 let redirectedOnAuth = false
 
 export async function authFetch(path: string, options: FetchOptions = {}) {
-  const token = useAuthStore.getState().token
+  const token = store.getState().auth.token
   const headers = new Headers(options.headers)
 
   if (token) {
@@ -16,8 +17,8 @@ export async function authFetch(path: string, options: FetchOptions = {}) {
   const response = await fetch(path, { ...options, headers })
 
   if (response.status === 401) {
-    useAuthStore.getState().clearAuth()
-    useToastStore.getState().push('登录已过期，请重新登录')
+    store.dispatch(clearAuth())
+    store.dispatch(enqueueToast('登录已过期，请重新登录'))
     if (typeof window !== 'undefined' && !redirectedOnAuth) {
       redirectedOnAuth = true
       if (window.location.pathname !== '/login') {
