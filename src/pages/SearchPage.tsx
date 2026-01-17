@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { searchSkills } from '@/services/search'
+import { useLazySearchSkillsQuery } from '@/store/api/searchApi'
 import { Link } from 'react-router-dom'
 
 export type SearchSkill = {
@@ -19,9 +19,16 @@ export type SearchSkill = {
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
-  const [results, setResults] = useState<SearchSkill[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [triggerSearch, { data: results = [], isFetching, isError, isUninitialized, reset }] =
+    useLazySearchSkillsQuery()
+  const status: 'idle' | 'loading' | 'ready' | 'error' = isUninitialized
+    ? 'idle'
+    : isFetching
+      ? 'loading'
+      : isError
+        ? 'error'
+        : 'ready'
 
   const tags = useMemo(() => {
     const set = new Set<string>()
@@ -37,14 +44,7 @@ export default function SearchPage() {
   const submit = async () => {
     const trimmed = query.trim()
     if (!trimmed) return
-    setStatus('loading')
-    try {
-      const data = await searchSkills(trimmed)
-      setResults(data)
-      setStatus('ready')
-    } catch (error) {
-      setStatus('error')
-    }
+    triggerSearch(trimmed)
   }
 
   return (
@@ -72,8 +72,7 @@ export default function SearchPage() {
           onClick={() => {
             setQuery('')
             setSelectedTags([])
-            setResults([])
-            setStatus('idle')
+            reset()
           }}
           className="h-11 rounded-full px-6"
         >
