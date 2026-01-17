@@ -4,6 +4,8 @@ from app.models.enums import ReportStatus
 
 
 class ReportCreate(BaseModel):
+    target_type: str
+    target_id: str
     title: str
     content: str
 
@@ -14,6 +16,8 @@ class ReportUpdate(BaseModel):
 
 class ReportOut(BaseModel):
     id: str
+    target_type: str
+    target_id: str
     title: str
     content: str
     status: ReportStatus
