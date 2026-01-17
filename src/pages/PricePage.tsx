@@ -12,11 +12,11 @@ export default function PricePage() {
           </h1>
         </div>
         <p className="max-w-2xl text-base text-muted-foreground">
-          目前不展示具体价格。以下是我们计划中的收费方向，最终以正式上线为准。
+          当前阶段全部功能免费开放，欢迎尽情体验。以下是我们计划中的收费方向，最终以正式上线为准。
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="rounded-2xl border border-border/60 bg-white/80 shadow-sm">
           <CardHeader className="space-y-2">
             <div className="flex items-center gap-2">
@@ -55,6 +55,26 @@ export default function PricePage() {
               <li>AI 模型调用额度与稳定性保障。</li>
               <li>平台功能：技能管理、市场运营、协作与权限。</li>
               <li>卡片生图等创作工具与资产化能力。</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-border/60 bg-white/80 shadow-sm">
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">方向 03</Badge>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Enterprise
+              </span>
+            </div>
+            <CardTitle className="text-xl">企业赋能服务</CardTitle>
+            <CardDescription>提供解决方案与行业资讯服务。</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            <ul className="space-y-2">
+              <li>结合行业实践输出可落地的解决方案。</li>
+              <li>提供趋势洞察、最佳实践与资讯服务。</li>
+              <li>支持定制化能力与交付协同。</li>
             </ul>
           </CardContent>
         </Card>

@@ -13,11 +13,12 @@ def _auth_headers(client: TestClient) -> dict:
 
 
 def test_skill_flow():
-    init_db(drop_all=True)
+    init_db()
     with TestClient(app) as client:
         headers = _auth_headers(client)
+        skill_name = f"skill-{uuid4().hex[:8]}"
         payload = {
-            'name': 'skill-a',
+            'name': skill_name,
             'description': 'desc',
             'visibility': 'public',
             'tags': ['tag1', 'tag2'],
@@ -82,19 +83,23 @@ def test_skill_flow():
         imported = client.post('/api/v1/skills/import', json=import_payload, headers=headers)
         assert imported.status_code == 201
         assert imported.json()['latest_version'] == 1
+        imported_id = imported.json()['id']
 
         deleted = client.delete(f"/api/v1/skills/{skill_id}", headers=headers)
         assert deleted.status_code == 200
         missing = client.get(f"/api/v1/skills/{skill_id}")
         assert missing.status_code == 404
+        removed_import = client.delete(f"/api/v1/skills/{imported_id}", headers=headers)
+        assert removed_import.status_code == 200
 
 
 def test_skill_avatar_update_and_clear():
-    init_db(drop_all=True)
+    init_db()
     with TestClient(app) as client:
         headers = _auth_headers(client)
+        skill_name = f"skill-{uuid4().hex[:8]}"
         payload = {
-            'name': 'skill-a',
+            'name': skill_name,
             'description': 'desc',
             'visibility': 'public',
             'tags': ['tag1'],

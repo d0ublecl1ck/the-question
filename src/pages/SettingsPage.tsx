@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useAppDispatch } from '@/store/hooks'
 import { enqueueToast } from '@/store/slices/toastSlice'
 import {
@@ -13,6 +13,7 @@ import {
   useUpdateMeMutation,
   useUpdateMemoryMutation,
 } from '@/store/api/settingsApi'
+import { MoreHorizontal, Search } from 'lucide-react'
 
 export default function SettingsPage() {
   const { data: profileData, isLoading: isProfileLoading, isError: isProfileError } = useGetMeQuery()
@@ -24,32 +25,21 @@ export default function SettingsPage() {
   const dispatch = useAppDispatch()
   const profile = profileData ?? null
   const [email, setEmail] = useState('')
-  const [newMemoryKey, setNewMemoryKey] = useState('')
   const [newMemoryValue, setNewMemoryValue] = useState('')
   const [memoryDrafts, setMemoryDrafts] = useState<Record<string, string>>({})
   const [profileSaving, setProfileSaving] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [creatingMemory, setCreatingMemory] = useState(false)
   const [updatingMemoryIds, setUpdatingMemoryIds] = useState<string[]>([])
   const [deletingMemoryIds, setDeletingMemoryIds] = useState<string[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [memoryQuery, setMemoryQuery] = useState('')
   const status: 'loading' | 'ready' | 'error' =
     isProfileError || isMemoryError ? 'error' : isProfileLoading || isMemoryLoading ? 'loading' : 'ready'
-  const profileMemory = useMemo(() => {
-    return memoryItems.find((item) => item.key === 'profile')?.value ?? ''
-  }, [memoryItems])
-
   useEffect(() => {
     if (profile?.email) {
       setEmail(profile.email)
     }
   }, [profile?.email])
-
-  useEffect(() => {
-    if (!profileMemory) return
-    setMemoryDrafts((prev) => {
-      if (prev.profile) return prev
-      return { ...prev, profile: profileMemory }
-    })
-  }, [profileMemory])
 
   const saveProfile = async () => {
     if (!profile) return
@@ -65,13 +55,12 @@ export default function SettingsPage() {
   }
 
   const handleCreateMemory = async () => {
-    const key = newMemoryKey.trim()
     const value = newMemoryValue.trim()
-    if (!key || !value) return
+    if (!value) return
+    const key = `pref-${Date.now()}`
     setCreatingMemory(true)
     try {
       await updateMemoryMutation({ key, value, scope: 'user' }).unwrap()
-      setNewMemoryKey('')
       setNewMemoryValue('')
       dispatch(enqueueToast('偏好记忆已添加'))
     } catch {
@@ -82,7 +71,7 @@ export default function SettingsPage() {
   }
 
   const handleUpdateMemory = async (itemId: string, key: string, scope?: string | null) => {
-    const nextValue = (memoryDrafts[key] ?? '').trim()
+    const nextValue = (memoryDrafts[itemId] ?? '').trim()
     if (!nextValue) {
       dispatch(enqueueToast('内容不能为空'))
       return
@@ -91,6 +80,7 @@ export default function SettingsPage() {
     try {
       await updateMemoryMutation({ key, value: nextValue, scope: scope ?? 'user' }).unwrap()
       dispatch(enqueueToast('偏好记忆已保存'))
+      setEditingId(null)
     } catch {
       dispatch(enqueueToast('偏好记忆保存失败'))
     } finally {
@@ -115,13 +105,23 @@ export default function SettingsPage() {
     setMemoryDrafts((prev) => {
       const next = { ...prev }
       memoryItems.forEach((item) => {
-        if (next[item.key] === undefined) {
-          next[item.key] = item.value
+        if (next[item.id] === undefined) {
+          next[item.id] = item.value
         }
       })
       return next
     })
   }, [memoryItems])
+
+  const filteredMemoryItems = useMemo(() => {
+    const keyword = memoryQuery.trim().toLowerCase()
+    if (!keyword) return memoryItems
+    return memoryItems.filter((item) => {
+      const value = item.value.toLowerCase()
+      const key = item.key.toLowerCase()
+      return value.includes(keyword) || key.includes(keyword)
+    })
+  }, [memoryItems, memoryQuery])
 
   return (
     <section className="w-full space-y-12">
@@ -171,85 +171,115 @@ export default function SettingsPage() {
             </p>
             <div className="rounded-2xl border border-border/60 bg-white/80 p-4 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold text-foreground">新增偏好</h4>
-                  <p className="text-xs text-muted-foreground">每条偏好作为独立记忆项保存。</p>
+                <div className="relative w-full sm:max-w-sm">
+                  <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={memoryQuery}
+                    onChange={(event) => setMemoryQuery(event.target.value)}
+                    placeholder="搜索记忆"
+                    className="pl-9"
+                  />
                 </div>
+                <Button
+                  onClick={handleCreateMemory}
+                  className="rounded-full"
+                  disabled={creatingMemory || !newMemoryValue.trim()}
+                >
+                  {creatingMemory ? '添加中...' : '新增记忆'}
+                </Button>
               </div>
-              <div className="mt-3 grid gap-3 md:grid-cols-[220px_1fr]">
-                <Input
-                  value={newMemoryKey}
-                  onChange={(event) => setNewMemoryKey(event.target.value)}
-                  placeholder="偏好名称，如：语气偏好"
-                />
-                <Textarea
-                  value={newMemoryValue}
-                  onChange={(event) => setNewMemoryValue(event.target.value)}
-                  className="min-h-[96px]"
-                  placeholder="例如：偏好简洁回复；常用日报总结技能；熟悉前端与产品。"
-                />
-              </div>
-              <Button
-                onClick={handleCreateMemory}
-                className="mt-3 rounded-full"
-                disabled={creatingMemory || !newMemoryKey.trim() || !newMemoryValue.trim()}
-              >
-                {creatingMemory ? '添加中...' : '添加偏好'}
-              </Button>
+              <Textarea
+                value={newMemoryValue}
+                onChange={(event) => setNewMemoryValue(event.target.value)}
+                className="mt-3 min-h-[96px]"
+                placeholder="新增一条偏好记忆，例如：偏好简洁回复；熟悉前端与产品。"
+              />
             </div>
 
             <div className="space-y-3">
-              {memoryItems.length === 0 ? (
+              {filteredMemoryItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-                  还没有偏好记忆，先添加第一条吧。
+                  暂无匹配的记忆内容。
                 </div>
               ) : (
-                memoryItems.map((item) => {
-                  const draftValue = memoryDrafts[item.key] ?? item.value
+                filteredMemoryItems.map((item) => {
+                  const draftValue = memoryDrafts[item.id] ?? item.value
                   const isUpdating = updatingMemoryIds.includes(item.id)
                   const isDeleting = deletingMemoryIds.includes(item.id)
+                  const isEditing = editingId === item.id
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-border/60 bg-white/80 p-4 shadow-sm"
+                      className="flex items-start justify-between gap-4 rounded-2xl border border-border/60 bg-white/80 px-4 py-3 shadow-sm"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <Badge variant="outline" className="rounded-full">
-                            {item.key}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {item.scope ?? 'user'}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateMemory(item.id, item.key, item.scope)}
-                            disabled={isUpdating || isDeleting}
-                          >
-                            {isUpdating ? '保存中...' : '保存修改'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteMemory(item.id)}
-                            disabled={isUpdating || isDeleting}
-                          >
-                            {isDeleting ? '删除中...' : '删除'}
-                          </Button>
-                        </div>
+                      <div className="flex-1">
+                        {isEditing ? (
+                          <Textarea
+                            value={draftValue}
+                            onChange={(event) =>
+                              setMemoryDrafts((prev) => ({
+                                ...prev,
+                                [item.id]: event.target.value,
+                              }))
+                            }
+                            className="min-h-[96px]"
+                          />
+                        ) : (
+                          <p className="text-sm text-foreground whitespace-pre-wrap">
+                            {item.value}
+                          </p>
+                        )}
+                        {isEditing ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateMemory(item.id, item.key, item.scope)}
+                              disabled={isUpdating || isDeleting}
+                            >
+                              {isUpdating ? '保存中...' : '保存修改'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setMemoryDrafts((prev) => ({
+                                  ...prev,
+                                  [item.id]: item.value,
+                                }))
+                                setEditingId(null)
+                              }}
+                              disabled={isUpdating || isDeleting}
+                            >
+                              取消
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
-                      <Textarea
-                        value={draftValue}
-                        onChange={(event) =>
-                          setMemoryDrafts((prev) => ({
-                            ...prev,
-                            [item.key]: event.target.value,
-                          }))
-                        }
-                        className="mt-3 min-h-[110px]"
-                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                            aria-label="记忆操作"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setEditingId((prev) => (prev === item.id ? null : item.id))}
+                            disabled={isDeleting || isUpdating}
+                          >
+                            {isEditing ? '取消编辑' : '编辑'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteMemory(item.id)}
+                            disabled={isDeleting || isUpdating}
+                          >
+                            删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   )
                 })
