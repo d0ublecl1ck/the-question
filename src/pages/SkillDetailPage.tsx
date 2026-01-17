@@ -1,44 +1,17 @@
-import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import type { MarketSkill } from './MarketPage'
-import { fetchMarketSkillDetail } from '@/services/market'
+import type { MarketSkill } from '@/store/api/types'
+import { useGetMarketSkillDetailQuery } from '@/store/api/marketApi'
 import ReportDialog from '@/components/market/ReportDialog'
-
-type DetailState = {
-  status: 'loading' | 'ready' | 'error'
-  data?: MarketSkill
-}
 
 export default function SkillDetailPage() {
   const { id } = useParams()
-  const [state, setState] = useState<DetailState>({ status: 'loading' })
+  const { data, isLoading, isError } = useGetMarketSkillDetailQuery(id ?? '', { skip: !id })
+  const status: 'loading' | 'ready' | 'error' = !id || isError ? 'error' : isLoading ? 'loading' : 'ready'
 
-  useEffect(() => {
-    if (!id) {
-      setState({ status: 'error' })
-      return
-    }
-    let alive = true
-    const load = async () => {
-      try {
-        const data = await fetchMarketSkillDetail(id)
-        if (!alive) return
-        setState({ status: 'ready', data })
-      } catch (error) {
-        if (!alive) return
-        setState({ status: 'error' })
-      }
-    }
-    load()
-    return () => {
-      alive = false
-    }
-  }, [id])
-
-  if (state.status === 'loading') {
+  if (status === 'loading') {
     return (
       <section className="rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg">
         <p className="text-sm text-muted-foreground">加载中...</p>
@@ -46,7 +19,7 @@ export default function SkillDetailPage() {
     )
   }
 
-  if (state.status === 'error' || !state.data) {
+  if (status === 'error' || !data) {
     return (
       <section className="rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg">
         <p className="text-sm text-muted-foreground">未找到技能详情</p>
@@ -54,7 +27,7 @@ export default function SkillDetailPage() {
     )
   }
 
-  const detail = state.data
+  const detail: MarketSkill = data
 
   return (
     <section className="space-y-6 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">

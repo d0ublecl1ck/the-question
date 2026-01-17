@@ -1,52 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import type { MarketSkill } from './MarketPage'
-import { fetchFavoriteSkills, fetchMarketSkillDetail } from '@/services/market'
+import type { MarketSkill } from '@/store/api/types'
+import { useGetFavoriteSkillDetailsQuery } from '@/store/api/marketApi'
 import { Link } from 'react-router-dom'
 
-type LibraryState = {
-  status: 'loading' | 'ready' | 'error'
-  items: MarketSkill[]
-}
-
 export default function LibraryPage() {
-  const [state, setState] = useState<LibraryState>({ status: 'loading', items: [] })
+  const { data: items = [], isLoading, isError } = useGetFavoriteSkillDetailsQuery()
+  const status: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
   const [query, setQuery] = useState('')
-
-  useEffect(() => {
-    let alive = true
-    const load = async () => {
-      try {
-        const favorites = await fetchFavoriteSkills()
-        const details = await Promise.all(
-          favorites.map((item) => fetchMarketSkillDetail(item.skill_id)),
-        )
-        if (!alive) return
-        setState({ status: 'ready', items: details })
-      } catch (error) {
-        if (!alive) return
-        setState({ status: 'error', items: [] })
-      }
-    }
-    load()
-    return () => {
-      alive = false
-    }
-  }, [])
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    if (!normalized) return state.items
-    return state.items.filter(
+    if (!normalized) return items
+    return items.filter(
       (item) =>
         item.name.toLowerCase().includes(normalized) ||
         item.description.toLowerCase().includes(normalized) ||
         item.tags.some((tag) => tag.toLowerCase().includes(normalized)),
     )
-  }, [query, state.items])
+  }, [query, items])
 
   return (
     <section className="space-y-8 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
@@ -78,11 +53,11 @@ export default function LibraryPage() {
           <h3 className="text-lg font-semibold">收藏列表</h3>
           <span className="text-xs text-muted-foreground">{filtered.length} 项</span>
         </div>
-        {state.status === 'loading' ? (
+        {status === 'loading' ? (
           <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             加载中...
           </div>
-        ) : state.status === 'error' ? (
+        ) : status === 'error' ? (
           <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
             加载失败，请稍后重试
           </div>
