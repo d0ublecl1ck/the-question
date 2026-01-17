@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { clearAuth } from '@/store/slices/authSlice'
 import logoUrl from '@/assets/logo.svg'
+import avatarUrl from '@/assets/avatar.jpg'
 
 const publicNavItems = [
   { to: '/', label: '首页' },
@@ -27,9 +28,6 @@ export default function AppShell() {
   const isAuthed = status === 'authenticated'
   const navItems = isAuthed ? authedNavItems : publicNavItems
   const email = user?.email ?? ''
-  const avatarSeed = email || 'anonymous'
-  const accent = Array.from(avatarSeed).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360
-  const initials = email ? email.slice(0, 1).toUpperCase() : '?'
   const isChatRoute = location.pathname.startsWith('/chat')
   const mainClassName = [
     'mx-auto flex w-full flex-1 justify-center px-[5%]',
@@ -115,13 +113,12 @@ export default function AppShell() {
               <button
                 type="button"
                 data-testid="account-trigger"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white"
-                style={{ backgroundColor: `hsl(${accent} 55% 55%)` }}
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full"
                 onClick={() => setPanelOpen((open) => !open)}
                 aria-expanded={panelOpen}
                 aria-haspopup="menu"
               >
-                {initials}
+                <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" />
               </button>
               {panelOpen && (
                 <div className="absolute right-0 top-11 w-56 rounded-2xl border border-border/60 bg-white p-4 text-sm shadow-lg">

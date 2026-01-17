@@ -42,3 +42,19 @@ uv run alembic upgrade head
 cd backend
 uv run alembic revision --autogenerate -m "<message>"
 ```
+
+## 市场预设技能（种子脚本）
+
+写入预设技能到市场（含 system 用户归属）：
+
+```bash
+cd backend
+PYTHONPATH=. uv run scripts/seed_market_skills.py --path skills/market-presets.json
+```
+
+仅校验（不写入 DB）：
+
+```bash
+cd backend
+PYTHONPATH=. uv run scripts/seed_market_skills.py --path skills/market-presets.json --dry-run
+```

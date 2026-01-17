@@ -30,6 +30,7 @@ it('renders the top bar with title and nav', () => {
   expect(screen.getByText('About')).toBeInTheDocument()
   expect(screen.getByText('Price')).toBeInTheDocument()
   expect(screen.getByText('Login')).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'avatar' })).toBeInTheDocument()
   expect(screen.queryByText('未登录')).not.toBeInTheDocument()
   fireEvent.click(screen.getByTestId('account-trigger'))
   expect(screen.getByText('未登录')).toBeInTheDocument()

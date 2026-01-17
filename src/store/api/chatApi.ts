@@ -1,5 +1,13 @@
 import { baseApi } from './baseApi'
-import type { ChatMessage, ChatSession, SkillItem } from './types'
+import type {
+  ChatMessage,
+  ChatSession,
+  SkillItem,
+  SkillSuggestion,
+  SkillSuggestionStatus,
+  SkillDraftSuggestion,
+  SkillDraftAcceptResult,
+} from './types'
 
 export const chatApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -54,6 +62,66 @@ export const chatApi = baseApi.injectEndpoints({
         body: payload,
       }),
     }),
+    listSkillSuggestions: build.query<
+      SkillSuggestion[],
+      { sessionId: string; status?: SkillSuggestionStatus }
+    >({
+      query: ({ sessionId, status }) => {
+        const params = new URLSearchParams()
+        if (status) params.set('status', status)
+        const query = params.toString()
+        return `/api/v1/chats/${sessionId}/suggestions${query ? `?${query}` : ''}`
+      },
+      providesTags: (_result, _error, { sessionId }) => [{ type: 'SkillSuggestions', id: sessionId }],
+    }),
+    updateSkillSuggestion: build.mutation<
+      SkillSuggestion,
+      { sessionId: string; suggestionId: string; status: SkillSuggestionStatus }
+    >({
+      query: ({ sessionId, suggestionId, status }) => ({
+        url: `/api/v1/chats/${sessionId}/suggestions/${suggestionId}`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: (_result, _error, { sessionId }) => [{ type: 'SkillSuggestions', id: sessionId }],
+    }),
+    listSkillDraftSuggestions: build.query<
+      SkillDraftSuggestion[],
+      { sessionId: string; status?: SkillSuggestionStatus }
+    >({
+      query: ({ sessionId, status }) => {
+        const params = new URLSearchParams()
+        if (status) params.set('status', status)
+        const query = params.toString()
+        return `/api/v1/chats/${sessionId}/draft-suggestions${query ? `?${query}` : ''}`
+      },
+      providesTags: (_result, _error, { sessionId }) => [{ type: 'SkillDraftSuggestions', id: sessionId }],
+    }),
+    updateSkillDraftSuggestion: build.mutation<
+      SkillDraftSuggestion,
+      { sessionId: string; suggestionId: string; status: SkillSuggestionStatus }
+    >({
+      query: ({ sessionId, suggestionId, status }) => ({
+        url: `/api/v1/chats/${sessionId}/draft-suggestions/${suggestionId}`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: (_result, _error, { sessionId }) => [{ type: 'SkillDraftSuggestions', id: sessionId }],
+    }),
+    acceptSkillDraftSuggestion: build.mutation<
+      SkillDraftAcceptResult,
+      { sessionId: string; suggestionId: string; modelId?: string | null }
+    >({
+      query: ({ sessionId, suggestionId, modelId }) => ({
+        url: `/api/v1/chats/${sessionId}/draft-suggestions/${suggestionId}/accept`,
+        method: 'POST',
+        body: { model: modelId ?? null },
+      }),
+      invalidatesTags: (_result, _error, { sessionId }) => [
+        { type: 'SkillDraftSuggestions', id: sessionId },
+        'Skills',
+      ],
+    }),
     listSkills: build.query<SkillItem[], void>({
       query: () => '/api/v1/skills',
       providesTags: ['Skills'],
@@ -70,5 +138,10 @@ export const {
   useLazyListChatMessagesQuery,
   useCreateChatMessageMutation,
   useCreateSkillSuggestionMutation,
+  useListSkillSuggestionsQuery,
+  useUpdateSkillSuggestionMutation,
+  useListSkillDraftSuggestionsQuery,
+  useUpdateSkillDraftSuggestionMutation,
+  useAcceptSkillDraftSuggestionMutation,
   useListSkillsQuery,
 } = chatApi

@@ -220,9 +220,9 @@ export default function LibraryPage() {
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">专家广场</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-semibold">技能库</h2>
+              <h2 className="text-3xl font-semibold">智囊团</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                管理收藏与自建技能，支持检索、筛选与多视图浏览。
+                管理收藏与自建技能专家，支持检索、筛选与多视图浏览。
               </p>
             </div>
             <span className="rounded-full border border-border/60 bg-white/80 px-4 py-2 text-xs text-muted-foreground shadow-sm">

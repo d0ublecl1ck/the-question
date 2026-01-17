@@ -20,3 +20,22 @@ it('renders flat surface without background class', () => {
   const textarea = screen.getByPlaceholderText('输入内容，回车发送')
   expect(textarea).toHaveClass('bg-transparent')
 })
+
+it('renders MiniMax icon when MiniMax model is selected', () => {
+  const minimaxModels = [
+    { id: 'MiniMax-M2.1-lightning', name: 'MiniMax M2.1 Lightning', host: 'minimax' },
+  ]
+
+  render(
+    <AI_Prompt
+      value=""
+      onChange={() => undefined}
+      onSend={() => undefined}
+      models={minimaxModels}
+      selectedModelId={minimaxModels[0]?.id ?? null}
+      onModelChange={() => undefined}
+    />,
+  )
+
+  expect(screen.getByLabelText('MiniMax Icon')).toBeInTheDocument()
+})

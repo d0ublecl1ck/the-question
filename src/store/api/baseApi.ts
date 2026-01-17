@@ -68,6 +68,8 @@ export const baseApi = createApi({
     'ChatMessages',
     'ChatSessions',
     'Skills',
+    'SkillSuggestions',
+    'SkillDraftSuggestions',
     'SkillDetail',
     'AiModels',
   ],

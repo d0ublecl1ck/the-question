@@ -13,7 +13,9 @@ import {
   useListChatMessagesQuery,
   useListChatSessionsQuery,
   useListSkillsQuery,
+  useListSkillSuggestionsQuery,
   useUpdateChatSessionTitleMutation,
+  useUpdateSkillSuggestionMutation,
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 
@@ -24,7 +26,9 @@ vi.mock('@/store/api/chatApi', () => ({
   useListChatMessagesQuery: vi.fn(),
   useListChatSessionsQuery: vi.fn(),
   useListSkillsQuery: vi.fn(),
+  useListSkillSuggestionsQuery: vi.fn(),
   useUpdateChatSessionTitleMutation: vi.fn(),
+  useUpdateSkillSuggestionMutation: vi.fn(),
 }))
 
 vi.mock('@/store/api/aiApi', () => ({
@@ -33,6 +37,14 @@ vi.mock('@/store/api/aiApi', () => ({
 
 beforeEach(() => {
   store.dispatch(setAuth({ token: 'token', user: { id: 'u1', email: 'a@b.com' } }))
+  vi.mocked(useListSkillSuggestionsQuery).mockReturnValue({
+    data: [],
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListSkillSuggestionsQuery>)
+  vi.mocked(useUpdateSkillSuggestionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useUpdateSkillSuggestionMutation>)
 })
 
 it('opens skill picker when clicking skill icon', async () => {
@@ -65,6 +77,14 @@ it('opens skill picker when clicking skill icon', async () => {
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListSkillSuggestionsQuery).mockReturnValue({
+    data: [],
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListSkillSuggestionsQuery>)
+  vi.mocked(useUpdateSkillSuggestionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useUpdateSkillSuggestionMutation>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
     data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
     isLoading: false,

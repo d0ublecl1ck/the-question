@@ -29,8 +29,8 @@ it('renders market page sections', async () => {
     </Provider>,
   )
   expect(useGetMarketSkillsQuery).toHaveBeenCalled()
-  expect(await screen.findByRole('heading', { name: '市场' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: '市场' })).toHaveAttribute('href', '/market')
+  expect(await screen.findByRole('heading', { name: '社区' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: '社区' })).toHaveAttribute('href', '/market')
   expect(screen.getByRole('link', { name: '我的' })).toHaveAttribute('href', '/library')
   expect(screen.getByText('分类')).toBeInTheDocument()
   expect(screen.getByText('排序')).toBeInTheDocument()
@@ -66,7 +66,7 @@ it('does not wrap sections in cards', async () => {
       </MemoryRouter>
     </Provider>,
   )
-  await screen.findByRole('heading', { name: '市场' })
+  await screen.findByRole('heading', { name: '社区' })
   expect(container.querySelector('.page-card')).toBeNull()
 })
 
