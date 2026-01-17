@@ -34,7 +34,7 @@ it('renders market page sections', async () => {
   expect(screen.getByRole('link', { name: '我的' })).toHaveAttribute('href', '/library')
   expect(screen.getByText('分类')).toBeInTheDocument()
   expect(screen.getByText('排序')).toBeInTheDocument()
-  expect(screen.getByText('技能列表')).toBeInTheDocument()
+  expect(screen.getByText('专家列表')).toBeInTheDocument()
 })
 
 it('loads market skills', async () => {

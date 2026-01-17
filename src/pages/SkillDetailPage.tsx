@@ -13,7 +13,7 @@ export default function SkillDetailPage() {
 
   if (status === 'loading') {
     return (
-      <section className="rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg">
+      <section className="py-6">
         <p className="text-sm text-muted-foreground">加载中...</p>
       </section>
     )
@@ -21,7 +21,7 @@ export default function SkillDetailPage() {
 
   if (status === 'error' || !data) {
     return (
-      <section className="rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg">
+      <section className="py-6">
         <p className="text-sm text-muted-foreground">未找到技能详情</p>
       </section>
     )
@@ -55,10 +55,8 @@ export default function SkillDetailPage() {
   ]
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-border/60 bg-[radial-gradient(circle_at_top,_rgba(240,236,255,0.9),_rgba(255,250,244,0.95)_55%,_rgba(255,255,255,0.92)_100%)] p-6 shadow-[0_24px_60px_rgba(30,16,64,0.08)] backdrop-blur lg:p-10">
-      <div className="pointer-events-none absolute -top-24 right-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,_rgba(255,202,101,0.45),_rgba(255,202,101,0))]" />
-      <div className="pointer-events-none absolute -bottom-24 left-0 h-72 w-72 rounded-full bg-[radial-gradient(circle,_rgba(98,129,255,0.35),_rgba(98,129,255,0))]" />
-      <header className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+    <section className="space-y-8">
+      <header className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-4">
           <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">Skill Detail</p>
           <h2 className="text-4xl font-semibold tracking-tight text-foreground">{detail.name}</h2>
@@ -71,7 +69,7 @@ export default function SkillDetailPage() {
             ))}
           </div>
         </div>
-        <aside className="w-full space-y-3 rounded-3xl border border-border/60 bg-white/80 p-5 shadow-sm lg:w-72">
+        <aside className="w-full space-y-3 lg:w-72">
           <div className="flex items-center justify-between text-sm font-medium">
             <span>综合评分</span>
             <span className="text-lg">{detail.rating.average.toFixed(1)}</span>
@@ -89,7 +87,7 @@ export default function SkillDetailPage() {
       <Separator className="my-8" />
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="space-y-4 rounded-3xl border border-border/60 bg-white/75 p-5 shadow-sm">
+        <aside className="space-y-4">
           <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">目录</p>
           <nav className="space-y-3 text-sm font-medium text-foreground/80">
             {sectionList.map((section) => (
@@ -108,7 +106,7 @@ export default function SkillDetailPage() {
             <article
               key={section.title}
               id={section.title}
-              className="rounded-3xl border border-border/60 bg-white/85 p-6 shadow-sm"
+              className="border-b border-border/60 pb-6 last:border-b-0 last:pb-0"
             >
               <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">{section.title}</p>
               <p className="mt-4 text-sm leading-relaxed text-foreground/80">{section.body}</p>
