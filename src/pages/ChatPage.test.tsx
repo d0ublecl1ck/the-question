@@ -34,7 +34,9 @@ it('renders chat page with composer', async () => {
       <ChatPage />
     </MemoryRouter>,
   )
-  expect(await screen.findByText('对话')).toBeInTheDocument()
+  expect(await screen.findByText('今天可以帮你做什么？')).toBeInTheDocument()
+  expect(screen.getByTestId('chat-right-panel')).toHaveClass('mx-auto')
+  expect(screen.queryByText('以访客身份探索？登录以获取完整体验')).not.toBeInTheDocument()
   expect(await screen.findByPlaceholderText('输入内容，按 $ 触发技能选择')).toBeInTheDocument()
 })
 

@@ -62,3 +62,17 @@ it('shows account email when authenticated', () => {
   fireEvent.mouseEnter(screen.getByTestId('account-trigger'))
   expect(screen.getByText('admin@admin.com')).toBeInTheDocument()
 })
+
+it('centers page content within the shell', () => {
+  render(
+    <MemoryRouter>
+      <Routes>
+        <Route path="/" element={<AppShell />}>
+          <Route index element={<div />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  )
+
+  expect(screen.getByRole('main')).toHaveClass('justify-center')
+})
