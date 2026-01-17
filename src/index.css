@@ -51,6 +51,7 @@
   --accent-foreground: 222 28% 12%;
   --destructive: 0 70% 54%;
   --destructive-foreground: 0 0% 98%;
+  --color-destructive-foreground: var(--destructive-foreground);
   --border: 220 16% 88%;
   --input: 220 16% 88%;
   --ring: 222 20% 18%;

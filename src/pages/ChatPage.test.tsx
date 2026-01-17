@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { MemoryRouter, useLocation } from 'react-router-dom'
@@ -87,9 +87,60 @@ it('renders chat page with composer', async () => {
   const bannerLink = screen.getByRole('link', { name: '前往 watcha.cn' })
   expect(bannerLink).toHaveAttribute('href', 'https://watcha.cn/')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('w-full')
+  expect(screen.getByTestId('chat-right-panel')).toHaveClass('mx-auto')
+  expect(screen.getByTestId('chat-right-panel')).toHaveClass('max-w-4xl')
+  expect(screen.getByTestId('chat-right-panel')).toHaveClass('pt-[20vh]')
   expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
   expect(screen.queryByText('以访客身份探索？登录以获取完整体验')).not.toBeInTheDocument()
   expect(await screen.findByPlaceholderText('输入内容，回车发送')).toBeInTheDocument()
+})
+
+it('prefills draft from navigation state', async () => {
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [{ id: 's1', title: '历史对话' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([previewTrigger, { isFetching: false }])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={[{ pathname: '/chat', state: { draft: '想聊的内容' } }]}>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  const input = await screen.findByPlaceholderText('输入内容，回车发送')
+  await waitFor(() => expect(input).toHaveValue('想聊的内容'))
 })
 
 it('asks for confirmation before deleting a session', async () => {

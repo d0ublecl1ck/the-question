@@ -27,24 +27,26 @@ export default function ChatComposer({
 }: ChatComposerProps) {
   return (
     <div className="mt-6">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="mx-auto w-[75%]">
+        <div className="flex flex-wrap items-center gap-2">
         {selectedSkillName && (
           <Badge variant="secondary" className="gap-1">
             <Sparkles className="h-3 w-3" />
             {selectedSkillName}
           </Badge>
         )}
+        </div>
+        <AI_Prompt
+          value={value}
+          onChange={onChange}
+          onSend={onSend}
+          onTriggerSkill={onTriggerSkill}
+          models={models}
+          selectedModelId={selectedModelId}
+          onModelChange={onModelChange}
+          disabled={disabled}
+        />
       </div>
-      <AI_Prompt
-        value={value}
-        onChange={onChange}
-        onSend={onSend}
-        onTriggerSkill={onTriggerSkill}
-        models={models}
-        selectedModelId={selectedModelId}
-        onModelChange={onModelChange}
-        disabled={disabled}
-      />
     </div>
   )
 }
