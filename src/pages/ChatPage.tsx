@@ -13,7 +13,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sparkles, Tag } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
-import { createChatSession, createSkillSuggestion, listChatMessages } from '@/services/chat'
+import {
+  createChatSession,
+  createSkillSuggestion,
+  deleteChatSession,
+  listChatMessages,
+  listChatSessions,
+  updateChatSessionTitle,
+  type ChatSession,
+} from '@/services/chat'
 import { useNavigate } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
 import { listAiModels, streamAiChat, type AiModelOption } from '@/services/ai'
@@ -41,15 +49,27 @@ export default function ChatPage() {
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [sessions, setSessions] = useState<ChatSession[]>([])
+  const [sessionPeek, setSessionPeek] = useState<Record<string, string>>({})
   const [skills, setSkills] = useState<SkillItem[]>([])
   const [models, setModels] = useState<AiModelOption[]>([])
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionQuery, setSessionQuery] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
 
   const skillById = useMemo(() => Object.fromEntries(skills.map((skill) => [skill.id, skill])), [skills])
+  const filteredSessions = useMemo(() => {
+    const keyword = sessionQuery.trim().toLowerCase()
+    if (!keyword) return sessions
+    return sessions.filter((session) => {
+      const title = (session.title ?? '').toLowerCase()
+      const preview = (sessionPeek[session.id] ?? '').toLowerCase()
+      return title.includes(keyword) || preview.includes(keyword)
+    })
+  }, [sessions, sessionPeek, sessionQuery])
 
   useEffect(() => {
     if (!token) return
@@ -57,8 +77,8 @@ export default function ChatPage() {
     const load = async () => {
       setStatus('loading')
       try {
-        const [sessionResult, skillResult, modelResult] = await Promise.allSettled([
-          createChatSession('对话'),
+        const [sessionsResult, skillResult, modelResult] = await Promise.allSettled([
+          listChatSessions(),
           authFetch('/api/v1/skills'),
           listAiModels(),
         ])
@@ -68,23 +88,53 @@ export default function ChatPage() {
         setModels(modelList)
         setSelectedModelId((prev) => prev ?? modelList[0]?.id ?? null)
 
-        if (sessionResult.status !== 'fulfilled') {
-          throw new Error('Create session failed')
-        }
-        const session = sessionResult.value
-
         if (skillResult.status !== 'fulfilled' || !skillResult.value.ok) {
           throw new Error('Load skills failed')
         }
         const skillData = (await skillResult.value.json()) as SkillItem[]
         if (!alive) return
 
-        setSessionId(session.id)
         setSkills(skillData)
 
-        const history = await listChatMessages(session.id)
+        const sessionList =
+          sessionsResult.status === 'fulfilled' ? sessionsResult.value : []
+        let activeSession = sessionList[0] ?? null
+        if (!activeSession) {
+          const created = await createChatSession('对话')
+          activeSession = created
+        }
+
+        const orderedSessions = [...sessionList].sort((a, b) => {
+          const next = b.updated_at ?? b.created_at ?? ''
+          const prev = a.updated_at ?? a.created_at ?? ''
+          return next.localeCompare(prev)
+        })
+        if (activeSession && !orderedSessions.find((session) => session.id === activeSession?.id)) {
+          orderedSessions.unshift(activeSession)
+        }
+        setSessions(orderedSessions)
+
+        if (!activeSession) {
+          throw new Error('Create session failed')
+        }
+        setSessionId(activeSession.id)
+
+        const history = await listChatMessages(activeSession.id)
         if (!alive) return
         setMessages(history)
+        const previewEntries = await Promise.all(
+          orderedSessions.map(async (session) => {
+            try {
+              const preview = await listChatMessages(session.id, { limit: 1 })
+              return [session.id, preview[0]?.content ?? ''] as const
+            } catch (error) {
+              return [session.id, ''] as const
+            }
+          }),
+        )
+        if (alive) {
+          setSessionPeek(Object.fromEntries(previewEntries))
+        }
         setStatus('ready')
       } catch (error) {
         if (!alive) return
@@ -100,17 +150,24 @@ export default function ChatPage() {
   const handleSend = async () => {
     if (!draft.trim() || !selectedModelId) return
     let activeSessionId = sessionId
+    let shouldUpdateTitle = false
     if (!activeSessionId) {
       try {
         const session = await createChatSession('对话')
         activeSessionId = session.id
         setSessionId(session.id)
+        setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
+        shouldUpdateTitle = true
       } catch (error) {
         setStatus('error')
         return
       }
     }
     const content = draft.trim()
+    const activeSession = sessions.find((session) => session.id === activeSessionId)
+    if (activeSession && (!activeSession.title || activeSession.title === '对话')) {
+      shouldUpdateTitle = true
+    }
     const userMessage: ChatMessage = {
       id: `local-user-${Date.now()}`,
       role: 'user',
@@ -127,6 +184,21 @@ export default function ChatPage() {
     setSelectedSkill(null)
     setStreaming(true)
     try {
+      if (shouldUpdateTitle && activeSessionId) {
+        const nextTitle = content.length > 24 ? `${content.slice(0, 24)}...` : content
+        updateChatSessionTitle(activeSessionId, nextTitle)
+          .then((updated) => {
+            setSessions((prev) => {
+              const next = [updated, ...prev.filter((item) => item.id !== updated.id)]
+              return next
+            })
+          })
+          .catch(() => undefined)
+      }
+      setSessionPeek((prev) => ({
+        ...prev,
+        [activeSessionId]: prev[activeSessionId] ?? content,
+      }))
       await streamAiChat(
         {
           sessionId: activeSessionId,
@@ -172,6 +244,64 @@ export default function ChatPage() {
     }
   }
 
+  const handleCreateSession = async () => {
+    setStatus('loading')
+    try {
+      const session = await createChatSession('对话')
+      setSessionId(session.id)
+      setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
+      setMessages([])
+      setStatus('ready')
+    } catch (error) {
+      setStatus('error')
+    }
+  }
+
+  const handleSelectSession = async (session: ChatSession) => {
+    if (session.id === sessionId) return
+    setSessionId(session.id)
+    setStatus('loading')
+    setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
+    try {
+      const history = await listChatMessages(session.id)
+      setMessages(history)
+      setStatus('ready')
+    } catch (error) {
+      setStatus('error')
+    }
+  }
+
+  const handleDeleteSession = async (session: ChatSession) => {
+    const remaining = sessions.filter((item) => item.id !== session.id)
+    setSessions(remaining)
+    setSessionPeek((prev) => {
+      const next = { ...prev }
+      delete next[session.id]
+      return next
+    })
+    if (session.id === sessionId) {
+      const fallback = remaining[0] ?? null
+      if (fallback) {
+        setSessionId(fallback.id)
+        try {
+          const history = await listChatMessages(fallback.id)
+          setMessages(history)
+          setStatus('ready')
+        } catch (error) {
+          setStatus('error')
+        }
+      } else {
+        setSessionId(null)
+        setMessages([])
+      }
+    }
+    try {
+      await deleteChatSession(session.id)
+    } catch (error) {
+      setStatus('error')
+    }
+  }
+
   if (!token) {
     return (
       <section className="rounded-[28px] border border-border/70 bg-white px-8 py-10">
@@ -188,7 +318,7 @@ export default function ChatPage() {
   }
 
   return (
-    <section className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+    <section className="grid w-full gap-8 lg:grid-cols-[2fr_8fr]">
       <h2 className="sr-only">对话</h2>
       <aside className="hidden h-full flex-col justify-between rounded-[28px] border border-border/70 bg-white/80 px-5 py-6 text-sm text-muted-foreground lg:flex">
         <div className="space-y-6">
@@ -197,31 +327,69 @@ export default function ChatPage() {
             <p className="text-base font-semibold text-foreground">对话台</p>
           </div>
           <div className="space-y-3">
-            <button className="flex w-full items-center justify-between rounded-full bg-muted/60 px-4 py-2 text-left text-foreground">
+            <button
+              className="flex w-full items-center justify-between rounded-full bg-muted/60 px-4 py-2 text-left text-foreground"
+              onClick={handleCreateSession}
+            >
               新建
               <span className="text-xs text-muted-foreground">+</span>
             </button>
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-[0.35em]">资源</div>
-              <div className="space-y-2 text-sm">
-                <button className="w-full rounded-full px-3 py-1 text-left hover:bg-muted/60">
-                  对话库
-                </button>
-                <button className="w-full rounded-full px-3 py-1 text-left hover:bg-muted/60">
-                  技能市场
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-xs uppercase tracking-[0.35em]">项目</div>
-              <div className="space-y-2 text-sm">
-                <button className="w-full rounded-full px-3 py-1 text-left hover:bg-muted/60">
-                  正在进行
-                </button>
-                <button className="w-full rounded-full px-3 py-1 text-left hover:bg-muted/60">
-                  新建项目
-                </button>
-              </div>
+              <div className="text-xs uppercase tracking-[0.35em]">历史对话</div>
+              <input
+                value={sessionQuery}
+                onChange={(event) => setSessionQuery(event.target.value)}
+                placeholder="搜索对话"
+                className="h-9 w-full rounded-full border border-border/70 bg-white px-3 text-xs text-foreground placeholder:text-muted-foreground"
+              />
+              <ScrollArea className="h-[360px] pr-2">
+                <div className="space-y-2 text-sm">
+                  {filteredSessions.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground">
+                      暂无历史对话
+                    </div>
+                  )}
+                  {filteredSessions.map((session) => {
+                    const title = session.title?.trim() || '未命名对话'
+                    const isActive = session.id === sessionId
+                    return (
+                      <div
+                        key={session.id}
+                        className={[
+                          'group flex items-start gap-2 rounded-2xl px-3 py-2 transition',
+                          isActive
+                            ? 'bg-muted/60 text-foreground'
+                            : 'text-muted-foreground hover:bg-muted/50',
+                        ].join(' ')}
+                      >
+                        <button
+                          className="flex-1 text-left"
+                          onClick={() => handleSelectSession(session)}
+                        >
+                          <div className="text-sm font-medium">{title}</div>
+                          {sessionPeek[session.id] && (
+                            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                              {sessionPeek[session.id]}
+                            </div>
+                          )}
+                          {session.updated_at && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {new Date(session.updated_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="mt-1 rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:border-border/70 hover:text-foreground"
+                          onClick={() => handleDeleteSession(session)}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
             </div>
           </div>
         </div>
@@ -241,7 +409,7 @@ export default function ChatPage() {
         )}
 
         <div className="w-full">
-          <div className="mx-auto w-full max-w-3xl" data-testid="chat-right-panel">
+          <div className="w-full" data-testid="chat-right-panel">
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground">
                 <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
