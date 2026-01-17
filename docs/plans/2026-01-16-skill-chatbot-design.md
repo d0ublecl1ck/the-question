@@ -1,4 +1,4 @@
-# Skill Chatbot PRD（MVP）
+# 问对 · WenDui PRD（MVP）
 
 ## 1. 目标与用户
 

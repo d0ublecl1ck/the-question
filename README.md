@@ -1,6 +1,6 @@
-# React + TypeScript + Vite
+# 问对 · WenDui
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+问对（WenDui）是一个将 Skill 技术与传统聊天融合的应用，帮助用户把可复用流程沉淀为 Skill，并在对话中智能调用。
 
 Currently, two official plugins are available:
 
