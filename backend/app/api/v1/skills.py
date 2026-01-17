@@ -6,6 +6,7 @@ from app.schemas.skill import (
     SkillCreate,
     SkillDetail,
     SkillExport,
+    SkillExportSkill,
     SkillImport,
     SkillOut,
     SkillUpdate,
@@ -40,6 +41,7 @@ def _to_skill_out(skill) -> SkillOut:
         description=skill.description,
         visibility=skill.visibility,
         tags=skill_tags_to_list(skill),
+        avatar=skill.avatar,
         owner_id=skill.owner_id,
         created_at=skill.created_at,
         updated_at=skill.updated_at,
@@ -220,7 +222,7 @@ def export_skill_endpoint(skill_id: str, session: Session = Depends(get_session)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
     skill, versions = result
     return SkillExport(
-        skill=_to_skill_out(skill),
+        skill=SkillExportSkill(**_to_skill_out(skill).model_dump(exclude={'avatar'})),
         versions=[
             SkillVersionOut(
                 id=version.id,
