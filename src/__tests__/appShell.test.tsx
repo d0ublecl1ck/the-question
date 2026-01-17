@@ -1,18 +1,26 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { Provider } from 'react-redux'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it } from 'vitest'
 import AppShell from '../components/AppShell'
-import { useAuthStore } from '../stores/authStore'
+import { store } from '@/store/appStore'
+import { clearAuth, setAuth } from '@/store/slices/authSlice'
+
+beforeEach(() => {
+  store.dispatch(clearAuth())
+})
 
 it('renders the top bar with title and nav', () => {
   render(
-    <MemoryRouter>
-      <Routes>
-        <Route path="/" element={<AppShell />}>
-          <Route index element={<div />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>
+    <Provider store={store}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
   )
 
   const title = screen.getByText('WenDui')
@@ -30,13 +38,15 @@ it('renders the top bar with title and nav', () => {
 
 it('does not render the global top bar', () => {
   render(
-    <MemoryRouter>
-      <Routes>
-        <Route path="/" element={<AppShell />}>
-          <Route index element={<div />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>
+    <Provider store={store}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
   )
 
   expect(screen.queryByText('Workspace')).not.toBeInTheDocument()
@@ -44,18 +54,20 @@ it('does not render the global top bar', () => {
 })
 
 it('shows account email when authenticated', () => {
-  useAuthStore.getState().setAuth({
+  store.dispatch(setAuth({
     token: 'token-1',
     user: { id: 'u1', email: 'admin@admin.com' },
-  })
+  }))
   render(
-    <MemoryRouter>
-      <Routes>
-        <Route path="/" element={<AppShell />}>
-          <Route index element={<div />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>
+    <Provider store={store}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
   )
 
   expect(screen.queryByText('admin@admin.com')).not.toBeInTheDocument()

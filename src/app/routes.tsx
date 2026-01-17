@@ -12,10 +12,10 @@ import PricePage from '../pages/PricePage'
 import SearchPage from '../pages/SearchPage'
 import SettingsPage from '../pages/SettingsPage'
 import SkillDetailPage from '../pages/SkillDetailPage'
-import { useAuthStore } from '../stores/authStore'
+import { useAppSelector } from '@/store/hooks'
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
-  const status = useAuthStore((state) => state.status)
+  const status = useAppSelector((state) => state.auth.status)
   const location = useLocation()
   if (status !== 'authenticated') {
     return <Navigate to="/login" replace state={{ from: location }} />

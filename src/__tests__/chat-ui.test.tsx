@@ -1,12 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { Provider } from 'react-redux'
 import { expect, it, vi, beforeEach } from 'vitest'
 import ChatPage from '../pages/ChatPage'
-import { useAuthStore } from '@/stores/authStore'
 import { MemoryRouter } from 'react-router-dom'
+import { store } from '@/store/appStore'
+import { setAuth } from '@/store/slices/authSlice'
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'authenticated', token: 'token', user: { id: 'u1', email: 'a@b.com' } })
+  store.dispatch(setAuth({ token: 'token', user: { id: 'u1', email: 'a@b.com' } }))
 })
 
 it('opens skill picker when pressing $', async () => {
@@ -31,9 +33,11 @@ it('opens skill picker when pressing $', async () => {
   }))
   const user = userEvent.setup()
   render(
-    <MemoryRouter>
-      <ChatPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
   )
   const input = screen.getByPlaceholderText(/输入内容/)
   await user.click(input)

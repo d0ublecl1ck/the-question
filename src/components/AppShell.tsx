@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { clearAuth } from '@/store/slices/authSlice'
 
 const publicNavItems = [
   { to: '/', label: 'Home' },
@@ -18,9 +19,9 @@ const authedNavItems = [
 ]
 
 export default function AppShell() {
-  const status = useAuthStore((state) => state.status)
-  const user = useAuthStore((state) => state.user)
-  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const dispatch = useAppDispatch()
+  const status = useAppSelector((state) => state.auth.status)
+  const user = useAppSelector((state) => state.auth.user)
   const navigate = useNavigate()
   const [panelOpen, setPanelOpen] = useState(false)
   const isAuthed = status === 'authenticated'
@@ -112,7 +113,7 @@ export default function AppShell() {
                       type="button"
                       className="mt-3 w-full rounded-full border border-border/70 px-3 py-2 text-sm text-foreground hover:bg-muted/60"
                       onClick={() => {
-                        clearAuth()
+                        dispatch(clearAuth())
                         navigate('/login')
                       }}
                     >

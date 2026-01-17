@@ -1,11 +1,13 @@
 import { render, screen } from '@testing-library/react'
+import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
 import { expect, it, vi, beforeEach } from 'vitest'
 import ChatPage from './ChatPage'
-import { useAuthStore } from '@/stores/authStore'
+import { store } from '@/store/appStore'
+import { clearAuth, setAuth } from '@/store/slices/authSlice'
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'authenticated', token: 'token', user: { id: 'u1', email: 'a@b.com' } })
+  store.dispatch(setAuth({ token: 'token', user: { id: 'u1', email: 'a@b.com' } }))
 })
 
 it('renders chat page with composer', async () => {
@@ -30,20 +32,24 @@ it('renders chat page with composer', async () => {
   }))
 
   render(
-    <MemoryRouter>
-      <ChatPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
   )
   expect(await screen.findByText('对话')).toBeInTheDocument()
   expect(await screen.findByPlaceholderText('输入内容，按 $ 触发技能选择')).toBeInTheDocument()
 })
 
 it('renders login entry when unauthenticated', () => {
-  useAuthStore.setState({ status: 'anonymous', token: undefined, user: undefined })
+  store.dispatch(clearAuth())
   render(
-    <MemoryRouter>
-      <ChatPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
   )
   expect(screen.getByRole('button', { name: '去登录' })).toBeInTheDocument()
 })

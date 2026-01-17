@@ -12,7 +12,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sparkles, Tag } from 'lucide-react'
-import { useAuthStore } from '@/stores/authStore'
+import { useAppSelector } from '@/store/hooks'
 import { createChatSession, createSkillSuggestion, listChatMessages } from '@/services/chat'
 import { useNavigate } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
@@ -34,7 +34,7 @@ type ChatMessage = {
 }
 
 export default function ChatPage() {
-  const token = useAuthStore((state) => state.token)
+  const token = useAppSelector((state) => state.auth.token)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
