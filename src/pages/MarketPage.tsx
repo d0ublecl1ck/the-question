@@ -58,14 +58,16 @@ export default function MarketPage() {
   }
 
   return (
-    <section className="space-y-8">
-      <header className="page-card">
+    <section className="space-y-10">
+      <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Market</p>
-        <h2 className="page-title">市场</h2>
-        <p className="page-subtitle">官方技能与社区生态的入口。发现可复用流程并快速进入详情。</p>
+        <h2 className="text-3xl font-semibold">市场</h2>
+        <p className="text-sm text-muted-foreground">
+          官方技能与社区生态的入口。发现可复用流程并快速进入详情。
+        </p>
       </header>
 
-      <section className="page-card space-y-8">
+      <section className="space-y-8">
         <section className="space-y-4">
           <div className="flex items-baseline justify-between">
             <h3 className="text-lg font-semibold">Highlights</h3>

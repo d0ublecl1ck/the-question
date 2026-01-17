@@ -1,9 +1,21 @@
-import json
+from __future__ import annotations
+
 from collections.abc import AsyncGenerator
 
-import httpx
-
 from app.core.config import settings
+
+try:
+    from openai import AsyncOpenAI
+except Exception:  # pragma: no cover - optional for tests
+    AsyncOpenAI = None  # type: ignore[assignment]
+
+
+def _build_client() -> AsyncOpenAI:
+    if AsyncOpenAI is None:
+        raise RuntimeError("openai SDK is not installed")
+    if not settings.OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY is missing in environment or .env")
+    return AsyncOpenAI(api_key=settings.OPENAI_API_KEY, base_url=settings.OPENAI_BASE_URL)
 
 
 async def stream_chat_completion(
@@ -11,35 +23,15 @@ async def stream_chat_completion(
     model: str,
     messages: list[dict[str, str]],
 ) -> AsyncGenerator[str, None]:
-    url = f"{settings.OPENAI_BASE_URL.rstrip('/')}/chat/completions"
-    headers = {
-        'Authorization': f'Bearer {settings.OPENAI_API_KEY}',
-        'Content-Type': 'application/json',
-    }
-    payload = {
-        'model': model,
-        'messages': messages,
-        'stream': True,
-    }
-    async with httpx.AsyncClient(timeout=None) as client:
-        async with client.stream('POST', url, headers=headers, json=payload) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
-                if not line:
-                    continue
-                if not line.startswith('data:'):
-                    continue
-                data = line.replace('data:', '', 1).strip()
-                if data == '[DONE]':
-                    break
-                try:
-                    event = json.loads(data)
-                except json.JSONDecodeError:
-                    continue
-                delta = (
-                    event.get('choices', [{}])[0]
-                    .get('delta', {})
-                    .get('content')
-                )
-                if delta:
-                    yield delta
+    client = _build_client()
+    stream = await client.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=True,
+    )
+    async for event in stream:
+        if not event.choices:
+            continue
+        delta = event.choices[0].delta.content
+        if delta:
+            yield delta

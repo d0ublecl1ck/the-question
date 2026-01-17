@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
-from app.core.ai_models import AVAILABLE_OPENAI_MODELS
-from app.core.config import settings
+from app.core.ai_models import available_openai_models
 from app.db.session import get_session
 from app.models.enums import ChatRole
 from app.models.user import User
@@ -27,12 +26,12 @@ def _ensure_session(session: Session, session_id: str, user: User):
 
 
 def _allowed_model(model: str) -> bool:
-    return any(item['id'] == model for item in AVAILABLE_OPENAI_MODELS)
+    return any(item['id'] == model for item in available_openai_models())
 
 
 @router.get('/models', response_model=list[AiModelOut])
 def list_models() -> list[AiModelOut]:
-    return [AiModelOut(**item) for item in AVAILABLE_OPENAI_MODELS]
+    return [AiModelOut(**item) for item in available_openai_models()]
 
 
 @router.post('/chat/stream')
@@ -41,8 +40,6 @@ async def stream_chat(
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
-    if not settings.OPENAI_API_KEY:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='OpenAI API key not configured')
     if not _allowed_model(payload.model):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Model not available')
 
