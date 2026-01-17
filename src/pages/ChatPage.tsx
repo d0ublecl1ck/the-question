@@ -108,10 +108,10 @@ export default function ChatPage() {
     let activeSessionId = sessionId
     if (!activeSessionId) {
       try {
-        const session = await createChatSession('对话')
+        const session = await createChatSession({ title: '对话' }).unwrap()
         activeSessionId = session.id
         setSessionId(session.id)
-      } catch (error) {
+      } catch {
         setStatus('error')
         return
       }
@@ -155,7 +155,7 @@ export default function ChatPage() {
           },
         },
       )
-    } catch (error) {
+    } catch {
       setStatus('error')
     } finally {
       setStreaming(false)
@@ -173,7 +173,7 @@ export default function ChatPage() {
     try {
       await createSkillSuggestion({ session_id: sessionId, skill_id: selectedSkill.id }).unwrap()
       setSuggestionStatus('success')
-    } catch (error) {
+    } catch {
       setSuggestionStatus('error')
     }
   }

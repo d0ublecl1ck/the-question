@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useGetMarketSkillsQuery } from '@/store/api/marketApi'
-import type { MarketSkill } from '@/store/api/types'
 
 export default function MarketPage() {
   const { data: skills = [], isLoading, isError } = useGetMarketSkillsQuery()

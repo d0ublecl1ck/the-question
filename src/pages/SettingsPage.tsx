@@ -37,7 +37,7 @@ export default function SettingsPage() {
     try {
       await updateMe({ email }).unwrap()
       setSaving('saved')
-    } catch (error) {
+    } catch {
       setSaving('error')
     }
   }
@@ -47,7 +47,7 @@ export default function SettingsPage() {
     try {
       await updateMemoryMutation({ key: 'profile', value: memory, scope: 'user' }).unwrap()
       setSaving('saved')
-    } catch (error) {
+    } catch {
       setSaving('error')
     }
   }
