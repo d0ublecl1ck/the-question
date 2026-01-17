@@ -1,5 +1,4 @@
-import { Button } from '@/components/ui/button'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import skillHubCard from '@/assets/skill-hub-card.png'
 
 const roleHighlights = [
@@ -82,33 +81,56 @@ const expertPicks = [
 ]
 
 export default function HomePage() {
+  const navigate = useNavigate()
+  const handleSubmit = () => {
+    navigate('/chat')
+  }
+
   return (
-    <section className="w-full space-y-20">
+    <section className="w-full space-y-14">
       <header className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">WenDui</p>
-            <h2 className="text-sm font-medium text-muted-foreground">首页</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">问对</h2>
           </div>
           <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
             问对问题，遇见专家
           </h1>
-          <p className="max-w-xl text-base text-muted-foreground">
-            问对是一个把对话与技能结合的 AI 平台，帮助团队把高价值流程沉淀为 Skill，在会话中
-            直接调用并持续迭代。
+          <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
+            我们帮您从提问中生成技能专家，让每个问题都有专家级的解决方案。
           </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button asChild className="rounded-full px-6">
-              <Link to="/chat">开始体验</Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-full px-6">
-              <Link to="/market">浏览技能市场</Link>
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-6 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            <span>对话入口</span>
-            <span>技能生态</span>
-            <span>知识治理</span>
+          <div className="rounded-[28px] bg-slate-100/70 p-2 shadow-sm">
+            <form
+              className="ai-pulse flex flex-col gap-2 rounded-[24px] border border-slate-200 bg-white/80 px-4 py-3 shadow-sm"
+              onSubmit={(event) => {
+                event.preventDefault()
+                handleSubmit()
+              }}
+            >
+              <textarea
+                name="prompt"
+                aria-label="AI 对话输入"
+                placeholder="输入你的问题，回车开始对话"
+                rows={2}
+                className="min-h-[72px] w-full resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault()
+                    handleSubmit()
+                  }
+                }}
+              />
+              <div className="flex items-center justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-black/5 text-slate-600 hover:bg-black/10"
+                  aria-label="发送"
+                >
+                  &gt;
+                </button>
+              </div>
+            </form>
           </div>
         </div>
         <Link
@@ -125,10 +147,10 @@ export default function HomePage() {
             <div className="bg-white/95 px-8 py-6">
               <div className="max-w-sm space-y-2 text-sm text-slate-700">
                 <div className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  Skill Hub
+                  Expert Market
                 </div>
-                <div className="text-lg font-semibold text-slate-700">对话即执行</div>
-                <div>对话、技能、知识统一在一个可控的工作台里。</div>
+                <div className="text-lg font-semibold text-slate-700">开始探索</div>
+                <div>创建、搜集、分享你的专家团队。</div>
               </div>
             </div>
           </div>

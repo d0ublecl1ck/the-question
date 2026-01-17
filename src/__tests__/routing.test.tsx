@@ -33,7 +33,7 @@ it('renders home page at root when unauthenticated', () => {
       <RouterProvider router={router} />
     </Provider>,
   )
-  expect(screen.getByRole('heading', { name: '首页' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '问对' })).toBeInTheDocument()
 })
 
 it('renders home page at root when authenticated', () => {
@@ -44,7 +44,7 @@ it('renders home page at root when authenticated', () => {
       <RouterProvider router={router} />
     </Provider>,
   )
-  expect(screen.getByRole('heading', { name: '首页' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '问对' })).toBeInTheDocument()
 })
 
 it('renders chat page at /chat when authenticated', () => {

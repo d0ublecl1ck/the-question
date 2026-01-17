@@ -4,6 +4,36 @@
 @tailwind components;
 @tailwind utilities;
 
+.ai-pulse {
+  position: relative;
+}
+
+.ai-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  animation: aiPulse 2.4s ease-out infinite;
+}
+
+@keyframes aiPulse {
+  0% {
+    opacity: 0.65;
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
+  }
+  70% {
+    opacity: 0;
+    box-shadow: 0 0 0 18px rgba(59, 130, 246, 0);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0 18px rgba(59, 130, 246, 0);
+  }
+}
+
 :root {
   --background: 210 20% 98%;
   --foreground: 222 28% 10%;
