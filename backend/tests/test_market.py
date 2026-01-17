@@ -82,12 +82,15 @@ def test_market_list_and_detail():
         market_list = client.get('/api/v1/market/skills')
         assert market_list.status_code == 200
         assert any(item['id'] == skill_id for item in market_list.json())
+        item = next(item for item in market_list.json() if item['id'] == skill_id)
+        assert 'avatar' in item
 
         detail = client.get(f"/api/v1/market/skills/{skill_id}")
         assert detail.status_code == 200
         assert detail.json()['id'] == skill_id
         assert 'rating' in detail.json()
         assert 'comments_count' in detail.json()
+        assert 'avatar' in detail.json()
 
 
 def test_skill_search_by_content():
@@ -104,6 +107,8 @@ def test_skill_search_by_content():
         result = client.get('/api/v1/search/skills', params={'q': 'Example'})
         assert result.status_code == 200
         assert any(item['id'] == skill_id for item in result.json())
+        item = next(item for item in result.json() if item['id'] == skill_id)
+        assert 'avatar' in item
 
 
 def test_comment_reply_and_like():

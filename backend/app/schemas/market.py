@@ -77,6 +77,7 @@ class MarketSkillOut(BaseModel):
     description: str
     tags: list[str]
     visibility: str
+    avatar: Optional[str] = None
     favorites_count: int
     rating: RatingSummary
     comments_count: int

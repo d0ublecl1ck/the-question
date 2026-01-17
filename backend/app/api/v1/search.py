@@ -23,6 +23,7 @@ def search_skills_endpoint(
             description=skill.description,
             visibility=skill.visibility,
             tags=skill_tags_to_list(skill),
+            avatar=skill.avatar,
             owner_id=skill.owner_id,
             created_at=skill.created_at,
             updated_at=skill.updated_at,
