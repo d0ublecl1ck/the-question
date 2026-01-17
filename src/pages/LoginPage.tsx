@@ -88,7 +88,10 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="flex min-h-screen items-center justify-center px-6">
+    <section
+      className="flex w-full flex-1 items-center justify-center px-6"
+      data-testid="login-page"
+    >
       <div className="w-full max-w-md text-center">
         <div className="flex flex-col items-center gap-3">
           <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-900 text-white">
