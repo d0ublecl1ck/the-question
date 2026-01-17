@@ -36,6 +36,7 @@ def create_skill(session: Session, payload: SkillCreate, owner_id: str | None) -
         description=payload.description,
         visibility=payload.visibility,
         tags=_serialize_tags(payload.tags),
+        avatar=payload.avatar,
         owner_id=owner_id,
     )
     session.add(skill)

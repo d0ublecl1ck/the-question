@@ -33,6 +33,8 @@ def test_skill_flow():
         listed = client.get('/api/v1/skills')
         assert listed.status_code == 200
         assert any(item['id'] == skill_id for item in listed.json())
+        skill_item = next(item for item in listed.json() if item['id'] == skill_id)
+        assert 'avatar' in skill_item
 
         tagged = client.get('/api/v1/skills?tags=tag1')
         assert tagged.status_code == 200
@@ -67,6 +69,7 @@ def test_skill_flow():
         exported = client.get(f"/api/v1/skills/{skill_id}/export")
         assert exported.status_code == 200
         assert len(exported.json()['versions']) == 2
+        assert 'avatar' not in exported.json()['skill']
 
         import_payload = {
             'name': 'imported-skill',
@@ -84,3 +87,34 @@ def test_skill_flow():
         assert deleted.status_code == 200
         missing = client.get(f"/api/v1/skills/{skill_id}")
         assert missing.status_code == 404
+
+
+def test_skill_avatar_update_and_clear():
+    init_db(drop_all=True)
+    with TestClient(app) as client:
+        headers = _auth_headers(client)
+        payload = {
+            'name': 'skill-a',
+            'description': 'desc',
+            'visibility': 'public',
+            'tags': ['tag1'],
+            'content': 'v1 content',
+        }
+        created = client.post('/api/v1/skills', json=payload, headers=headers)
+        skill_id = created.json()['id']
+
+        updated = client.patch(
+            f"/api/v1/skills/{skill_id}",
+            json={'avatar': 'data:image/png;base64,AAAA'},
+            headers=headers,
+        )
+        assert updated.status_code == 200
+        assert updated.json()['avatar'] == 'data:image/png;base64,AAAA'
+
+        cleared = client.patch(
+            f"/api/v1/skills/{skill_id}",
+            json={'avatar': None},
+            headers=headers,
+        )
+        assert cleared.status_code == 200
+        assert cleared.json()['avatar'] is None

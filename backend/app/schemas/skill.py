@@ -12,7 +12,11 @@ class SkillBase(BaseModel):
     tags: list[str] = Field(default_factory=list)
 
 
-class SkillCreate(SkillBase):
+class SkillBaseWithAvatar(SkillBase):
+    avatar: Optional[str] = None
+
+
+class SkillCreate(SkillBaseWithAvatar):
     content: str = Field(max_length=settings.SKILL_CONTENT_MAX_LEN)
 
 
@@ -21,9 +25,10 @@ class SkillUpdate(BaseModel):
     description: Optional[str] = None
     visibility: Optional[SkillVisibility] = None
     tags: Optional[list[str]] = None
+    avatar: Optional[str] = None
 
 
-class SkillOut(SkillBase):
+class SkillOut(SkillBaseWithAvatar):
     id: str
     owner_id: Optional[str] = None
     created_at: datetime
@@ -65,8 +70,21 @@ class SkillVersionImport(BaseModel):
     parent_version_id: Optional[str] = None
 
 
+class SkillExportSkill(BaseModel):
+    id: str
+    name: str
+    description: str
+    visibility: SkillVisibility
+    tags: list[str] = Field(default_factory=list)
+    owner_id: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    deleted: bool = False
+    deleted_at: Optional[datetime] = None
+
+
 class SkillExport(BaseModel):
-    skill: SkillOut
+    skill: SkillExportSkill
     versions: list[SkillVersionOut]
 
 

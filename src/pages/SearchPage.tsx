@@ -12,6 +12,7 @@ export type SearchSkill = {
   description: string
   tags: string[]
   visibility: string
+  avatar?: string | null
   owner_id?: string | null
   created_at?: string
   updated_at?: string

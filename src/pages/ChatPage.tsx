@@ -24,6 +24,7 @@ export type SkillItem = {
   name: string
   description: string
   tags: string[]
+  avatar?: string | null
 }
 
 type ChatMessage = {
