@@ -44,5 +44,36 @@ class SkillSuggestionOut(BaseModel):
     session_id: str
     skill_id: str
     message_id: Optional[str] = None
+    reason: Optional[str] = None
     status: SkillSuggestionStatus
     created_at: datetime
+
+
+class SkillDraftSuggestionUpdate(BaseModel):
+    status: SkillSuggestionStatus
+
+
+class SkillDraftSuggestionAcceptIn(BaseModel):
+    model: Optional[str] = None
+
+
+class SkillDraftSuggestionOut(BaseModel):
+    id: str
+    session_id: str
+    message_id: Optional[str] = None
+    goal: str
+    constraints: Optional[str] = None
+    reason: Optional[str] = None
+    status: SkillSuggestionStatus
+    created_skill_id: Optional[str] = None
+    created_at: datetime
+
+
+class SkillDraftSuggestionAcceptOut(BaseModel):
+    suggestion_id: str
+    skill_id: str
+    version: int
+    name: str
+    description: str
+    visibility: str
+    warnings: list[str] = []

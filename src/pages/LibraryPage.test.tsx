@@ -58,7 +58,7 @@ it('renders library headline', async () => {
       </MemoryRouter>
     </Provider>,
   )
-  expect(await screen.findByRole('heading', { name: '技能库' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: '智囊团' })).toBeInTheDocument()
   expect(screen.getAllByRole('button', { name: '收藏' }).length).toBeGreaterThan(0)
   expect(screen.getByRole('button', { name: '我创建的' })).toBeInTheDocument()
 })

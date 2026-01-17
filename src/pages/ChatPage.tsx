@@ -18,10 +18,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useAppSelector } from '@/store/hooks'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ChatComposer from '@/components/chat/ChatComposer'
 import ChatBubble from '@/components/chat/ChatBubble'
+import SkillSuggestionCard from '@/components/chat/SkillSuggestionCard'
+import SkillDraftSuggestionCard from '@/components/chat/SkillDraftSuggestionCard'
 import { Message } from '@/components/ui/message'
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/conversation'
 import { streamAiChat, watchAiChatStream } from '@/store/api/aiStream'
@@ -32,10 +34,16 @@ import {
   useListChatMessagesQuery,
   useListChatSessionsQuery,
   useListSkillsQuery,
+  useListSkillSuggestionsQuery,
+  useListSkillDraftSuggestionsQuery,
+  useUpdateSkillDraftSuggestionMutation,
+  useAcceptSkillDraftSuggestionMutation,
   useUpdateChatSessionTitleMutation,
+  useUpdateSkillSuggestionMutation,
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
-import type { ChatMessage as ApiChatMessage, ChatSession } from '@/store/api/types'
+import type { ChatMessage as ApiChatMessage, ChatSession, SkillSuggestion, SkillDraftSuggestion } from '@/store/api/types'
+import { enqueueToast } from '@/store/slices/toastSlice'
 
 export type SkillItem = {
   id: string
@@ -123,6 +131,7 @@ const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>
 export default function ChatPage() {
   const token = useAppSelector((state) => state.auth.token)
   const user = useAppSelector((state) => state.auth.user)
+  const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const location = useLocation()
   const { sessionId: routeSessionId } = useParams()
@@ -141,6 +150,8 @@ export default function ChatPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
   const [watching, setWatching] = useState(false)
+  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<string[]>([])
+  const [dismissedDraftSuggestionIds, setDismissedDraftSuggestionIds] = useState<string[]>([])
   const isRootChat = location.pathname === '/chat'
   const messagesRef = useRef<ChatMessage[]>([])
   const lastAppliedDraftRef = useRef<string | null>(null)
@@ -182,8 +193,79 @@ export default function ChatPage() {
     { sessionId: sessionId ?? '' },
     { skip: !token || !sessionId, pollingInterval: messagesPollingInterval },
   )
+  const {
+    data: suggestions = [],
+    refetch: refetchSuggestions,
+  } = useListSkillSuggestionsQuery(
+    { sessionId: sessionId ?? '', status: 'pending' },
+    { skip: !token || !sessionId },
+  )
+  const {
+    data: draftSuggestions = [],
+    refetch: refetchDraftSuggestions,
+  } = useListSkillDraftSuggestionsQuery(
+    { sessionId: sessionId ?? '', status: 'pending' },
+    { skip: !token || !sessionId },
+  )
+  const [updateSkillSuggestion] = useUpdateSkillSuggestionMutation()
+  const [updateSkillDraftSuggestion] = useUpdateSkillDraftSuggestionMutation()
+  const [acceptSkillDraftSuggestion] = useAcceptSkillDraftSuggestionMutation()
+
+  useEffect(() => {
+    if (streaming || !sessionId) return
+    let attempts = 0
+    const maxAttempts = 5
+    const tick = () => {
+      attempts += 1
+      refetchSuggestions()
+      refetchDraftSuggestions()
+      if (attempts >= maxAttempts) {
+        window.clearInterval(timer)
+      }
+    }
+    tick()
+    const timer = window.setInterval(tick, 2000)
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [refetchSuggestions, refetchDraftSuggestions, sessionId, streaming])
+
+  useEffect(() => {
+    setDismissedSuggestionIds([])
+    setDismissedDraftSuggestionIds([])
+  }, [sessionId])
 
   const skillById = useMemo(() => Object.fromEntries(skills.map((skill) => [skill.id, skill])), [skills])
+  const dismissedSuggestionSet = useMemo(
+    () => new Set(dismissedSuggestionIds),
+    [dismissedSuggestionIds],
+  )
+  const dismissedDraftSuggestionSet = useMemo(
+    () => new Set(dismissedDraftSuggestionIds),
+    [dismissedDraftSuggestionIds],
+  )
+  const suggestionByMessageId = useMemo(() => {
+    const map = new Map<string, SkillSuggestion>()
+    suggestions
+      .filter((item) => item.status === 'pending' && !dismissedSuggestionSet.has(item.id))
+      .forEach((item) => {
+        if (item.message_id) {
+          map.set(item.message_id, item)
+        }
+      })
+    return map
+  }, [dismissedSuggestionSet, suggestions])
+  const draftSuggestionByMessageId = useMemo(() => {
+    const map = new Map<string, SkillDraftSuggestion>()
+    draftSuggestions
+      .filter((item) => item.status === 'pending' && !dismissedDraftSuggestionSet.has(item.id))
+      .forEach((item) => {
+        if (item.message_id) {
+          map.set(item.message_id, item)
+        }
+      })
+    return map
+  }, [dismissedDraftSuggestionSet, draftSuggestions])
   const filteredSessions = useMemo(() => {
     const keyword = sessionQuery.trim().toLowerCase()
     if (!keyword) return sessions
@@ -514,18 +596,117 @@ export default function ChatPage() {
   }
 
   const handleClarifyComplete = useCallback(
-    async (payload: { selection: string | null; ranking: string[]; freeText: string }) => {
+    async (payload: {
+      responses: {
+        single_choice: { question: string; answer: string | null }[]
+        ranking: { question: string; order: string[] }[]
+        free_text: { question: string; answer: string }[]
+      }
+    }) => {
       const response = {
-        clarify_chain_response: {
-          single_choice: payload.selection,
-          ranking: payload.ranking,
-          free_text: payload.freeText,
-        },
+        clarify_chain_response: payload.responses,
       }
       const content = `\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``
       await sendMessageWithContent(content, null, { preserveDraft: true, preserveSkill: true })
     },
     [sendMessageWithContent],
+  )
+
+  const handleUseSuggestion = useCallback(
+    async (suggestion: SkillSuggestion) => {
+      if (!sessionId) return
+      const skill = skillById[suggestion.skill_id]
+      if (!skill) {
+        dispatch(enqueueToast('技能未加载，请稍后重试'))
+        return
+      }
+      setSelectedSkill(skill)
+      setDismissedSuggestionIds((prev) => [...prev, suggestion.id])
+      try {
+        await updateSkillSuggestion({
+          sessionId,
+          suggestionId: suggestion.id,
+          status: 'accepted',
+        }).unwrap()
+        dispatch(enqueueToast(`已选择技能：${skill.name}`))
+      } catch {
+        dispatch(enqueueToast('更新技能建议失败'))
+      }
+    },
+    [dispatch, sessionId, skillById, updateSkillSuggestion],
+  )
+
+  const handleRejectSuggestion = useCallback(
+    async (suggestion: SkillSuggestion) => {
+      if (!sessionId) return
+      setDismissedSuggestionIds((prev) => [...prev, suggestion.id])
+      try {
+        await updateSkillSuggestion({
+          sessionId,
+          suggestionId: suggestion.id,
+          status: 'rejected',
+        }).unwrap()
+        dispatch(enqueueToast('已关闭该技能推荐'))
+      } catch {
+        dispatch(enqueueToast('更新技能建议失败'))
+      }
+    },
+    [dispatch, sessionId, updateSkillSuggestion],
+  )
+
+  const handleDismissSuggestion = useCallback(
+    async (suggestion: SkillSuggestion) => {
+      await handleRejectSuggestion(suggestion)
+    },
+    [handleRejectSuggestion],
+  )
+
+  const handleAcceptDraftSuggestion = useCallback(
+    async (suggestion: SkillDraftSuggestion) => {
+      if (!sessionId) return
+      const modelId = selectedModelId ?? models[0]?.id ?? null
+      if (!modelId) {
+        dispatch(enqueueToast('模型不可用，请稍后重试'))
+        return
+      }
+      setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
+      try {
+        const result = await acceptSkillDraftSuggestion({
+          sessionId,
+          suggestionId: suggestion.id,
+          modelId,
+        }).unwrap()
+        dispatch(enqueueToast(`已生成技能：${result.name}`))
+      } catch {
+        dispatch(enqueueToast('生成技能失败'))
+      }
+    },
+    [acceptSkillDraftSuggestion, dispatch, models, selectedModelId, sessionId],
+  )
+
+  const handleRejectDraftSuggestion = useCallback(
+    async (suggestion: SkillDraftSuggestion) => {
+      if (!sessionId) return
+      setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
+      try {
+        await updateSkillDraftSuggestion({
+          sessionId,
+          suggestionId: suggestion.id,
+          status: 'rejected',
+        }).unwrap()
+        dispatch(enqueueToast('已关闭沉淀建议'))
+      } catch {
+        dispatch(enqueueToast('更新沉淀建议失败'))
+      }
+    },
+    [dispatch, sessionId, updateSkillDraftSuggestion],
+  )
+
+  const handleDismissDraftSuggestion = useCallback(
+    async (suggestion: SkillDraftSuggestion) => {
+      await handleRejectDraftSuggestion(suggestion)
+    },
+    [handleRejectDraftSuggestion],
   )
 
   const handlePick = (skill: SkillItem) => {
@@ -631,7 +812,16 @@ export default function ChatPage() {
                     </div>
                   )}
                   {filteredSessions.map((session) => {
-                    const title = session.title?.trim() || '未命名对话'
+                    const sessionTitle = session.title?.trim()
+                    const fallbackTitle = sessionPeek[session.id]?.trim()
+                    const resolvedTitle =
+                      sessionTitle && sessionTitle !== '对话'
+                        ? sessionTitle
+                        : fallbackTitle && fallbackTitle !== '对话'
+                          ? fallbackTitle
+                          : '未命名对话'
+                    const displayTitle =
+                      resolvedTitle.length > 24 ? `${resolvedTitle.slice(0, 24)}...` : resolvedTitle
                     const isActive = session.id === sessionId
                     return (
                       <div
@@ -660,17 +850,7 @@ export default function ChatPage() {
                             handleSelectSession(session)
                           }}
                         >
-                          <div className="text-sm font-medium">{title}</div>
-                          {sessionPeek[session.id] && (
-                            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                              {sessionPeek[session.id]}
-                            </div>
-                          )}
-                          {session.updated_at && (
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              {new Date(session.updated_at).toLocaleDateString()}
-                            </div>
-                          )}
+                          <div className="line-clamp-1 text-sm font-medium">{displayTitle}</div>
                         </button>
                         <button
                           type="button"
@@ -756,15 +936,41 @@ export default function ChatPage() {
                   )}
                   {messages.map((message) => {
                     const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
+                    const suggestion =
+                      message.role === 'assistant' ? suggestionByMessageId.get(message.id) : null
+                    const suggestionSkill = suggestion ? skillById[suggestion.skill_id] ?? null : null
+                    const draftSuggestion =
+                      message.role === 'assistant' ? draftSuggestionByMessageId.get(message.id) : null
                     return (
                       <Message key={message.id} from={message.role}>
-                        <ChatBubble
-                          role={message.role}
-                          content={message.content}
-                          skillName={badgeSkill?.name ?? undefined}
-                          messageId={message.id}
-                          onClarifyComplete={handleClarifyComplete}
-                        />
+                        <div className="flex w-full flex-col gap-2">
+                          <ChatBubble
+                            role={message.role}
+                            content={message.content}
+                            skillName={badgeSkill?.name ?? undefined}
+                            messageId={message.id}
+                            onClarifyComplete={handleClarifyComplete}
+                          />
+                          {suggestion && (
+                            <SkillSuggestionCard
+                              skill={suggestionSkill}
+                              reason={suggestion.reason ?? null}
+                              onUse={() => handleUseSuggestion(suggestion)}
+                              onDismiss={() => handleDismissSuggestion(suggestion)}
+                              onReject={() => handleRejectSuggestion(suggestion)}
+                            />
+                          )}
+                          {draftSuggestion && (
+                            <SkillDraftSuggestionCard
+                              goal={draftSuggestion.goal}
+                              constraints={draftSuggestion.constraints ?? null}
+                              reason={draftSuggestion.reason ?? null}
+                              onAccept={() => handleAcceptDraftSuggestion(draftSuggestion)}
+                              onDismiss={() => handleDismissDraftSuggestion(draftSuggestion)}
+                              onReject={() => handleRejectDraftSuggestion(draftSuggestion)}
+                            />
+                          )}
+                        </div>
                       </Message>
                     )
                   })}

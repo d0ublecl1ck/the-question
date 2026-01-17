@@ -103,13 +103,13 @@ def test_ai_stream_missing_key_returns_error():
 def test_ai_stream_persists_message(monkeypatch: pytest.MonkeyPatch):
     init_db(drop_all=True)
 
-    async def fake_stream_chat_completion(*, model: str, messages: list[dict[str, str]]):
-        del model, messages
+    async def fake_stream_agent_text(*args, **kwargs):
+        del args, kwargs
         for chunk in ("hello", " ", "world"):
             yield chunk
 
     with _temp_providers(PROVIDERS_JSON), _temp_env('OPENAI_API_KEY', 'test'):
-        monkeypatch.setattr(ai_module, 'stream_chat_completion', fake_stream_chat_completion)
+        monkeypatch.setattr(ai_module, 'stream_agent_text', fake_stream_agent_text)
         with TestClient(app) as client:
             headers = _auth_headers(client)
             session = client.post('/api/v1/chats', json={'title': 'test'}, headers=headers)

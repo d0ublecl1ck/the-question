@@ -80,7 +80,7 @@ export default function MarketPage() {
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">专家广场</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-semibold">市场</h2>
+              <h2 className="text-3xl font-semibold">社区</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 以分类、排序与视图切换快速筛选技能资产。
               </p>

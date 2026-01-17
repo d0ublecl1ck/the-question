@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import skillHubCard from '@/assets/skill-hub-card.png'
+import expertDebater from '@/assets/experts/expert-debater.png'
+import expertDesigner from '@/assets/experts/expert-designer.png'
+import expertPainter from '@/assets/experts/expert-painter.png'
+import expertArchitect from '@/assets/experts/expert-architect.png'
+import expertWriter from '@/assets/experts/expert-writer.png'
 
 const roleHighlights = [
   {
@@ -45,39 +50,34 @@ const capabilityItems = [
 
 const expertPicks = [
   {
-    name: '交付专家 · 林澈',
-    title: 'AI 方案架构师',
-    description: '聚焦企业流程落地与技能化交付。',
-    image:
-      'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1000&q=80',
+    name: '辩论者 · 云澈',
+    title: '论证与反驳',
+    description: '快速拆解观点，构建有力论证链路。',
+    image: expertDebater,
   },
   {
-    name: '行业顾问 · 苏然',
-    title: '增长与运营',
-    description: '擅长用对话驱动高价值转化。',
-    image:
-      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1000&q=80',
+    name: '设计师 · 黎安',
+    title: '视觉与体验',
+    description: '把想法转成清晰、可落地的设计语言。',
+    image: expertDesigner,
   },
   {
-    name: '知识教练 · 叶晴',
-    title: '知识体系设计',
-    description: '把隐性经验转成可复用技能。',
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=80',
+    name: '画家 · 牧青',
+    title: '画面与风格',
+    description: '捕捉情绪与氛围，输出有温度的视觉表达。',
+    image: expertPainter,
   },
   {
-    name: '协作顾问 · 程越',
-    title: '组织协同',
-    description: '打造跨团队的技能治理框架。',
-    image:
-      'https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=1000&q=80',
+    name: '架构师 · 星河',
+    title: '系统与治理',
+    description: '设计稳健架构，平衡扩展与成本。',
+    image: expertArchitect,
   },
   {
-    name: '交互设计 · 许然',
-    title: '体验策略',
-    description: '让复杂流程像对话一样顺滑。',
-    image:
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=80',
+    name: '作家 · 山海',
+    title: '叙事与表达',
+    description: '将复杂信息写成可读、可感的故事。',
+    image: expertWriter,
   },
 ]
 
@@ -191,28 +191,28 @@ export default function HomePage() {
             Today's top picks
           </span>
         </div>
-        <div className="relative overflow-hidden rounded-[32px] bg-neutral-100/80 px-4 py-14">
+        <div className="relative overflow-visible rounded-[32px] bg-neutral-100/80 px-4 py-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9),rgba(245,245,245,0.6))]" />
           <div className="relative flex flex-col items-center">
             <div className="mb-10 text-center text-lg font-medium text-neutral-700">
-              今天推荐的专家阵容
+              今日精选
             </div>
-            <div className="flex w-full items-center justify-center gap-4 overflow-x-auto pb-6 pt-2">
+            <div className="flex w-full items-center justify-center gap-4 overflow-visible overflow-x-auto pb-8 pt-8">
               {expertPicks.map((expert, index) => (
                 <div
                   key={`${expert.name}-${index}`}
                   className={[
-                    'relative h-[260px] w-[220px] flex-shrink-0 overflow-hidden rounded-[22px] shadow-xl',
+                    'group relative z-0 h-[260px] w-[220px] flex-shrink-0 overflow-hidden rounded-[22px] shadow-xl transition-transform duration-300 ease-out will-change-transform hover:z-10 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl',
                     'bg-neutral-200',
                     index === 1 ? 'translate-y-4' : '',
-                    index === 2 ? '-translate-y-6' : '',
+                    index === 2 ? '-translate-y-4' : '',
                     index === 3 ? 'translate-y-6' : '',
                   ].join(' ')}
                 >
                   <img
                     src={expert.image}
                     alt={expert.name}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.05]"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/80 via-neutral-900/10 to-transparent" />

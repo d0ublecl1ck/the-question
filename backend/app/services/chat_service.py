@@ -127,6 +127,7 @@ def create_suggestion(
     session_id: str,
     skill_id: str,
     message_id:Optional[str],
+    reason: Optional[str] = None,
 ) -> SkillSuggestion:
     existing = session.exec(
         select(SkillSuggestion).where(
@@ -134,11 +135,17 @@ def create_suggestion(
         )
     ).first()
     if existing:
+        if reason and not existing.reason:
+            existing.reason = reason
+            session.add(existing)
+            session.commit()
+            session.refresh(existing)
         return existing
     record = SkillSuggestion(
         session_id=session_id,
         skill_id=skill_id,
         message_id=message_id,
+        reason=reason,
     )
     session.add(record)
     session.commit()

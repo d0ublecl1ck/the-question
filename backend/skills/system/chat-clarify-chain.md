@@ -24,10 +24,10 @@ Identify the smallest set of missing information that blocks progress. Common ca
 - Required vs optional: Confirm what must be satisfied versus nice-to-have.
 
 ### Step 2: Emit a JSON Clarification Chain (Fixed Schema)
-Always output a JSON object that contains a short multi-question chain. Start the response with the marker `<!-- Clarification chain -->` on the first line, then output only the JSON (no extra text).
-- One single-choice question with options ["是", "否", "其他"].
-- One ranking question for priorities or preferences.
-- One free-text question for missing details.
+Always output a JSON object that contains a short multi-question chain (at least 1 question). Start the response with the marker `<!-- Clarification chain -->` on the first line, then output only the JSON (no extra text).
+- Use single-choice when you need a binary or mandatory constraint check (choices ["是", "否", "其他"]).
+- Use ranking when you need priorities or preferences.
+- Use free-text when you need a short missing detail.
 
 Use this schema (do not add extra top-level keys):
 
@@ -55,7 +55,7 @@ Use this schema (do not add extra top-level keys):
 ### Step 3: Iterate with User Answers
 - When the user answers, refine the chain to the next smallest missing set.
 - Stop the chain once the request is “sufficiently clear” to proceed.
-- Keep each chain concise (max 3 questions per turn).
+- Keep each chain concise. It is OK to ask only 1 or 2 questions.
 
 ## Question Design Rules
 

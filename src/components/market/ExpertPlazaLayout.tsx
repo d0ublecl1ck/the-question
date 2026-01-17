@@ -10,7 +10,7 @@ type ExpertPlazaLayoutProps = {
 }
 
 const navItems = [
-  { to: '/market', label: '市场' },
+  { to: '/market', label: '社区' },
   { to: '/library', label: '我的' },
 ]
 

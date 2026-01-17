@@ -11,9 +11,7 @@ type ChatBubbleProps = {
   messageId?: string
   onClarifyComplete?: (payload: {
     messageId?: string
-    selection: string | null
-    ranking: string[]
-    freeText: string
+    responses: ClarifyChainResponse
   }) => void
 }
 
@@ -45,6 +43,41 @@ type ClarifyChainItem = {
 
 type ClarifyChainPayload = {
   clarify_chain: ClarifyChainItem[]
+}
+
+type ClarifyChainResponse = {
+  single_choice: { question: string; answer: string | null }[]
+  ranking: { question: string; order: string[] }[]
+  free_text: { question: string; answer: string }[]
+}
+
+export const buildClarifyResponsePayload = (
+  clarificationTree: UITree | null,
+  selectedChoices: Record<string, string | null>,
+  rankingOrders: Record<string, string[]>,
+  freeTexts: Record<string, string>,
+): ClarifyChainResponse => {
+  const response: ClarifyChainResponse = { single_choice: [], ranking: [], free_text: [] }
+  if (!clarificationTree) return response
+  const root = clarificationTree.elements[clarificationTree.root]
+  const orderedKeys = root?.children ?? Object.keys(clarificationTree.elements)
+  orderedKeys.forEach((key) => {
+    const element = clarificationTree.elements[key]
+    if (!element) return
+    const props = element.props as { question?: string; choices?: string[] } | undefined
+    const question = props?.question ?? ''
+    if (element.type === 'single_choice') {
+      response.single_choice.push({ question, answer: selectedChoices[key] ?? null })
+    }
+    if (element.type === 'ranking') {
+      const order = rankingOrders[key] ?? props?.choices ?? []
+      response.ranking.push({ question, order })
+    }
+    if (element.type === 'free_text') {
+      response.free_text.push({ question, answer: freeTexts[key] ?? '' })
+    }
+  })
+  return response
 }
 
 
@@ -200,8 +233,8 @@ const renderRanking = (
   element: UIElement,
   order: string[],
   onReorder: (next: string[]) => void,
-  dragIndex: number | null,
-  onDragStart: (index: number) => void,
+  dragState: { key: string; index: number } | null,
+  onDragStart: (key: string, index: number) => void,
   onDragEnd: () => void
 ) => {
   const props = element.props as { question?: string; choices?: string[] } | undefined
@@ -215,6 +248,12 @@ const renderRanking = (
     onReorder(next)
   }
 
+  const handleMove = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction
+    if (nextIndex < 0 || nextIndex >= items.length) return
+    moveItem(index, nextIndex)
+  }
+
   return (
     <div className="rounded-xl border border-border/60 bg-white/70 p-3">
       <p className="text-sm font-medium text-foreground">{props?.question}</p>
@@ -223,11 +262,11 @@ const renderRanking = (
           <li
             key={option}
             draggable
-            onDragStart={() => onDragStart(index)}
+            onDragStart={() => onDragStart(element.key, index)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={() => {
-              if (dragIndex === null) return
-              moveItem(dragIndex, index)
+              if (!dragState || dragState.key !== element.key) return
+              moveItem(dragState.index, index)
               onDragEnd()
             }}
             onDragEnd={() => onDragEnd()}
@@ -235,7 +274,25 @@ const renderRanking = (
           >
             <span className="text-xs text-muted-foreground">{index + 1}</span>
             <span className="flex-1">{option}</span>
-            <span className="cursor-grab text-xs text-muted-foreground">⇅</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-foreground/40"
+                onClick={() => handleMove(index, -1)}
+                aria-label="上移"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-foreground/40"
+                onClick={() => handleMove(index, 1)}
+                aria-label="下移"
+              >
+                ↓
+              </button>
+              <span className="cursor-grab text-xs text-muted-foreground">⇅</span>
+            </div>
           </li>
         ))}
       </ol>
@@ -265,15 +322,15 @@ const renderFreeText = (
 
 const renderTree = (
   tree: UITree,
-  selection: string | null,
-  onSelect: (value: string) => void,
-  ranking: string[],
-  onReorder: (next: string[]) => void,
-  dragIndex: number | null,
-  onDragStart: (index: number) => void,
+  selections: Record<string, string | null>,
+  onSelect: (key: string, value: string) => void,
+  rankings: Record<string, string[]>,
+  onReorder: (key: string, next: string[]) => void,
+  dragState: { key: string; index: number } | null,
+  onDragStart: (key: string, index: number) => void,
   onDragEnd: () => void,
-  freeText: string,
-  onFreeTextChange: (next: string) => void
+  freeTexts: Record<string, string>,
+  onFreeTextChange: (key: string, next: string) => void
 ): ReactNode => {
   const visited = new Set<string>()
 
@@ -289,10 +346,19 @@ const renderTree = (
       ))
       return <div className="flex flex-col gap-3">{children}</div>
     }
-    if (element.type === 'single_choice') return renderSingleChoice(element, selection, onSelect)
+    if (element.type === 'single_choice')
+      return renderSingleChoice(element, selections[key] ?? null, (value) => onSelect(key, value))
     if (element.type === 'ranking')
-      return renderRanking(element, ranking, onReorder, dragIndex, onDragStart, onDragEnd)
-    if (element.type === 'free_text') return renderFreeText(element, freeText, onFreeTextChange)
+      return renderRanking(
+        element,
+        rankings[key] ?? [],
+        (next) => onReorder(key, next),
+        dragState,
+        onDragStart,
+        onDragEnd,
+      )
+    if (element.type === 'free_text')
+      return renderFreeText(element, freeTexts[key] ?? '', (next) => onFreeTextChange(key, next))
     return null
   }
 
@@ -314,26 +380,46 @@ export default function ChatBubble({
   const badgeClassName = role === 'assistant' ? '' : 'border-white/40 text-white'
   const parts = parseContent(content)
   const hasImage = parts.some((part) => part.type === 'image')
-  const clarificationTree = role === 'assistant' ? parseClarificationChain(content) : null
-  const initialRanking = useMemo(() => {
-    if (!clarificationTree) return []
-    const rankingNode = Object.values(clarificationTree.elements).find((element) => element.type === 'ranking')
-    const props = rankingNode?.props as { choices?: string[] } | undefined
-    return props?.choices ?? []
-  }, [clarificationTree])
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null)
-  const [rankingOrder, setRankingOrder] = useState<string[]>(initialRanking)
-  const [dragIndex, setDragIndex] = useState<number | null>(null)
-  const [freeText, setFreeText] = useState('')
+  const clarificationTree = useMemo(
+    () => (role === 'assistant' ? parseClarificationChain(content) : null),
+    [content, role],
+  )
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({})
+  const [rankingOrders, setRankingOrders] = useState<Record<string, string[]>>({})
+  const [freeTexts, setFreeTexts] = useState<Record<string, string>>({})
+  const [dragState, setDragState] = useState<{ key: string; index: number } | null>(null)
   const [isDone, setIsDone] = useState(false)
 
   useEffect(() => {
-    setRankingOrder(initialRanking)
-    setSelectedChoice(null)
-    setFreeText('')
+    if (!clarificationTree) {
+      setSelectedChoices({})
+      setRankingOrders({})
+      setFreeTexts({})
+      setIsDone(false)
+      setDragState(null)
+      return
+    }
+    const nextChoices: Record<string, string | null> = {}
+    const nextRankings: Record<string, string[]> = {}
+    const nextFreeTexts: Record<string, string> = {}
+    Object.values(clarificationTree.elements).forEach((element) => {
+      if (element.type === 'single_choice') {
+        nextChoices[element.key] = null
+      }
+      if (element.type === 'ranking') {
+        const props = element.props as { choices?: string[] } | undefined
+        nextRankings[element.key] = [...(props?.choices ?? [])]
+      }
+      if (element.type === 'free_text') {
+        nextFreeTexts[element.key] = ''
+      }
+    })
+    setSelectedChoices(nextChoices)
+    setRankingOrders(nextRankings)
+    setFreeTexts(nextFreeTexts)
     setIsDone(false)
-    setDragIndex(null)
-  }, [initialRanking])
+    setDragState(null)
+  }, [clarificationTree])
 
   return (
     <div className={bubbleClassName}>
@@ -341,22 +427,22 @@ export default function ChatBubble({
         <div className="flex flex-col gap-3">
           {renderTree(
             clarificationTree,
-            selectedChoice,
-            (value) => {
-              setSelectedChoice(value)
+            selectedChoices,
+            (key, value) => {
+              setSelectedChoices((prev) => ({ ...prev, [key]: value }))
               setIsDone(false)
             },
-            rankingOrder,
-            (next) => {
-              setRankingOrder(next)
+            rankingOrders,
+            (key, next) => {
+              setRankingOrders((prev) => ({ ...prev, [key]: next }))
               setIsDone(false)
             },
-            dragIndex,
-            (index) => setDragIndex(index),
-            () => setDragIndex(null),
-            freeText,
-            (next) => {
-              setFreeText(next)
+            dragState,
+            (key, index) => setDragState({ key, index }),
+            () => setDragState(null),
+            freeTexts,
+            (key, next) => {
+              setFreeTexts((prev) => ({ ...prev, [key]: next }))
               setIsDone(false)
             }
           )}
@@ -372,9 +458,12 @@ export default function ChatBubble({
                 if (nextDone && onClarifyComplete) {
                   onClarifyComplete({
                     messageId,
-                    selection: selectedChoice,
-                    ranking: rankingOrder,
-                    freeText,
+                    responses: buildClarifyResponsePayload(
+                      clarificationTree,
+                      selectedChoices,
+                      rankingOrders,
+                      freeTexts,
+                    ),
                   })
                 }
               }}

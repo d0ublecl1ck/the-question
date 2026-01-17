@@ -90,6 +90,7 @@ def create_alias_suggestion(
         session_id=record.session_id,
         skill_id=record.skill_id,
         message_id=record.message_id,
+        reason=record.reason,
         status=record.status,
         created_at=record.created_at,
     )

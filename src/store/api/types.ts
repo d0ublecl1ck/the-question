@@ -47,6 +47,40 @@ export type ChatMessage = {
   image_base64?: string | null
 }
 
+export type SkillSuggestionStatus = 'pending' | 'accepted' | 'rejected'
+
+export type SkillSuggestion = {
+  id: string
+  session_id: string
+  skill_id: string
+  message_id?: string | null
+  reason?: string | null
+  status: SkillSuggestionStatus
+  created_at?: string
+}
+
+export type SkillDraftSuggestion = {
+  id: string
+  session_id: string
+  message_id?: string | null
+  goal: string
+  constraints?: string | null
+  reason?: string | null
+  created_skill_id?: string | null
+  status: SkillSuggestionStatus
+  created_at?: string
+}
+
+export type SkillDraftAcceptResult = {
+  suggestion_id: string
+  skill_id: string
+  version: number
+  name: string
+  description: string
+  visibility: string
+  warnings?: string[]
+}
+
 export type SkillItem = {
   id: string
   name: string

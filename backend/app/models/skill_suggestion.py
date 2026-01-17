@@ -12,6 +12,7 @@ class SkillSuggestion(IDModel, TimestampModel, SQLModel, table=True):
     session_id: str = Field(index=True)
     skill_id: str = Field(index=True)
     message_id: Optional[str] = Field(default=None, index=True)
+    reason: Optional[str] = Field(default=None)
     status: SkillSuggestionStatus = Field(
         default=SkillSuggestionStatus.PENDING,
         sa_column=enum_column(SkillSuggestionStatus, 'skill_suggestion_status'),
