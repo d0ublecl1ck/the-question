@@ -3,14 +3,14 @@ import { MemoryRouter } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import PricePage from './PricePage'
 
-it('renders pricing headline and cards', () => {
+it('renders pricing direction content', () => {
   render(
     <MemoryRouter>
       <PricePage />
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('heading', { name: '为不同规模团队准备的方案' })).toBeInTheDocument()
-  expect(screen.getAllByText('Pricing').length).toBeGreaterThan(0)
-  expect(screen.getByText('Startup')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '未来可能的收费方式' })).toBeInTheDocument()
+  expect(screen.getByText('社区专家分享收费')).toBeInTheDocument()
+  expect(screen.getByText('订阅收费')).toBeInTheDocument()
 })
