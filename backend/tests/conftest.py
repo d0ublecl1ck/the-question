@@ -1,4 +1,6 @@
 import json
+import os
+from pathlib import Path
 
 import pytest
 
@@ -15,6 +17,15 @@ TEST_PROVIDERS_JSON = json.dumps(
         }
     ]
 )
+
+TEST_DB_PATH = (Path(__file__).resolve().parents[1] / "test.db").resolve()
+TEST_DB_URL = f"sqlite:///{TEST_DB_PATH}"
+
+if TEST_DB_PATH.exists():
+    TEST_DB_PATH.unlink()
+
+os.environ["DB_URL"] = TEST_DB_URL
+settings.DB_URL = TEST_DB_URL
 
 
 @pytest.fixture(autouse=True, scope="session")
