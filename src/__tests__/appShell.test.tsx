@@ -77,6 +77,34 @@ it('shows account email when authenticated', () => {
   expect(screen.getByText('admin@admin.com')).toBeInTheDocument()
 })
 
+it('renders authenticated nav without search', () => {
+  store.dispatch(
+    setAuth({
+      token: 'token-2',
+      user: { id: 'u2', email: 'user@example.com' },
+    }),
+  )
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  expect(screen.getByText('Home')).toBeInTheDocument()
+  expect(screen.getByText('Chat')).toBeInTheDocument()
+  expect(screen.getByText('Market')).toBeInTheDocument()
+  expect(screen.getByText('Library')).toBeInTheDocument()
+  expect(screen.getByText('Settings')).toBeInTheDocument()
+  expect(screen.queryByText('Search')).not.toBeInTheDocument()
+  expect(screen.queryByText('Login')).not.toBeInTheDocument()
+})
+
 it('centers page content within the shell', () => {
   render(
     <Provider store={store}>

@@ -66,7 +66,7 @@ it('opens skill picker when clicking skill icon', async () => {
     isError: false,
   } as ReturnType<typeof useListSkillsQuery>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
-    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2' }],
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useListAiModelsQuery>)

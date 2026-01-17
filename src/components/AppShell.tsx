@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { clearAuth } from '@/store/slices/authSlice'
+import logoUrl from '@/assets/logo.svg'
 
 const publicNavItems = [
   { to: '/', label: 'Home' },
@@ -14,7 +15,6 @@ const authedNavItems = [
   { to: '/chat', label: 'Chat' },
   { to: '/market', label: 'Market' },
   { to: '/library', label: 'Library' },
-  { to: '/search', label: 'Search' },
   { to: '/settings', label: 'Settings' },
 ]
 
@@ -43,7 +43,8 @@ export default function AppShell() {
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-white/90 backdrop-blur">
         <div className="flex items-center justify-between gap-6 px-6">
-          <Link to="/" className="flex h-14 items-center text-2xl font-semibold tracking-tight">
+          <Link to="/" className="flex h-14 items-center gap-3 text-2xl font-semibold tracking-tight">
+            <img src={logoUrl} alt="WenDui" className="h-8 w-8" />
             WenDui
           </Link>
           <div className="flex items-center gap-6">

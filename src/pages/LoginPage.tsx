@@ -6,6 +6,7 @@ import { setAuth } from '@/store/slices/authSlice'
 import { enqueueToast } from '@/store/slices/toastSlice'
 import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
 import { Link, useNavigate } from 'react-router-dom'
+import logoUrl from '@/assets/logo.svg'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -61,12 +62,12 @@ export default function LoginPage() {
     <section className="flex w-full flex-1 items-center justify-center px-6" data-testid="login-page">
       <div className="w-full max-w-sm text-center" data-testid="login-card">
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="flex h-20 w-20 items-center justify-center rounded-3xl bg-neutral-900 text-white"
+          <img
+            src={logoUrl}
+            alt="WenDui"
+            className="h-40 w-40 rounded-3xl"
             data-testid="login-logo"
-          >
-            <span className="text-3xl font-semibold">W</span>
-          </div>
+          />
           <h1 className="text-3xl font-semibold tracking-tight" data-testid="login-brand">
             WenDui
           </h1>
@@ -79,18 +80,18 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="h-11 rounded-2xl text-sm"
+            className="h-11 rounded-[16px] text-sm"
           />
           <Input
             placeholder="密码"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="h-11 rounded-2xl text-sm"
+            className="h-11 rounded-[16px] text-sm"
           />
           {status === 'error' && <p className="text-sm text-destructive">{error}</p>}
           <Button
-            className="h-11 w-full rounded-full text-sm"
+            className="h-11 w-full rounded-[16px] text-sm"
             onClick={submit}
             disabled={status === 'loading' || isLoginLoading || isRegisterLoading}
           >
