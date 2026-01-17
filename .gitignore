@@ -23,6 +23,17 @@ dist-ssr
 *.sln
 *.sw?
 .worktrees
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+*.db
+.env
+
+# Planning files
 task_plan.md
 notes.md
 deliverable.md
