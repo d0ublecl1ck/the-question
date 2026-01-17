@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { useCreateSkillReportMutation } from '@/store/api/marketApi'
 
 type ReportDialogProps = {
   targetId: string
@@ -13,6 +14,7 @@ export default function ReportDialog({ targetId, targetName }: ReportDialogProps
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [createReport] = useCreateSkillReportMutation()
 
   const canSubmit = title.trim().length > 0 && content.trim().length > 0 && status !== 'loading'
 
@@ -20,21 +22,9 @@ export default function ReportDialog({ targetId, targetName }: ReportDialogProps
     if (!canSubmit) return
     setStatus('loading')
     try {
-      const response = await fetch('/api/v1/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target_type: 'skill',
-          target_id: targetId,
-          title: title.trim(),
-          content: content.trim(),
-        }),
-      })
-      if (!response.ok) {
-        throw new Error('Request failed')
-      }
+      await createReport({ targetId, title: title.trim(), content: content.trim() }).unwrap()
       setStatus('success')
-    } catch (error) {
+    } catch {
       setStatus('error')
     }
   }

@@ -1,21 +1,8 @@
-import { authFetch } from '@/services/http'
-
-export type AiModelOption = {
-  id: string
-  label: string
-}
+import { store } from '@/store/appStore'
 
 type StreamHandlers = {
   onDelta: (delta: string) => void
   onError?: (error: Error) => void
-}
-
-export async function listAiModels(): Promise<AiModelOption[]> {
-  const response = await authFetch('/api/v1/ai/models')
-  if (!response.ok) {
-    throw new Error(`Request failed with ${response.status}`)
-  }
-  return response.json()
 }
 
 export async function streamAiChat(
@@ -27,9 +14,14 @@ export async function streamAiChat(
   },
   handlers: StreamHandlers,
 ) {
-  const response = await authFetch('/api/v1/ai/chat/stream', {
+  const token = store.getState().auth.token
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+  const response = await fetch('/api/v1/ai/chat/stream', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       session_id: payload.sessionId,
       content: payload.content,

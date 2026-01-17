@@ -12,20 +12,22 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sparkles, Tag } from 'lucide-react'
-import { useAuthStore } from '@/stores/authStore'
-import {
-  createChatSession,
-  createSkillSuggestion,
-  deleteChatSession,
-  listChatMessages,
-  listChatSessions,
-  updateChatSessionTitle,
-  type ChatSession,
-} from '@/services/chat'
+import { useAppSelector } from '@/store/hooks'
 import { useNavigate } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
-import { listAiModels, streamAiChat, type AiModelOption } from '@/services/ai'
-import { authFetch } from '@/services/http'
+import { streamAiChat } from '@/store/api/aiStream'
+import {
+  useCreateChatSessionMutation,
+  useCreateSkillSuggestionMutation,
+  useDeleteChatSessionMutation,
+  useLazyListChatMessagesQuery,
+  useListChatMessagesQuery,
+  useListChatSessionsQuery,
+  useListSkillsQuery,
+  useUpdateChatSessionTitleMutation,
+} from '@/store/api/chatApi'
+import { useListAiModelsQuery } from '@/store/api/aiApi'
+import type { ChatMessage as ApiChatMessage, ChatSession } from '@/store/api/types'
 
 export type SkillItem = {
   id: string
@@ -42,8 +44,33 @@ type ChatMessage = {
   skill_id?: string | null
 }
 
+const sortSessions = (sessions: ChatSession[]) => {
+  return [...sessions].sort((a, b) => {
+    const next = b.updated_at ?? b.created_at ?? ''
+    const prev = a.updated_at ?? a.created_at ?? ''
+    return next.localeCompare(prev)
+  })
+}
+
+const toLocalMessage = (message: ApiChatMessage): ChatMessage => {
+  if (message.role === 'system') {
+    return {
+      id: message.id,
+      role: 'assistant',
+      content: message.content,
+      skill_id: message.skill_id ?? null,
+    }
+  }
+  return {
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    skill_id: message.skill_id ?? null,
+  }
+}
+
 export default function ChatPage() {
-  const token = useAuthStore((state) => state.token)
+  const token = useAppSelector((state) => state.auth.token)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
@@ -51,14 +78,36 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [sessionPeek, setSessionPeek] = useState<Record<string, string>>({})
-  const [skills, setSkills] = useState<SkillItem[]>([])
-  const [models, setModels] = useState<AiModelOption[]>([])
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionQuery, setSessionQuery] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
+
+  const [createChatSession, { isLoading: isCreatingSession }] = useCreateChatSessionMutation()
+  const [updateChatSessionTitle] = useUpdateChatSessionTitleMutation()
+  const [deleteChatSession] = useDeleteChatSessionMutation()
+  const [createSkillSuggestion] = useCreateSkillSuggestionMutation()
+  const [triggerPreview] = useLazyListChatMessagesQuery()
+
+  const { data: skills = [], isLoading: isSkillsLoading, isError: isSkillsError } = useListSkillsQuery(undefined, {
+    skip: !token,
+  })
+  const { data: models = [], isLoading: isModelsLoading, isError: isModelsError } = useListAiModelsQuery(undefined, {
+    skip: !token,
+  })
+  const { data: sessionsData = [], isLoading: isSessionsLoading, isError: isSessionsError } = useListChatSessionsQuery(undefined, {
+    skip: !token,
+  })
+  const {
+    data: messagesData = [],
+    isLoading: isMessagesLoading,
+    isError: isMessagesError,
+  } = useListChatMessagesQuery(
+    { sessionId: sessionId ?? '' },
+    { skip: !token || !sessionId },
+  )
 
   const skillById = useMemo(() => Object.fromEntries(skills.map((skill) => [skill.id, skill])), [skills])
   const filteredSessions = useMemo(() => {
@@ -73,79 +122,71 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!token) return
+    if (sessionsData.length === 0) {
+      if (!sessionId && !isCreatingSession) {
+        setStatus('loading')
+        createChatSession({ title: '对话' })
+          .unwrap()
+          .then((session) => {
+            setSessions([session])
+            setSessionId(session.id)
+            setStatus('ready')
+          })
+          .catch(() => setStatus('error'))
+      }
+      return
+    }
+    const ordered = sortSessions(sessionsData)
+    setSessions(ordered)
+    if (!sessionId) {
+      setSessionId(ordered[0]?.id ?? null)
+    }
+  }, [token, sessionsData, sessionId, isCreatingSession, createChatSession])
+
+  useEffect(() => {
+    if (models.length === 0) return
+    setSelectedModelId((prev) => prev ?? models[0]?.id ?? null)
+  }, [models])
+
+  useEffect(() => {
+    if (!sessionId) return
+    setMessages(messagesData.map(toLocalMessage))
+  }, [messagesData, sessionId])
+
+  useEffect(() => {
+    if (sessions.length === 0) return
     let alive = true
-    const load = async () => {
-      setStatus('loading')
-      try {
-        const [sessionsResult, skillResult, modelResult] = await Promise.allSettled([
-          listChatSessions(),
-          authFetch('/api/v1/skills'),
-          listAiModels(),
-        ])
-
-        const modelList = modelResult.status === 'fulfilled' ? modelResult.value : []
-        if (!alive) return
-        setModels(modelList)
-        setSelectedModelId((prev) => prev ?? modelList[0]?.id ?? null)
-
-        if (skillResult.status !== 'fulfilled' || !skillResult.value.ok) {
-          throw new Error('Load skills failed')
-        }
-        const skillData = (await skillResult.value.json()) as SkillItem[]
-        if (!alive) return
-
-        setSkills(skillData)
-
-        const sessionList =
-          sessionsResult.status === 'fulfilled' ? sessionsResult.value : []
-        let activeSession = sessionList[0] ?? null
-        if (!activeSession) {
-          const created = await createChatSession('对话')
-          activeSession = created
-        }
-
-        const orderedSessions = [...sessionList].sort((a, b) => {
-          const next = b.updated_at ?? b.created_at ?? ''
-          const prev = a.updated_at ?? a.created_at ?? ''
-          return next.localeCompare(prev)
-        })
-        if (activeSession && !orderedSessions.find((session) => session.id === activeSession?.id)) {
-          orderedSessions.unshift(activeSession)
-        }
-        setSessions(orderedSessions)
-
-        if (!activeSession) {
-          throw new Error('Create session failed')
-        }
-        setSessionId(activeSession.id)
-
-        const history = await listChatMessages(activeSession.id)
-        if (!alive) return
-        setMessages(history)
-        const previewEntries = await Promise.all(
-          orderedSessions.map(async (session) => {
-            try {
-              const preview = await listChatMessages(session.id, { limit: 1 })
-              return [session.id, preview[0]?.content ?? ''] as const
-            } catch (error) {
-              return [session.id, ''] as const
-            }
-          }),
-        )
-        if (alive) {
-          setSessionPeek(Object.fromEntries(previewEntries))
-        }
-        setStatus('ready')
-      } catch (error) {
-        if (!alive) return
-        setStatus('error')
+    const loadPreview = async () => {
+      const results = await Promise.all(
+        sessions.map(async (session) => {
+          try {
+            const response = await triggerPreview({ sessionId: session.id, limit: 1 }).unwrap()
+            const preview = response[0]?.content ?? ''
+            return [session.id, preview] as const
+          } catch {
+            return [session.id, ''] as const
+          }
+        }),
+      )
+      if (alive) {
+        setSessionPeek(Object.fromEntries(results))
       }
     }
-    load()
+    loadPreview()
     return () => {
       alive = false
     }
-  }, [token])
+  }, [sessions, triggerPreview])
+
+  const isLoading =
+    isCreatingSession ||
+    isSkillsLoading ||
+    isModelsLoading ||
+    isMessagesLoading ||
+    isSessionsLoading ||
+    status === 'loading'
+  const isError = status === 'error' || isSkillsError || isModelsError || isMessagesError || isSessionsError
+  const viewStatus: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
 
   const handleSend = async () => {
     if (!draft.trim() || !selectedModelId) return
@@ -153,12 +194,12 @@ export default function ChatPage() {
     let shouldUpdateTitle = false
     if (!activeSessionId) {
       try {
-        const session = await createChatSession('对话')
+        const session = await createChatSession({ title: '对话' }).unwrap()
         activeSessionId = session.id
         setSessionId(session.id)
         setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
         shouldUpdateTitle = true
-      } catch (error) {
+      } catch {
         setStatus('error')
         return
       }
@@ -186,12 +227,10 @@ export default function ChatPage() {
     try {
       if (shouldUpdateTitle && activeSessionId) {
         const nextTitle = content.length > 24 ? `${content.slice(0, 24)}...` : content
-        updateChatSessionTitle(activeSessionId, nextTitle)
+        updateChatSessionTitle({ sessionId: activeSessionId, title: nextTitle })
+          .unwrap()
           .then((updated) => {
-            setSessions((prev) => {
-              const next = [updated, ...prev.filter((item) => item.id !== updated.id)]
-              return next
-            })
+            setSessions((prev) => [updated, ...prev.filter((item) => item.id !== updated.id)])
           })
           .catch(() => undefined)
       }
@@ -221,7 +260,7 @@ export default function ChatPage() {
           },
         },
       )
-    } catch (error) {
+    } catch {
       setStatus('error')
     } finally {
       setStreaming(false)
@@ -237,9 +276,9 @@ export default function ChatPage() {
     if (!sessionId || !selectedSkill) return
     setSuggestionStatus('loading')
     try {
-      await createSkillSuggestion({ session_id: sessionId, skill_id: selectedSkill.id })
+      await createSkillSuggestion({ session_id: sessionId, skill_id: selectedSkill.id }).unwrap()
       setSuggestionStatus('success')
-    } catch (error) {
+    } catch {
       setSuggestionStatus('error')
     }
   }
@@ -247,28 +286,20 @@ export default function ChatPage() {
   const handleCreateSession = async () => {
     setStatus('loading')
     try {
-      const session = await createChatSession('对话')
+      const session = await createChatSession({ title: '对话' }).unwrap()
       setSessionId(session.id)
       setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
       setMessages([])
       setStatus('ready')
-    } catch (error) {
+    } catch {
       setStatus('error')
     }
   }
 
-  const handleSelectSession = async (session: ChatSession) => {
+  const handleSelectSession = (session: ChatSession) => {
     if (session.id === sessionId) return
     setSessionId(session.id)
-    setStatus('loading')
     setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
-    try {
-      const history = await listChatMessages(session.id)
-      setMessages(history)
-      setStatus('ready')
-    } catch (error) {
-      setStatus('error')
-    }
   }
 
   const handleDeleteSession = async (session: ChatSession) => {
@@ -281,23 +312,14 @@ export default function ChatPage() {
     })
     if (session.id === sessionId) {
       const fallback = remaining[0] ?? null
-      if (fallback) {
-        setSessionId(fallback.id)
-        try {
-          const history = await listChatMessages(fallback.id)
-          setMessages(history)
-          setStatus('ready')
-        } catch (error) {
-          setStatus('error')
-        }
-      } else {
-        setSessionId(null)
+      setSessionId(fallback?.id ?? null)
+      if (!fallback) {
         setMessages([])
       }
     }
     try {
-      await deleteChatSession(session.id)
-    } catch (error) {
+      await deleteChatSession(session.id).unwrap()
+    } catch {
       setStatus('error')
     }
   }
@@ -362,10 +384,7 @@ export default function ChatPage() {
                             : 'text-muted-foreground hover:bg-muted/50',
                         ].join(' ')}
                       >
-                        <button
-                          className="flex-1 text-left"
-                          onClick={() => handleSelectSession(session)}
-                        >
+                        <button className="flex-1 text-left" onClick={() => handleSelectSession(session)}>
                           <div className="text-sm font-medium">{title}</div>
                           {sessionPeek[session.id] && (
                             <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
@@ -419,64 +438,42 @@ export default function ChatPage() {
               </div>
             </div>
 
-          <div className="mt-8 text-center">
-            <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              选择技能与模型，快速进入对话并保持连续行动。
-            </p>
-          </div>
-
-          <div className="mt-8 rounded-[24px] border border-border/40 bg-white/70 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                <Tag className="h-3 w-3" />
-                使用 $ 快捷触发
-              </Badge>
-              {selectedSkill && (
-                <Badge variant="secondary" className="gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  {selectedSkill.name}
-                </Badge>
-              )}
+            <div className="mt-8 text-center">
+              <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                选择技能与模型，快速进入对话并保持连续行动。
+              </p>
             </div>
-            <AI_Prompt
-              value={draft}
-              onChange={setDraft}
-              onSend={handleSend}
-              onTriggerSkill={() => setOpen(true)}
-              models={models}
-              selectedModelId={selectedModelId}
-              onModelChange={setSelectedModelId}
-              disabled={streaming}
-            />
-          </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-            <button className="rounded-full px-4 py-1.5 hover:bg-muted/40">
-              生成幻灯片
-            </button>
-            <button className="rounded-full px-4 py-1.5 hover:bg-muted/40">
-              撰写文档
-            </button>
-            <button className="rounded-full px-4 py-1.5 hover:bg-muted/40">
-              创建故事线
-            </button>
-            <button className="rounded-full px-4 py-1.5 hover:bg-muted/40">
-              批量调研
-            </button>
-            <button className="rounded-full px-4 py-1.5 hover:bg-muted/40">
-              分析数据
-            </button>
-            <button className="rounded-full px-4 py-1.5 hover:bg-muted/40">
-              创建网页
-            </button>
-          </div>
+            <div className="mt-8 rounded-[24px] border border-border/40 bg-white/70 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="gap-1">
+                  <Tag className="h-3 w-3" />
+                  使用 $ 快捷触发
+                </Badge>
+                {selectedSkill && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    {selectedSkill.name}
+                  </Badge>
+                )}
+              </div>
+              <AI_Prompt
+                value={draft}
+                onChange={setDraft}
+                onSend={handleSend}
+                onTriggerSkill={() => setOpen(true)}
+                models={models}
+                selectedModelId={selectedModelId}
+                onModelChange={setSelectedModelId}
+                disabled={streaming}
+              />
+            </div>
 
-          <div className="mt-10 border-t border-border/50 pt-6">
-            <ScrollArea className="h-[280px] pr-2">
-              <div className="flex flex-col gap-3">
-                {messages.length === 0 && status === 'ready' && (
-                  <div className="rounded-2xl border border-dashed border-border/60 bg-white/70 p-3 text-sm text-muted-foreground">
+            <ScrollArea className="mt-6 h-[460px] rounded-[26px] border border-border/60 bg-white/70 p-5">
+              <div className="flex flex-col gap-4">
+                {messages.length === 0 && viewStatus === 'ready' && (
+                  <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
                     还没有消息，开始你的第一条对话。
                   </div>
                 )}
@@ -487,8 +484,8 @@ export default function ChatPage() {
                       key={message.id}
                       className={
                         message.role === 'assistant'
-                          ? 'max-w-[80%] rounded-2xl border border-border/60 bg-white/80 p-3 text-foreground'
-                          : 'ml-auto max-w-[80%] rounded-2xl border border-foreground/10 bg-foreground text-background p-3'
+                          ? 'max-w-[78%] rounded-2xl border border-border/60 bg-white/80 p-4 text-foreground'
+                          : 'ml-auto max-w-[78%] rounded-2xl border border-foreground/10 bg-foreground text-background p-4'
                       }
                     >
                       <p className="text-sm leading-relaxed">{message.content}</p>
@@ -507,20 +504,15 @@ export default function ChatPage() {
                 })}
               </div>
             </ScrollArea>
-          </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                variant="secondary"
-                className="gap-2 rounded-full px-6"
-                onClick={() => setOpen(true)}
-              >
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-white/80 p-4">
+              <Button variant="secondary" className="gap-2" onClick={() => setOpen(true)}>
                 <Sparkles className="h-4 w-4" />
                 选择技能
               </Button>
               <Button
                 variant="outline"
-                className="rounded-full px-6"
+                className="rounded-full"
                 onClick={requestSuggestion}
                 disabled={!selectedSkill || suggestionStatus === 'loading'}
               >

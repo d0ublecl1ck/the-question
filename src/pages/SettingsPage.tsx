@@ -1,77 +1,43 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
-import { authFetch } from '@/services/http'
-
-type MeProfile = {
-  id: string
-  email: string
-  is_active: boolean
-  role: string
-}
-
-type MemoryItem = {
-  id: string
-  key: string
-  value: string
-  scope?: string | null
-}
+import { useGetMeQuery, useGetMemoryQuery, useUpdateMeMutation, useUpdateMemoryMutation } from '@/store/api/settingsApi'
 
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<MeProfile | null>(null)
+  const { data: profileData, isLoading: isProfileLoading, isError: isProfileError } = useGetMeQuery()
+  const { data: memoryItems = [], isLoading: isMemoryLoading, isError: isMemoryError } =
+    useGetMemoryQuery({ scope: 'user' })
+  const [updateMe] = useUpdateMeMutation()
+  const [updateMemoryMutation] = useUpdateMemoryMutation()
+  const profile = profileData ?? null
   const [email, setEmail] = useState('')
   const [memory, setMemory] = useState('')
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [saving, setSaving] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const status: 'loading' | 'ready' | 'error' =
+    isProfileError || isMemoryError ? 'error' : isProfileLoading || isMemoryLoading ? 'loading' : 'ready'
+  const profileMemory = useMemo(() => {
+    return memoryItems.find((item) => item.key === 'profile')?.value ?? ''
+  }, [memoryItems])
 
   useEffect(() => {
-    let alive = true
-    const load = async () => {
-      try {
-        const [meResponse, memoryResponse] = await Promise.all([
-          authFetch('/api/v1/me'),
-          authFetch('/api/v1/me/memory?scope=user'),
-        ])
-        if (!meResponse.ok || !memoryResponse.ok) {
-          throw new Error('Request failed')
-        }
-        const meData = (await meResponse.json()) as MeProfile
-        const memoryData = (await memoryResponse.json()) as MemoryItem[]
-        if (!alive) return
-        setProfile(meData)
-        setEmail(meData.email)
-        const profileMemory = memoryData.find((item) => item.key === 'profile')
-        setMemory(profileMemory?.value ?? '')
-        setStatus('ready')
-      } catch (error) {
-        if (!alive) return
-        setStatus('error')
-      }
+    if (profile?.email) {
+      setEmail(profile.email)
     }
-    load()
-    return () => {
-      alive = false
-    }
-  }, [])
+  }, [profile?.email])
+
+  useEffect(() => {
+    setMemory(profileMemory)
+  }, [profileMemory])
 
   const saveProfile = async () => {
     if (!profile) return
     setSaving('saving')
     try {
-      const response = await authFetch('/api/v1/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      if (!response.ok) {
-        throw new Error('Request failed')
-      }
-      const updated = (await response.json()) as MeProfile
-      setProfile(updated)
+      await updateMe({ email }).unwrap()
       setSaving('saved')
-    } catch (error) {
+    } catch {
       setSaving('error')
     }
   }
@@ -79,16 +45,9 @@ export default function SettingsPage() {
   const saveMemory = async () => {
     setSaving('saving')
     try {
-      const response = await authFetch('/api/v1/me/memory', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'profile', value: memory, scope: 'user' }),
-      })
-      if (!response.ok) {
-        throw new Error('Request failed')
-      }
+      await updateMemoryMutation({ key: 'profile', value: memory, scope: 'user' }).unwrap()
       setSaving('saved')
-    } catch (error) {
+    } catch {
       setSaving('error')
     }
   }

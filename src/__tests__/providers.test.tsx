@@ -1,18 +1,13 @@
-import { render, screen } from '@testing-library/react'
-import { useQueryClient } from '@tanstack/react-query'
-import { expect, it } from 'vitest'
-import { AppProviders } from '../app/providers'
+import { render } from '@testing-library/react'
+import { Provider } from 'react-redux'
+import App from '@/App'
+import { store } from '@/store/appStore'
 
-function Probe() {
-  const client = useQueryClient()
-  return <span>{client ? 'ok' : 'no'}</span>
-}
-
-it('provides a query client', () => {
-  render(
-    <AppProviders>
-      <Probe />
-    </AppProviders>,
+test('renders app with redux provider', () => {
+  const { getAllByText } = render(
+    <Provider store={store}>
+      <App />
+    </Provider>,
   )
-  expect(screen.getByText('ok')).toBeInTheDocument()
+  expect(getAllByText('WenDui').length).toBeGreaterThan(0)
 })

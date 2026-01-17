@@ -3,18 +3,40 @@ import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import SearchPage from './SearchPage'
-import * as searchService from '@/services/search'
+import { useLazySearchSkillsQuery } from '@/store/api/searchApi'
+
+vi.mock('@/store/api/searchApi', () => ({
+  useLazySearchSkillsQuery: vi.fn(),
+}))
 
 it('renders search page and results', async () => {
-  vi.spyOn(searchService, 'searchSkills').mockResolvedValue([
+  vi.mocked(useLazySearchSkillsQuery).mockReturnValue([
+    vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'skill-1',
+          name: '日报总结',
+          description: '快速生成日报',
+          tags: ['work'],
+          visibility: 'public',
+        },
+      ],
+    }),
     {
-      id: 'skill-1',
-      name: '日报总结',
-      description: '快速生成日报',
-      tags: ['work'],
-      visibility: 'public',
+      data: [
+        {
+          id: 'skill-1',
+          name: '日报总结',
+          description: '快速生成日报',
+          tags: ['work'],
+          visibility: 'public',
+        },
+      ],
+      isFetching: false,
+      isError: false,
+      isUninitialized: false,
     },
-  ])
+  ] as ReturnType<typeof useLazySearchSkillsQuery>)
   const user = userEvent.setup()
   render(
     <MemoryRouter>
