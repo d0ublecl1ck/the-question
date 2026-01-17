@@ -5,31 +5,53 @@ import { expect, it, vi, beforeEach } from 'vitest'
 import ChatPage from './ChatPage'
 import { store } from '@/store/appStore'
 import { clearAuth, setAuth } from '@/store/slices/authSlice'
+import {
+  useCreateChatSessionMutation,
+  useCreateSkillSuggestionMutation,
+  useListChatMessagesQuery,
+  useListSkillsQuery,
+} from '@/store/api/chatApi'
+import { useListAiModelsQuery } from '@/store/api/aiApi'
+
+vi.mock('@/store/api/chatApi', () => ({
+  useCreateChatSessionMutation: vi.fn(),
+  useCreateSkillSuggestionMutation: vi.fn(),
+  useListChatMessagesQuery: vi.fn(),
+  useListSkillsQuery: vi.fn(),
+}))
+
+vi.mock('@/store/api/aiApi', () => ({
+  useListAiModelsQuery: vi.fn(),
+}))
 
 beforeEach(() => {
   store.dispatch(setAuth({ token: 'token', user: { id: 'u1', email: 'a@b.com' } }))
 })
 
 it('renders chat page with composer', async () => {
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo) => {
-    const url = typeof input === 'string' ? input : input.url
-    if (url.includes('/api/v1/chat/sessions')) {
-      return new Response(JSON.stringify({ id: 's1', title: '对话' }), { status: 201 })
-    }
-    if (url.includes('/api/v1/skills')) {
-      return new Response(
-        JSON.stringify([{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }]),
-        { status: 200 },
-      )
-    }
-    if (url.includes('/api/v1/ai/models')) {
-      return new Response(JSON.stringify([{ id: 'gpt-5.2-2025-12-11', label: 'GPT-5.2' }]), { status: 200 })
-    }
-    if (url.includes('/api/v1/chats/')) {
-      return new Response(JSON.stringify([]), { status: 200 })
-    }
-    return new Response(JSON.stringify({}), { status: 200 })
-  }))
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useCreateSkillSuggestionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateSkillSuggestionMutation>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', label: 'GPT-5.2' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListAiModelsQuery>)
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatMessagesQuery>)
 
   render(
     <Provider store={store}>
@@ -44,6 +66,29 @@ it('renders chat page with composer', async () => {
 
 it('renders login entry when unauthenticated', () => {
   store.dispatch(clearAuth())
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useCreateSkillSuggestionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateSkillSuggestionMutation>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListAiModelsQuery>)
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatMessagesQuery>)
   render(
     <Provider store={store}>
       <MemoryRouter>

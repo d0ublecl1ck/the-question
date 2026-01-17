@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAppDispatch } from '@/store/hooks'
 import { setAuth } from '@/store/slices/authSlice'
+import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
 import { useNavigate } from 'react-router-dom'
 
 export default function LoginPage() {
@@ -13,17 +14,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [error, setError] = useState('')
+  const [loginWithProfile, { isLoading: isLoginLoading }] = useLoginWithProfileMutation()
+  const [registerWithProfile, { isLoading: isRegisterLoading }] = useRegisterWithProfileMutation()
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
-  const extractErrorMessage = async (response: Response, fallback: string) => {
-    try {
-      const data = (await response.json()) as { detail?: string }
+  const extractErrorMessage = (payload: unknown, fallback: string) => {
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      const data = (payload as { data?: { detail?: string } }).data
       if (data?.detail) {
         return data.detail
       }
-    } catch {
-      // ignore invalid json
     }
     return fallback
   }
@@ -38,51 +39,16 @@ export default function LoginPage() {
     setStatus('loading')
     setError('')
     try {
-      const endpoint = mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register'
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      if (!response.ok) {
-        const message = await extractErrorMessage(
-          response,
-          mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试',
-        )
-        throw new Error(message)
-      }
-      const data = (await response.json()) as { access_token?: string }
-      const resolveUser = async (token: string) => {
-        const meResponse = await fetch('/api/v1/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!meResponse.ok) {
-          throw new Error('Fetch me failed')
-        }
-        return (await meResponse.json()) as { id: string; email: string }
-      }
-
-      if (mode === 'register') {
-        const loginResponse = await fetch('/api/v1/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        })
-        if (!loginResponse.ok) {
-          const message = await extractErrorMessage(loginResponse, '登录失败，请检查账号信息')
-          throw new Error(message)
-        }
-        const loginData = (await loginResponse.json()) as { access_token: string }
-        const user = await resolveUser(loginData.access_token)
-        dispatch(setAuth({ token: loginData.access_token, user }))
-      } else if (data.access_token) {
-        const user = await resolveUser(data.access_token)
-        dispatch(setAuth({ token: data.access_token, user }))
-      }
+      const result =
+        mode === 'login'
+          ? await loginWithProfile({ email, password }).unwrap()
+          : await registerWithProfile({ email, password }).unwrap()
+      dispatch(setAuth({ token: result.token, user: result.user }))
       navigate('/')
     } catch (err) {
       setStatus('error')
-      setError(err instanceof Error && err.message ? err.message : '登录失败，请检查账号信息')
+      const fallback = mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试'
+      setError(extractErrorMessage(err, fallback))
     } finally {
       setStatus('idle')
     }
@@ -120,7 +86,11 @@ export default function LoginPage() {
             className="h-11 rounded-2xl text-sm"
           />
           {status === 'error' && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="h-11 w-full rounded-full text-sm" onClick={submit} disabled={status === 'loading'}>
+          <Button
+            className="h-11 w-full rounded-full text-sm"
+            onClick={submit}
+            disabled={status === 'loading' || isLoginLoading || isRegisterLoading}
+          >
             {mode === 'login' ? '邮箱登录' : '邮箱注册'}
           </Button>
         </div>

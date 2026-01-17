@@ -5,8 +5,22 @@ import { MemoryRouter } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import LoginPage from './LoginPage'
 import { store } from '@/store/appStore'
+import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
+
+vi.mock('@/store/api/authApi', () => ({
+  useLoginWithProfileMutation: vi.fn(),
+  useRegisterWithProfileMutation: vi.fn(),
+}))
 
 it('renders login page', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
       <MemoryRouter>
@@ -23,6 +37,14 @@ it('renders login page', () => {
 })
 
 it('renders larger logo and brand styles', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
       <MemoryRouter>
@@ -37,6 +59,14 @@ it('renders larger logo and brand styles', () => {
 
 it('shows email validation error on submit', async () => {
   const user = userEvent.setup()
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
       <MemoryRouter>
@@ -51,6 +81,14 @@ it('shows email validation error on submit', async () => {
 })
 
 it('centers login content within the page', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
       <MemoryRouter>

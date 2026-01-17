@@ -1,24 +1,26 @@
 import { render, screen } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import SettingsPage from './SettingsPage'
+import { useGetMeQuery, useGetMemoryQuery } from '@/store/api/settingsApi'
+
+vi.mock('@/store/api/settingsApi', () => ({
+  useGetMeQuery: vi.fn(),
+  useGetMemoryQuery: vi.fn(),
+  useUpdateMeMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
+  useUpdateMemoryMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
+}))
 
 it('renders settings sections', async () => {
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo) => {
-    const url = typeof input === 'string' ? input : input.url
-    if (url.endsWith('/api/v1/me')) {
-      return new Response(
-        JSON.stringify({ id: 'user-1', email: 'a@b.com', is_active: true, role: 'user' }),
-        { status: 200 },
-      )
-    }
-    if (url.includes('/api/v1/me/memory')) {
-      return new Response(
-        JSON.stringify([{ id: 'mem-1', key: 'profile', value: '偏好简洁', scope: 'user' }]),
-        { status: 200 },
-      )
-    }
-    return new Response(JSON.stringify({}), { status: 200 })
-  }))
+  vi.mocked(useGetMeQuery).mockReturnValue({
+    data: { id: 'user-1', email: 'a@b.com', is_active: true, role: 'user' },
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetMeQuery>)
+  vi.mocked(useGetMemoryQuery).mockReturnValue({
+    data: [{ id: 'mem-1', key: 'profile', value: '偏好简洁', scope: 'user' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetMemoryQuery>)
 
   render(<SettingsPage />)
   expect(await screen.findByText('账号信息')).toBeInTheDocument()

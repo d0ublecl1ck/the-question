@@ -13,11 +13,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sparkles, Tag } from 'lucide-react'
 import { useAppSelector } from '@/store/hooks'
-import { createChatSession, createSkillSuggestion, listChatMessages } from '@/services/chat'
 import { useNavigate } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
-import { listAiModels, streamAiChat, type AiModelOption } from '@/services/ai'
-import { authFetch } from '@/services/http'
+import { streamAiChat } from '@/services/ai'
+import {
+  useCreateChatSessionMutation,
+  useCreateSkillSuggestionMutation,
+  useListChatMessagesQuery,
+  useListSkillsQuery,
+} from '@/store/api/chatApi'
+import { useListAiModelsQuery } from '@/store/api/aiApi'
 
 export type SkillItem = {
   id: string
@@ -40,13 +45,26 @@ export default function ChatPage() {
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [skills, setSkills] = useState<SkillItem[]>([])
-  const [models, setModels] = useState<AiModelOption[]>([])
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
+  const [createChatSession, { isLoading: isCreatingSession }] = useCreateChatSessionMutation()
+  const [createSkillSuggestion] = useCreateSkillSuggestionMutation()
+  const { data: skills = [], isLoading: isSkillsLoading, isError: isSkillsError } = useListSkillsQuery(undefined, {
+    skip: !token,
+  })
+  const { data: models = [], isLoading: isModelsLoading, isError: isModelsError } = useListAiModelsQuery(undefined, {
+    skip: !token,
+  })
+  const {
+    data: messagesData = [],
+    isLoading: isMessagesLoading,
+    isError: isMessagesError,
+  } = useListChatMessagesQuery(sessionId ?? '', {
+    skip: !token || !sessionId,
+  })
 
   const skillById = useMemo(() => Object.fromEntries(skills.map((skill) => [skill.id, skill])), [skills])
 
@@ -56,36 +74,11 @@ export default function ChatPage() {
     const load = async () => {
       setStatus('loading')
       try {
-        const [sessionResult, skillResult, modelResult] = await Promise.allSettled([
-          createChatSession('对话'),
-          authFetch('/api/v1/skills'),
-          listAiModels(),
-        ])
-
-        const modelList = modelResult.status === 'fulfilled' ? modelResult.value : []
+        const session = await createChatSession({ title: '对话' }).unwrap()
         if (!alive) return
-        setModels(modelList)
-        setSelectedModelId((prev) => prev ?? modelList[0]?.id ?? null)
-
-        if (sessionResult.status !== 'fulfilled') {
-          throw new Error('Create session failed')
-        }
-        const session = sessionResult.value
-
-        if (skillResult.status !== 'fulfilled' || !skillResult.value.ok) {
-          throw new Error('Load skills failed')
-        }
-        const skillData = (await skillResult.value.json()) as SkillItem[]
-        if (!alive) return
-
         setSessionId(session.id)
-        setSkills(skillData)
-
-        const history = await listChatMessages(session.id)
-        if (!alive) return
-        setMessages(history)
         setStatus('ready')
-      } catch (error) {
+      } catch {
         if (!alive) return
         setStatus('error')
       }
@@ -94,7 +87,21 @@ export default function ChatPage() {
     return () => {
       alive = false
     }
-  }, [token])
+  }, [token, createChatSession])
+
+  useEffect(() => {
+    if (models.length === 0) return
+    setSelectedModelId((prev) => prev ?? models[0]?.id ?? null)
+  }, [models])
+
+  useEffect(() => {
+    if (!sessionId) return
+    setMessages(messagesData)
+  }, [messagesData, sessionId])
+
+  const isLoading = isCreatingSession || isSkillsLoading || isModelsLoading || isMessagesLoading || status === 'loading'
+  const isError = status === 'error' || isSkillsError || isModelsError || isMessagesError
+  const viewStatus: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
 
   const handleSend = async () => {
     if (!draft.trim() || !selectedModelId) return
@@ -164,7 +171,7 @@ export default function ChatPage() {
     if (!sessionId || !selectedSkill) return
     setSuggestionStatus('loading')
     try {
-      await createSkillSuggestion({ session_id: sessionId, skill_id: selectedSkill.id })
+      await createSkillSuggestion({ session_id: sessionId, skill_id: selectedSkill.id }).unwrap()
       setSuggestionStatus('success')
     } catch (error) {
       setSuggestionStatus('error')
@@ -199,7 +206,7 @@ export default function ChatPage() {
 
         <ScrollArea className="h-[420px] rounded-2xl border border-border/70 bg-white p-4">
           <div className="flex flex-col gap-4">
-            {messages.length === 0 && status === 'ready' && (
+                {messages.length === 0 && viewStatus === 'ready' && (
               <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
                 还没有消息，开始你的第一条对话。
               </div>
