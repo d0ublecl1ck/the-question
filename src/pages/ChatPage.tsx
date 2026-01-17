@@ -189,6 +189,7 @@ export default function ChatPage() {
 
   return (
     <section className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <h2 className="sr-only">对话</h2>
       <aside className="hidden h-full flex-col justify-between rounded-[28px] border border-border/70 bg-white/80 px-5 py-6 text-sm text-muted-foreground lg:flex">
         <div className="space-y-6">
           <div className="space-y-1">
@@ -241,14 +242,14 @@ export default function ChatPage() {
 
         <div className="w-full">
           <div className="mx-auto w-full max-w-3xl" data-testid="chat-right-panel">
-          <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground">
-              <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
-                2026
-              </span>
-              快来领取最高价值 348 美元的奖励
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground">
+                <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
+                  2026
+                </span>
+                快来领取最高价值 348 美元的奖励
+              </div>
             </div>
-          </div>
 
           <div className="mt-8 text-center">
             <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
@@ -340,26 +341,30 @@ export default function ChatPage() {
             </ScrollArea>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button variant="secondary" className="gap-2 rounded-full px-6" onClick={() => setOpen(true)}>
-              <Sparkles className="h-4 w-4" />
-              选择技能
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full px-6"
-              onClick={requestSuggestion}
-              disabled={!selectedSkill || suggestionStatus === 'loading'}
-            >
-              {suggestionStatus === 'loading' ? '生成中...' : '触发建议'}
-            </Button>
-            {suggestionStatus === 'success' && (
-              <span className="text-xs text-emerald-600">已生成建议</span>
-            )}
-            {suggestionStatus === 'error' && (
-              <span className="text-xs text-destructive">生成失败，请稍后重试</span>
-            )}
-          </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button
+                variant="secondary"
+                className="gap-2 rounded-full px-6"
+                onClick={() => setOpen(true)}
+              >
+                <Sparkles className="h-4 w-4" />
+                选择技能
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full px-6"
+                onClick={requestSuggestion}
+                disabled={!selectedSkill || suggestionStatus === 'loading'}
+              >
+                {suggestionStatus === 'loading' ? '生成中...' : '触发建议'}
+              </Button>
+              {suggestionStatus === 'success' && (
+                <span className="text-xs text-emerald-600">已生成建议</span>
+              )}
+              {suggestionStatus === 'error' && (
+                <span className="text-xs text-destructive">生成失败，请稍后重试</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
