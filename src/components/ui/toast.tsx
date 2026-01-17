@@ -1,7 +1,7 @@
-import { useToastStore } from '@/stores/toastStore'
+import { useAppSelector } from '@/store/hooks'
 
 export function ToastViewport() {
-  const toasts = useToastStore((state) => state.toasts)
+  const toasts = useAppSelector((state) => state.toast.toasts)
   return (
     <div className="pointer-events-none fixed right-6 top-6 z-50 flex flex-col gap-3">
       {toasts.map((toast) => (
