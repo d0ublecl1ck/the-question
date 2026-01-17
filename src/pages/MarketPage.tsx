@@ -148,7 +148,7 @@ export default function MarketPage() {
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold">技能列表</h3>
+            <h3 className="text-base font-semibold">专家列表</h3>
             <span className="text-xs text-muted-foreground">共 {filtered.length} 项</span>
           </div>
           {status === 'loading' ? (
