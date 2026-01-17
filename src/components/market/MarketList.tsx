@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Link } from 'react-router-dom'
 import type { MarketSkill } from '@/pages/MarketPage'
 
 type MarketListProps = {
@@ -10,7 +11,7 @@ type MarketListProps = {
 export default function MarketList({ items }: MarketListProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
         暂无技能
       </div>
     )
@@ -21,7 +22,7 @@ export default function MarketList({ items }: MarketListProps) {
       {items.map((item, index) => (
         <article
           key={item.id}
-          className="rounded-2xl border border-border/70 bg-background/70 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          className="rounded-2xl border border-border/60 bg-white/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
@@ -40,8 +41,8 @@ export default function MarketList({ items }: MarketListProps) {
               <span className="text-muted-foreground">
                 收藏 {item.favorites_count} · 评论 {item.comments_count}
               </span>
-              <Button variant="outline" size="sm" className="rounded-full">
-                查看详情
+              <Button asChild variant="outline" size="sm" className="rounded-full">
+                <Link to={`/skills/${item.id}`}>查看详情</Link>
               </Button>
             </div>
           </div>

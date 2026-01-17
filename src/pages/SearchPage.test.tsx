@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import SearchPage from './SearchPage'
 import * as searchService from '@/services/search'
 
@@ -15,7 +16,11 @@ it('renders search page and results', async () => {
     },
   ])
   const user = userEvent.setup()
-  render(<SearchPage />)
+  render(
+    <MemoryRouter>
+      <SearchPage />
+    </MemoryRouter>,
+  )
 
   const input = screen.getByPlaceholderText('搜索技能，例如：日报总结')
   await user.type(input, '日报')

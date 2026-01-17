@@ -1,6 +1,14 @@
-# React + TypeScript + Vite
+# WenDui · 问对（前端）
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 启动方式（正确流程）
+
+```bash
+cd /Users/d0ublecl1ck/the-question/.worktrees/backend-fastapi
+pnpm install
+pnpm dev -- --host localhost --port 5174 --strictPort
+```
+
+前端访问：`http://localhost:5174/`
 
 Currently, two official plugins are available:
 

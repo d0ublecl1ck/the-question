@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { expect, it, vi, beforeEach } from 'vitest'
 import ChatPage from '../pages/ChatPage'
 import { useAuthStore } from '@/stores/authStore'
+import { MemoryRouter } from 'react-router-dom'
 
 beforeEach(() => {
   useAuthStore.setState({ status: 'authenticated', token: 'token', user: { id: 'u1', email: 'a@b.com' } })
@@ -26,7 +27,11 @@ it('opens skill picker when pressing $', async () => {
     return new Response(JSON.stringify({}), { status: 200 })
   }))
   const user = userEvent.setup()
-  render(<ChatPage />)
+  render(
+    <MemoryRouter>
+      <ChatPage />
+    </MemoryRouter>,
+  )
   const input = screen.getByPlaceholderText(/输入内容/)
   await user.click(input)
   await user.keyboard('$')

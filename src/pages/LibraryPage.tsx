@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import type { MarketSkill } from './MarketPage'
 import { fetchFavoriteSkills, fetchMarketSkillDetail } from '@/services/market'
+import { Link } from 'react-router-dom'
 
 type LibraryState = {
   status: 'loading' | 'ready' | 'error'
@@ -48,7 +49,7 @@ export default function LibraryPage() {
   }, [query, state.items])
 
   return (
-    <section className="space-y-8 rounded-3xl border border-border/70 bg-gradient-to-br from-card/80 via-card/40 to-muted/20 p-6 shadow-glow backdrop-blur">
+    <section className="space-y-8 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Library</p>
         <h2 className="text-3xl font-semibold">技能库</h2>
@@ -57,7 +58,7 @@ export default function LibraryPage() {
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-background/60 p-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-white/70 p-4">
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -78,7 +79,7 @@ export default function LibraryPage() {
           <span className="text-xs text-muted-foreground">{filtered.length} 项</span>
         </div>
         {state.status === 'loading' ? (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             加载中...
           </div>
         ) : state.status === 'error' ? (
@@ -86,7 +87,7 @@ export default function LibraryPage() {
             加载失败，请稍后重试
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
             暂无收藏技能
           </div>
         ) : (
@@ -94,7 +95,7 @@ export default function LibraryPage() {
             {filtered.map((item) => (
               <article
                 key={item.id}
-                className="rounded-2xl border border-border/70 bg-background/70 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="rounded-2xl border border-border/60 bg-white/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="space-y-2">
@@ -109,10 +110,10 @@ export default function LibraryPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="rounded-full">
-                      查看详情
+                    <Button asChild variant="outline" size="sm" className="rounded-full">
+                      <Link to={`/skills/${item.id}`}>查看详情</Link>
                     </Button>
-                    <Button variant="outline" size="sm" className="rounded-full">
+                    <Button variant="outline" size="sm" className="rounded-full" disabled>
                       版本树
                     </Button>
                   </div>

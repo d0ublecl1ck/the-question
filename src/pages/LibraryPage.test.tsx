@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import LibraryPage from './LibraryPage'
 import * as marketService from '@/services/market'
 
@@ -14,6 +15,10 @@ it('renders library with empty state', async () => {
     rating: { average: 4.2, count: 10 },
     comments_count: 1,
   })
-  render(<LibraryPage />)
+  render(
+    <MemoryRouter>
+      <LibraryPage />
+    </MemoryRouter>,
+  )
   expect(await screen.findByText('暂无收藏技能')).toBeInTheDocument()
 })
