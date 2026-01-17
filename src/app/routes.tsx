@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation, type RouteObject } from 'react-router-dom'
 import AppShell from '../components/AppShell'

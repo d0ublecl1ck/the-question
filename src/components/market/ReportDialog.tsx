@@ -24,7 +24,7 @@ export default function ReportDialog({ targetId, targetName }: ReportDialogProps
     try {
       await createReport({ targetId, title: title.trim(), content: content.trim() }).unwrap()
       setStatus('success')
-    } catch (error) {
+    } catch {
       setStatus('error')
     }
   }
