@@ -1,21 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { clearAuth } from '@/store/slices/authSlice'
 import logoUrl from '@/assets/logo.svg'
 
 const publicNavItems = [
-  { to: '/', label: 'Home' },
+  { to: '/', label: '首页' },
   { to: '/about', label: 'About' },
   { to: '/price', label: 'Price' },
 ]
 
 const authedNavItems = [
-  { to: '/', label: 'Home' },
-  { to: '/chat', label: 'Chat' },
-  { to: '/market', label: 'Market' },
-  { to: '/library', label: 'Library' },
-  { to: '/settings', label: 'Settings' },
+  { to: '/', label: '首页' },
+  { to: '/chat', label: '对话' },
+  { to: '/market', label: '专家广场' },
 ]
 
 export default function AppShell() {
@@ -25,6 +23,7 @@ export default function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
   const [panelOpen, setPanelOpen] = useState(false)
+  const panelRef = useRef<HTMLDivElement | null>(null)
   const isAuthed = status === 'authenticated'
   const navItems = isAuthed ? authedNavItems : publicNavItems
   const email = user?.email ?? ''
@@ -38,6 +37,19 @@ export default function AppShell() {
       ? 'h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden py-6'
       : 'min-h-[calc(100vh-3.5rem)] pb-20 pt-8',
   ].join(' ')
+
+  useEffect(() => {
+    if (!panelOpen) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!panelRef.current) return
+      if (panelRef.current.contains(event.target as Node)) return
+      setPanelOpen(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [panelOpen])
 
   return (
     <div className="min-h-screen bg-white">
@@ -99,16 +111,15 @@ export default function AppShell() {
                 </NavLink>
               )}
             </nav>
-            <div
-              className="relative"
-              onMouseEnter={() => setPanelOpen(true)}
-              onMouseLeave={() => setPanelOpen(false)}
-            >
+            <div className="relative" ref={panelRef}>
               <button
                 type="button"
                 data-testid="account-trigger"
                 className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white"
                 style={{ backgroundColor: `hsl(${accent} 55% 55%)` }}
+                onClick={() => setPanelOpen((open) => !open)}
+                aria-expanded={panelOpen}
+                aria-haspopup="menu"
               >
                 {initials}
               </button>
@@ -118,16 +129,24 @@ export default function AppShell() {
                     {status === 'authenticated' ? email : '未登录'}
                   </div>
                   {status === 'authenticated' ? (
-                    <button
-                      type="button"
-                      className="mt-3 w-full rounded-full border border-border/70 px-3 py-2 text-sm text-foreground hover:bg-muted/60"
-                      onClick={() => {
-                        dispatch(clearAuth())
-                        navigate('/login')
-                      }}
-                    >
-                      退出账号
-                    </button>
+                    <>
+                      <Link
+                        to="/settings"
+                        className="mt-3 block w-full rounded-full border border-border/70 px-3 py-2 text-center text-sm text-foreground hover:bg-muted/60"
+                      >
+                        设置
+                      </Link>
+                      <button
+                        type="button"
+                        className="mt-2 w-full rounded-full border border-border/70 px-3 py-2 text-sm text-foreground hover:bg-muted/60"
+                        onClick={() => {
+                          dispatch(clearAuth())
+                          navigate('/login')
+                        }}
+                      >
+                        退出账号
+                      </button>
+                    </>
                   ) : (
                     <button
                       type="button"

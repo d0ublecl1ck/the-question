@@ -13,6 +13,7 @@ type MarketToolbarProps = {
   onViewChange: (value: 'list' | 'grid') => void
   sort: 'recent' | 'rating' | 'favorites'
   onSortChange: (value: 'recent' | 'rating' | 'favorites') => void
+  withContainer?: boolean
 }
 
 const sortOptions: Array<{ label: string; value: MarketToolbarProps['sort'] }> = [
@@ -31,9 +32,13 @@ export default function MarketToolbar({
   onViewChange,
   sort,
   onSortChange,
+  withContainer = true,
 }: MarketToolbarProps) {
+  const containerClassName = withContainer
+    ? 'space-y-4 rounded-2xl border border-border/60 bg-white/70 p-4 backdrop-blur'
+    : 'space-y-4'
   return (
-    <div className="space-y-4 rounded-2xl border border-border/60 bg-white/70 p-4 backdrop-blur">
+    <div className={containerClassName}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <Input
@@ -60,22 +65,22 @@ export default function MarketToolbar({
           </div>
         </div>
         <div className="flex items-center gap-2 self-end">
-        <Button
-          variant={view === 'grid' ? 'default' : 'ghost'}
-          size="sm"
-          className="rounded-full"
-          onClick={() => onViewChange('grid')}
-        >
-          网格
-        </Button>
-        <Button
-          variant={view === 'list' ? 'default' : 'ghost'}
-          size="sm"
-          className="rounded-full"
-          onClick={() => onViewChange('list')}
-        >
-          列表
-        </Button>
+          <Button
+            variant={view === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            className="rounded-full"
+            onClick={() => onViewChange('grid')}
+          >
+            网格
+          </Button>
+          <Button
+            variant={view === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            className="rounded-full"
+            onClick={() => onViewChange('list')}
+          >
+            列表
+          </Button>
         </div>
       </div>
 
