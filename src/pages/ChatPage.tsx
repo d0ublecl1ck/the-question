@@ -895,7 +895,7 @@ export default function ChatPage() {
                 <div className="flex justify-center">
                   <a
                     className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground transition hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                    href="https://watcha.cn/"
+                    href="https://watcha.cn/?utm_source=wendui"
                     target="_blank"
                     rel="noreferrer"
                     aria-label="前往 watcha.cn"

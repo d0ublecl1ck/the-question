@@ -123,7 +123,7 @@ it('renders chat page with composer', async () => {
   )
   expect(await screen.findByText('今天可以帮你做什么？')).toBeInTheDocument()
   const bannerLink = screen.getByRole('link', { name: '前往 watcha.cn' })
-  expect(bannerLink).toHaveAttribute('href', 'https://watcha.cn/')
+  expect(bannerLink).toHaveAttribute('href', 'https://watcha.cn/?utm_source=wendui')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('w-full')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('mx-auto')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('max-w-4xl')

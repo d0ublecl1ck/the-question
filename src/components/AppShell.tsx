@@ -7,6 +7,7 @@ import avatarUrl from '@/assets/avatar.jpg'
 
 const publicNavItems = [
   { to: '/', label: '首页' },
+  { to: '/market', label: '专家广场' },
   { to: '/about', label: '关于' },
   { to: '/price', label: '定价' },
 ]

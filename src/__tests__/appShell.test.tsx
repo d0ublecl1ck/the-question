@@ -27,6 +27,7 @@ it('renders the top bar with title and nav', () => {
   expect(title).toBeInTheDocument()
   expect(title).toHaveClass('text-2xl', 'font-semibold')
   expect(screen.getByText('首页')).toBeInTheDocument()
+  expect(screen.getByText('专家广场')).toBeInTheDocument()
   expect(screen.getByText('关于')).toBeInTheDocument()
   expect(screen.getByText('定价')).toBeInTheDocument()
   expect(screen.getByText('登录')).toBeInTheDocument()

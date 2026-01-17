@@ -27,6 +27,13 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Memory'],
     }),
+    deleteMemory: build.mutation<unknown, { memoryId: string }>({
+      query: ({ memoryId }) => ({
+        url: `/api/v1/memory/${memoryId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Memory'],
+    }),
   }),
 })
 
@@ -35,4 +42,5 @@ export const {
   useGetMemoryQuery,
   useUpdateMeMutation,
   useUpdateMemoryMutation,
+  useDeleteMemoryMutation,
 } = settingsApi

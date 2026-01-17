@@ -34,6 +34,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'about', element: <AboutPage /> },
       { path: 'price', element: <PricePage /> },
+      { path: 'market', element: <MarketPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'bubble-demo', element: <BubbleDemoPage /> },
       {
@@ -45,7 +46,6 @@ export const routes: RouteObject[] = [
         children: [
           { path: 'chat', element: <ChatPage /> },
           { path: 'chat/:sessionId', element: <ChatPage /> },
-          { path: 'market', element: <MarketPage /> },
           { path: 'skills/:id', element: <SkillDetailPage /> },
           { path: 'library', element: <LibraryPage /> },
           { path: 'settings', element: <SettingsPage /> },

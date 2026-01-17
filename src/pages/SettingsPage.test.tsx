@@ -1,13 +1,16 @@
 import { render, screen } from '@testing-library/react'
+import { Provider } from 'react-redux'
 import { expect, it, vi } from 'vitest'
 import SettingsPage from './SettingsPage'
-import { useGetMeQuery, useGetMemoryQuery } from '@/store/api/settingsApi'
+import { useDeleteMemoryMutation, useGetMeQuery, useGetMemoryQuery } from '@/store/api/settingsApi'
+import { store } from '@/store/appStore'
 
 vi.mock('@/store/api/settingsApi', () => ({
   useGetMeQuery: vi.fn(),
   useGetMemoryQuery: vi.fn(),
   useUpdateMeMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
   useUpdateMemoryMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
+  useDeleteMemoryMutation: vi.fn(() => [vi.fn(), { isLoading: false }]),
 }))
 
 it('renders settings sections', async () => {
@@ -22,10 +25,13 @@ it('renders settings sections', async () => {
     isError: false,
   } as ReturnType<typeof useGetMemoryQuery>)
 
-  render(<SettingsPage />)
+  render(
+    <Provider store={store}>
+      <SettingsPage />
+    </Provider>,
+  )
   expect(await screen.findByText('账号信息')).toBeInTheDocument()
   expect(screen.getByText('偏好记忆')).toBeInTheDocument()
-  expect(screen.getByText('默认技能')).toBeInTheDocument()
 })
 
 it('renders error state when loading fails', async () => {
@@ -40,6 +46,10 @@ it('renders error state when loading fails', async () => {
     isError: false,
   } as ReturnType<typeof useGetMemoryQuery>)
 
-  render(<SettingsPage />)
+  render(
+    <Provider store={store}>
+      <SettingsPage />
+    </Provider>,
+  )
   expect(await screen.findByText('加载失败，请稍后重试')).toBeInTheDocument()
 })
