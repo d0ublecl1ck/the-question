@@ -75,12 +75,15 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     --dangerously-bypass-approvals-and-sandbox \
     2>&1 | tee /dev/stderr) || true
   
-  # Check for completion signal
+  # Check for completion signal (guarded by prd.json state)
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
-    echo ""
-    echo "Ralph completed all tasks!"
-    echo "Completed at iteration $i of $MAX_ITERATIONS"
-    exit 0
+    if jq -e '[.userStories[].passes] | all' "$PRD_FILE" >/dev/null 2>&1; then
+      echo ""
+      echo "Ralph completed all tasks!"
+      echo "Completed at iteration $i of $MAX_ITERATIONS"
+      exit 0
+    fi
+    echo "Completion signal ignored: prd.json still has passes=false"
   fi
   
   echo "Iteration $i complete. Continuing..."

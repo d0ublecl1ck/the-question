@@ -32,3 +32,8 @@ __pycache__/
 *.egg-info/
 *.db
 .env
+
+# Planning files
+task_plan.md
+notes.md
+deliverable.md

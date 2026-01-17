@@ -7,3 +7,7 @@ class UserOut(BaseModel):
     email: EmailStr
     is_active: bool
     role: UserRole
+
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
