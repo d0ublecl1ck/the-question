@@ -8,6 +8,7 @@ from app.schemas.market import (
     FavoriteCreate,
     FavoriteOut,
     MarketStats,
+    MarketSkillOut,
     RatingCreate,
     RatingOut,
     RatingSummary,
@@ -20,12 +21,13 @@ from app.services.market_service import (
     count_favorites,
     get_rating_summary,
     get_user_rating,
+    list_market_skills,
     list_comments,
     list_favorites,
     remove_favorite,
     upsert_rating,
 )
-from app.services.skill_service import get_skill
+from app.services.skill_service import get_skill, skill_tags_to_list
 
 router = APIRouter(prefix='/market', tags=['market'])
 
@@ -33,6 +35,56 @@ router = APIRouter(prefix='/market', tags=['market'])
 def _ensure_skill(session: Session, skill_id: str) -> None:
     if not get_skill(session, skill_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
+
+
+@router.get('/skills', response_model=list[MarketSkillOut])
+def list_market_skills_endpoint(
+    limit: int = 50,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+) -> list[MarketSkillOut]:
+    skills = list_market_skills(session, limit=limit, offset=offset)
+    items: list[MarketSkillOut] = []
+    for skill in skills:
+        favorites_count = count_favorites(session, skill.id)
+        average, count = get_rating_summary(session, skill.id)
+        comments_count = count_comments(session, skill.id)
+        items.append(
+            MarketSkillOut(
+                id=skill.id,
+                name=skill.name,
+                description=skill.description,
+                tags=skill_tags_to_list(skill),
+                visibility=skill.visibility,
+                favorites_count=favorites_count,
+                rating=RatingSummary(skill_id=skill.id, average=average, count=count),
+                comments_count=comments_count,
+            )
+        )
+    return items
+
+
+@router.get('/skills/{skill_id}', response_model=MarketSkillOut)
+def get_market_skill_detail(
+    skill_id: str,
+    session: Session = Depends(get_session),
+) -> MarketSkillOut:
+    skill = get_skill(session, skill_id)
+    if not skill:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Skill not found')
+    favorites_count = count_favorites(session, skill_id)
+    average, count = get_rating_summary(session, skill_id)
+    comments_count = count_comments(session, skill_id)
+    return MarketSkillOut(
+        id=skill.id,
+        name=skill.name,
+        description=skill.description,
+        tags=skill_tags_to_list(skill),
+        visibility=skill.visibility,
+        favorites_count=favorites_count,
+        rating=RatingSummary(skill_id=skill.id, average=average, count=count),
+        comments_count=comments_count,
+    )
 
 
 @router.post('/favorites', response_model=FavoriteOut, status_code=status.HTTP_201_CREATED)

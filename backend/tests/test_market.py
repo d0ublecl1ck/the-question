@@ -71,3 +71,88 @@ def test_market_flow():
         assert stats.status_code == 200
         assert stats.json()['favorites_count'] == 0
         assert stats.json()['comments_count'] == 1
+
+
+def test_market_list_and_detail():
+    init_db(drop_all=True)
+    with TestClient(app) as client:
+        headers = _auth_headers(client)
+        skill_id = _create_skill(client, headers)
+
+        market_list = client.get('/api/v1/market/skills')
+        assert market_list.status_code == 200
+        assert any(item['id'] == skill_id for item in market_list.json())
+
+        detail = client.get(f"/api/v1/market/skills/{skill_id}")
+        assert detail.status_code == 200
+        assert detail.json()['id'] == skill_id
+        assert 'rating' in detail.json()
+        assert 'comments_count' in detail.json()
+
+
+def test_skill_search_by_content():
+    init_db(drop_all=True)
+    with TestClient(app) as client:
+        headers = _auth_headers(client)
+        skill_id = _create_skill(client, headers)
+        client.post(
+            f"/api/v1/skills/{skill_id}/versions",
+            json={'content': '## Instructions\nDo XYZ\n## Examples\nExample ABC'},
+            headers=headers,
+        )
+
+        result = client.get('/api/v1/search/skills', params={'q': 'Example'})
+        assert result.status_code == 200
+        assert any(item['id'] == skill_id for item in result.json())
+
+
+def test_comment_reply_and_like():
+    init_db(drop_all=True)
+    with TestClient(app) as client:
+        headers = _auth_headers(client)
+        skill_id = _create_skill(client, headers)
+        comment = client.post(
+            '/api/v1/market/comments',
+            json={'skill_id': skill_id, 'content': 'nice'},
+            headers=headers,
+        )
+        comment_id = comment.json()['id']
+
+        reply = client.post(
+            f"/api/v1/comments/{comment_id}/replies",
+            json={'content': 'agree'},
+            headers=headers,
+        )
+        assert reply.status_code == 201
+
+        liked = client.post(
+            f"/api/v1/comments/{comment_id}/like",
+            headers=headers,
+        )
+        assert liked.status_code == 200
+        assert liked.json()['liked'] is True
+
+
+def test_report_threshold_soft_delete_skill():
+    init_db(drop_all=True)
+    with TestClient(app) as client:
+        headers1 = _auth_headers(client)
+        headers2 = _auth_headers(client)
+        headers3 = _auth_headers(client)
+        skill_id = _create_skill(client, headers1)
+
+        for headers in [headers1, headers2, headers3]:
+            report = client.post(
+                '/api/v1/reports',
+                json={
+                    'target_type': 'skill',
+                    'target_id': skill_id,
+                    'title': 'bad',
+                    'content': 'bad content',
+                },
+                headers=headers,
+            )
+            assert report.status_code == 201
+
+        detail = client.get(f"/api/v1/market/skills/{skill_id}")
+        assert detail.status_code == 404

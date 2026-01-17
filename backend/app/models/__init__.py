@@ -6,6 +6,8 @@ from app.models.refresh_token import RefreshToken
 from app.models.skill_favorite import SkillFavorite
 from app.models.skill_rating import SkillRating
 from app.models.skill_comment import SkillComment
+from app.models.skill_comment_reply import SkillCommentReply
+from app.models.skill_comment_like import SkillCommentLike
 from app.models.chat_session import ChatSession
 from app.models.chat_message import ChatMessage
 from app.models.skill_suggestion import SkillSuggestion
@@ -23,6 +25,8 @@ __all__ = [
     'SkillFavorite',
     'SkillRating',
     'SkillComment',
+    'SkillCommentReply',
+    'SkillCommentLike',
     'ChatSession',
     'ChatMessage',
     'SkillSuggestion',

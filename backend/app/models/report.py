@@ -7,6 +7,8 @@ class Report(IDModel, TimestampModel, SQLModel, table=True):
     __tablename__ = 'reports'
 
     user_id: str = Field(index=True)
+    target_type: str = Field(index=True)
+    target_id: str = Field(index=True)
     title: str
     content: str
     status: ReportStatus = Field(

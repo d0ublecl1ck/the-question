@@ -232,3 +232,22 @@ def import_skill(session: Session, payload: SkillImport, owner_id: str | None) -
     latest = max(created_versions, key=lambda v: v.version)
     session.refresh(latest)
     return skill, latest
+
+
+def search_skills(session: Session, q: str, limit: int = 50, offset: int = 0) -> list[Skill]:
+    like = f"%{q}%"
+    statement = (
+        select(Skill)
+        .join(SkillVersion, SkillVersion.skill_id == Skill.id, isouter=True)
+        .where(Skill.deleted.is_(False))
+        .where(
+            (Skill.name.like(like))
+            | (Skill.description.like(like))
+            | (Skill.tags.like(like))
+            | (SkillVersion.content.like(like))
+        )
+        .distinct()
+        .offset(offset)
+        .limit(limit)
+    )
+    return list(session.exec(statement).all())

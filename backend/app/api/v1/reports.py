@@ -24,6 +24,8 @@ def create_report_endpoint(
     record = create_report(session, user.id, payload)
     return ReportOut(
         id=record.id,
+        target_type=record.target_type,
+        target_id=record.target_id,
         title=record.title,
         content=record.content,
         status=record.status,
@@ -43,6 +45,8 @@ def list_reports_endpoint(
     return [
         ReportOut(
             id=record.id,
+            target_type=record.target_type,
+            target_id=record.target_id,
             title=record.title,
             content=record.content,
             status=record.status,
@@ -66,6 +70,8 @@ def update_report_endpoint(
     record = update_report(session, record, payload)
     return ReportOut(
         id=record.id,
+        target_type=record.target_type,
+        target_id=record.target_id,
         title=record.title,
         content=record.content,
         status=record.status,

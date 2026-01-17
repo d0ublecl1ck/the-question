@@ -51,3 +51,32 @@ class CommentOut(BaseModel):
     user_id: str
     content: str
     created_at: datetime
+
+
+class CommentReplyCreate(BaseModel):
+    content: str
+
+
+class CommentReplyOut(BaseModel):
+    id: str
+    comment_id: str
+    user_id: str
+    content: str
+    created_at: datetime
+
+
+class CommentLikeOut(BaseModel):
+    comment_id: str
+    user_id: str
+    liked: bool
+
+
+class MarketSkillOut(BaseModel):
+    id: str
+    name: str
+    description: str
+    tags: list[str]
+    visibility: str
+    favorites_count: int
+    rating: RatingSummary
+    comments_count: int
