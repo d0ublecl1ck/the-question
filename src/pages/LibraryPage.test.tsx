@@ -4,6 +4,25 @@ import { MemoryRouter } from 'react-router-dom'
 import LibraryPage from './LibraryPage'
 import * as marketService from '@/services/market'
 
+it('renders library hero headline', async () => {
+  vi.spyOn(marketService, 'fetchFavoriteSkills').mockResolvedValue([])
+  vi.spyOn(marketService, 'fetchMarketSkillDetail').mockResolvedValue({
+    id: 'skill-1',
+    name: 'Alpha',
+    description: 'First skill',
+    tags: ['flow'],
+    favorites_count: 0,
+    rating: { average: 4.2, count: 10 },
+    comments_count: 1,
+  })
+  render(
+    <MemoryRouter>
+      <LibraryPage />
+    </MemoryRouter>,
+  )
+  expect(await screen.findByRole('heading', { name: '收藏工作台' })).toBeInTheDocument()
+})
+
 it('renders library with empty state', async () => {
   vi.spyOn(marketService, 'fetchFavoriteSkills').mockResolvedValue([])
   vi.spyOn(marketService, 'fetchMarketSkillDetail').mockResolvedValue({
