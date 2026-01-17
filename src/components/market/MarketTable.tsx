@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { Rating } from '@/components/ui/rating'
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import type { MarketSkill } from '@/store/api/types'
@@ -9,6 +10,9 @@ type MarketTableProps = {
 }
 
 export default function MarketTable({ items, renderActions }: MarketTableProps) {
+  const fallbackCover =
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80'
+
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
@@ -29,18 +33,12 @@ export default function MarketTable({ items, renderActions }: MarketTableProps) 
               className="relative aspect-[10/7] w-full bg-[linear-gradient(135deg,rgba(226,232,240,0.9),rgba(248,250,252,0.9))]"
               aria-hidden={item.avatar ? undefined : true}
             >
-              {item.avatar ? (
-                <img
-                  src={item.avatar}
-                  alt={`${item.name} cover`}
-                  className="h-full w-full max-h-56 max-w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Cover
-                </div>
-              )}
+              <img
+                src={item.avatar ?? fallbackCover}
+                alt={`${item.name} cover`}
+                className="h-full w-full max-h-56 max-w-full object-cover"
+                loading="lazy"
+              />
             </div>
             <div className="flex h-full flex-col justify-between p-5">
               <div className="space-y-3">
@@ -58,8 +56,12 @@ export default function MarketTable({ items, renderActions }: MarketTableProps) 
                   ))}
                 </div>
               </div>
-              <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
-                <span>评分 {item.rating.average.toFixed(1)}</span>
+              <div className="mt-5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>评分</span>
+                  <Rating rating={item.rating.average} showValue size="sm" />
+                  <span className="text-[10px] text-muted-foreground">({item.rating.count})</span>
+                </div>
                 <span>收藏 {item.favorites_count}</span>
                 {renderActions ? renderActions(item) : <span className="text-muted-foreground">打开</span>}
               </div>

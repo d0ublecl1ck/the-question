@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import skillHubCard from '@/assets/skill-hub-card.png'
 
@@ -82,8 +83,14 @@ const expertPicks = [
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const [prompt, setPrompt] = useState('')
   const handleSubmit = () => {
-    navigate('/chat')
+    const nextDraft = prompt.trim()
+    if (!nextDraft) {
+      navigate('/chat')
+      return
+    }
+    navigate('/chat', { state: { draft: nextDraft } })
   }
 
   return (
@@ -114,12 +121,14 @@ export default function HomePage() {
                 placeholder="输入你的问题，回车开始对话"
                 rows={2}
                 className="min-h-[72px] w-full resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                value={prompt}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault()
                     handleSubmit()
                   }
                 }}
+                onChange={(event) => setPrompt(event.target.value)}
               />
               <div className="flex items-center justify-end">
                 <button

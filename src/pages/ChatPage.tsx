@@ -51,6 +51,10 @@ type ChatMessage = {
   skill_id?: string | null
 }
 
+type ChatLocationState = {
+  draft?: string
+}
+
 const sortSessions = (sessions: ChatSession[]) => {
   return [...sessions].sort((a, b) => {
     const next = b.updated_at ?? b.created_at ?? ''
@@ -136,6 +140,16 @@ export default function ChatPage() {
   const [streaming, setStreaming] = useState(false)
   const isRootChat = location.pathname === '/chat'
   const messagesRef = useRef<ChatMessage[]>([])
+  const lastAppliedDraftRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const state = location.state as ChatLocationState | null
+    const nextDraft = typeof state?.draft === 'string' ? state.draft.trim() : ''
+    if (!nextDraft) return
+    if (lastAppliedDraftRef.current === nextDraft) return
+    setDraft(nextDraft)
+    lastAppliedDraftRef.current = nextDraft
+  }, [location.key])
 
   const [createChatSession, { isLoading: isCreatingSession }] = useCreateChatSessionMutation()
   const [updateChatSessionTitle] = useUpdateChatSessionTitleMutation()
@@ -515,7 +529,13 @@ export default function ChatPage() {
         )}
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col w-full" data-testid="chat-right-panel">
+          <div
+            className={[
+              'mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col',
+              isRootChat ? 'pt-[20vh]' : '',
+            ].join(' ')}
+            data-testid="chat-right-panel"
+          >
             {isRootChat ? (
               <>
                 <div className="flex justify-center">
