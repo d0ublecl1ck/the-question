@@ -90,12 +90,17 @@ export default function LoginPage() {
   return (
     <section className="flex w-full flex-1 items-center justify-center px-6" data-testid="login-page">
       <div className="w-full max-w-sm text-center" data-testid="login-card">
-        <div className="flex flex-col items-center gap-2.5">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900 text-white">
-            <span className="text-xl font-semibold">W</span>
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="flex h-20 w-20 items-center justify-center rounded-3xl bg-neutral-900 text-white"
+            data-testid="login-logo"
+          >
+            <span className="text-3xl font-semibold">W</span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">WenDui</h1>
-          <p className="text-xs text-muted-foreground">{'问对问题，遇见专家'}</p>
+          <h1 className="text-3xl font-semibold tracking-tight" data-testid="login-brand">
+            WenDui
+          </h1>
+          <p className="text-sm text-muted-foreground">{'问对问题，遇见专家'}</p>
         </div>
 
         <div className="mt-8 space-y-3">

@@ -18,6 +18,17 @@ it('renders login page', () => {
   expect(screen.queryByText('通过 Lark 登录')).not.toBeInTheDocument()
 })
 
+it('renders larger logo and brand styles', () => {
+  render(
+    <MemoryRouter>
+      <LoginPage />
+    </MemoryRouter>,
+  )
+  expect(screen.getByTestId('login-logo')).toHaveClass('h-20')
+  expect(screen.getByTestId('login-logo')).toHaveClass('w-20')
+  expect(screen.getByTestId('login-brand')).toHaveClass('text-3xl')
+})
+
 it('shows email validation error on submit', async () => {
   const user = userEvent.setup()
   render(
