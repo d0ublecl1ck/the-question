@@ -2,9 +2,10 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { expect, it, vi } from 'vitest'
 import SkillDetailPage from './SkillDetailPage'
-import { useGetMarketSkillDetailQuery } from '@/store/api/marketApi'
+import { useCreateSkillReportMutation, useGetMarketSkillDetailQuery } from '@/store/api/marketApi'
 
 vi.mock('@/store/api/marketApi', () => ({
+  useCreateSkillReportMutation: vi.fn(),
   useGetMarketSkillDetailQuery: vi.fn(),
 }))
 
@@ -22,6 +23,10 @@ it('renders report entry', async () => {
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useGetMarketSkillDetailQuery>)
+  vi.mocked(useCreateSkillReportMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateSkillReportMutation>)
 
   render(
     <MemoryRouter initialEntries={['/skills/skill-1']}>

@@ -15,7 +15,7 @@ import { Sparkles, Tag } from 'lucide-react'
 import { useAppSelector } from '@/store/hooks'
 import { useNavigate } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
-import { streamAiChat } from '@/services/ai'
+import { streamAiChat } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
   useCreateSkillSuggestionMutation,
