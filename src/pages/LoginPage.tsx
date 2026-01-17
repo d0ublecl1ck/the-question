@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAppDispatch } from '@/store/hooks'
 import { setAuth } from '@/store/slices/authSlice'
+import { enqueueToast } from '@/store/slices/toastSlice'
 import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -48,7 +49,9 @@ export default function LoginPage() {
     } catch (err) {
       setStatus('error')
       const fallback = mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试'
-      setError(extractErrorMessage(err, fallback))
+      const message = extractErrorMessage(err, fallback)
+      setError('')
+      dispatch(enqueueToast(message))
     } finally {
       setStatus('idle')
     }
