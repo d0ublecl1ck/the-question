@@ -27,9 +27,9 @@ it('renders the top bar with title and nav', () => {
   expect(title).toBeInTheDocument()
   expect(title).toHaveClass('text-2xl', 'font-semibold')
   expect(screen.getByText('首页')).toBeInTheDocument()
-  expect(screen.getByText('About')).toBeInTheDocument()
-  expect(screen.getByText('Price')).toBeInTheDocument()
-  expect(screen.getByText('Login')).toBeInTheDocument()
+  expect(screen.getByText('关于')).toBeInTheDocument()
+  expect(screen.getByText('定价')).toBeInTheDocument()
+  expect(screen.getByText('登录')).toBeInTheDocument()
   expect(screen.getByRole('img', { name: 'avatar' })).toBeInTheDocument()
   expect(screen.queryByText('未登录')).not.toBeInTheDocument()
   fireEvent.click(screen.getByTestId('account-trigger'))
@@ -101,7 +101,7 @@ it('renders authenticated nav without search', () => {
   expect(screen.getByText('对话')).toBeInTheDocument()
   expect(screen.getByText('专家广场')).toBeInTheDocument()
   expect(screen.queryByText('Search')).not.toBeInTheDocument()
-  expect(screen.queryByText('Login')).not.toBeInTheDocument()
+  expect(screen.queryByText('登录')).not.toBeInTheDocument()
 })
 
 it('shows settings entry in account panel when authenticated', () => {

@@ -8,9 +8,18 @@ import type { MarketSkill } from '@/store/api/types'
 type MarketTableProps = {
   items: MarketSkill[]
   renderActions?: (item: MarketSkill) => ReactNode
+  favoriteIds?: Set<string>
+  pendingFavoriteIds?: Set<string>
+  onToggleFavorite?: (item: MarketSkill) => void
 }
 
-export default function MarketTable({ items, renderActions }: MarketTableProps) {
+export default function MarketTable({
+  items,
+  renderActions,
+  favoriteIds,
+  pendingFavoriteIds,
+  onToggleFavorite,
+}: MarketTableProps) {
   const navigate = useNavigate()
   const fallbackCover =
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80'
@@ -78,7 +87,13 @@ export default function MarketTable({ items, renderActions }: MarketTableProps) 
                   <Rating rating={item.rating.average} showValue size="sm" />
                 </div>
                 <div onClick={stopPropagation} onKeyDown={stopPropagation}>
-                  <HeartButton initialCount={item.favorites_count} label="收藏" />
+                  <HeartButton
+                    count={item.favorites_count}
+                    active={favoriteIds?.has(item.id) ?? false}
+                    disabled={pendingFavoriteIds?.has(item.id) ?? false}
+                    ariaLabel={`收藏技能 ${item.name}`}
+                    onToggle={onToggleFavorite ? () => onToggleFavorite(item) : undefined}
+                  />
                 </div>
                 {renderActions ? (
                   <div onClick={stopPropagation} onKeyDown={stopPropagation}>
