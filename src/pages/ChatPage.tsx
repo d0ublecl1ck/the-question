@@ -471,7 +471,7 @@ export default function ChatPage() {
         )}
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col" data-testid="chat-right-panel">
+          <div className="flex min-h-0 flex-1 flex-col w-full" data-testid="chat-right-panel">
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground">
                 <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
