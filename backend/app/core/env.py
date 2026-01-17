@@ -34,9 +34,9 @@ def _parse_env_line(line: str) -> tuple[str, str] | None:
 
 
 def get_env_value(key: str) -> str | None:
-    value = os.getenv(key)
-    if value:
-        return value
+    if key in os.environ:
+        value = os.getenv(key)
+        return value if value else None
     for path in _iter_env_files():
         if not path.exists():
             continue

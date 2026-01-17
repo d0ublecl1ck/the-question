@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,9 +21,10 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAppSelector } from '@/store/hooks'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ChatComposer from '@/components/chat/ChatComposer'
-import { Message, MessageContent } from '@/components/ui/message'
+import ChatBubble from '@/components/chat/ChatBubble'
+import { Message } from '@/components/ui/message'
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/conversation'
-import { streamAiChat } from '@/store/api/aiStream'
+import { streamAiChat, watchAiChatStream } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
   useDeleteChatSessionMutation,
@@ -136,11 +137,19 @@ export default function ChatPage() {
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionQuery, setSessionQuery] = useState('')
+  const [messagesPollingInterval, setMessagesPollingInterval] = useState(0)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
+  const [watching, setWatching] = useState(false)
   const isRootChat = location.pathname === '/chat'
   const messagesRef = useRef<ChatMessage[]>([])
   const lastAppliedDraftRef = useRef<string | null>(null)
+  const pendingAssistantIdRef = useRef<string | null>(null)
+  const streamAssistantIdRef = useRef<string | null>(null)
+  const streamErrorRef = useRef(false)
+  const completedStreamIdsRef = useRef<Set<string>>(new Set())
+  const watchAbortRef = useRef<AbortController | null>(null)
+  const watchAttemptedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const state = location.state as ChatLocationState | null
@@ -171,7 +180,7 @@ export default function ChatPage() {
     isError: isMessagesError,
   } = useListChatMessagesQuery(
     { sessionId: sessionId ?? '' },
-    { skip: !token || !sessionId },
+    { skip: !token || !sessionId, pollingInterval: messagesPollingInterval },
   )
 
   const skillById = useMemo(() => Object.fromEntries(skills.map((skill) => [skill.id, skill])), [skills])
@@ -184,6 +193,45 @@ export default function ChatPage() {
       return title.includes(keyword) || preview.includes(keyword)
     })
   }, [sessions, sessionPeek, sessionQuery])
+
+  const replaceMessageId = useCallback((fromId: string, toId: string) => {
+    if (fromId === toId) return
+    setMessages((prev) => {
+      let changed = false
+      const next = prev.map((message) => {
+        if (message.id !== fromId) return message
+        changed = true
+        return { ...message, id: toId }
+      })
+      return changed ? next : prev
+    })
+  }, [])
+
+  const upsertAssistantMessage = useCallback(
+    (messageId: string, content: string, mode: 'replace' | 'append') => {
+      setMessages((prev) => {
+        const index = prev.findIndex((message) => message.id === messageId)
+        if (index === -1) {
+          return [
+            ...prev,
+            {
+              id: messageId,
+              role: 'assistant',
+              content,
+              skill_id: null,
+            },
+          ]
+        }
+        const current = prev[index]
+        const nextContent = mode === 'replace' ? content : `${current.content}${content}`
+        if (nextContent === current.content) return prev
+        const next = [...prev]
+        next[index] = { ...current, content: nextContent }
+        return next
+      })
+    },
+    [],
+  )
 
   useEffect(() => {
     if (!token) return
@@ -216,6 +264,21 @@ export default function ChatPage() {
   }, [sessionId])
 
   useEffect(() => {
+    if (!token || !sessionId) {
+      setMessagesPollingInterval((prev) => (prev === 0 ? prev : 0))
+      return
+    }
+    if (streaming || watching) {
+      setMessagesPollingInterval((prev) => (prev === 0 ? prev : 0))
+      return
+    }
+    const lastMessage = messagesData[messagesData.length - 1]
+    const shouldPoll = lastMessage?.role === 'assistant' && !lastMessage.content.trim()
+    const nextInterval = shouldPoll ? 2000 : 0
+    setMessagesPollingInterval((prev) => (prev === nextInterval ? prev : nextInterval))
+  }, [messagesData, sessionId, streaming, token, watching])
+
+  useEffect(() => {
     if (!sessionId) return
     const nextMessages = messagesData.map(toLocalMessage)
     const currentMessages = messagesRef.current
@@ -226,12 +289,76 @@ export default function ChatPage() {
     ) {
       return
     }
-    setMessages((prev) => (areMessagesEqual(prev, nextMessages) ? prev : nextMessages))
+    setMessages((prev) => {
+      const localById = new Map(prev.map((message) => [message.id, message]))
+      const nextIds = new Set(nextMessages.map((message) => message.id))
+      const merged = nextMessages.map((message) => {
+        const local = localById.get(message.id)
+        if (local && local.content.length > message.content.length) {
+          return local
+        }
+        return message
+      })
+      const serverSignatures = new Set(nextMessages.map((message) => `${message.role}:${message.content}`))
+      const localOnly = prev.filter(
+        (message) =>
+          !nextIds.has(message.id) &&
+          message.id.startsWith('local-') &&
+          !serverSignatures.has(`${message.role}:${message.content}`),
+      )
+      const combined = localOnly.length > 0 ? [...merged, ...localOnly] : merged
+      return areMessagesEqual(prev, combined) ? prev : combined
+    })
   }, [messagesData, sessionId])
 
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  useEffect(() => {
+    if (!token || !sessionId || streaming) return
+    const lastMessage = messages[messages.length - 1]
+    if (!lastMessage || lastMessage.role !== 'assistant') return
+    if (lastMessage.content.trim()) return
+    if (completedStreamIdsRef.current.has(lastMessage.id)) return
+    const watchKey = `${sessionId}:${lastMessage.id}`
+    if (watchAttemptedRef.current.has(watchKey)) return
+    watchAttemptedRef.current.add(watchKey)
+    const controller = new AbortController()
+    watchAbortRef.current?.abort()
+    watchAbortRef.current = controller
+    setWatching(true)
+    watchAiChatStream(
+      { sessionId },
+      {
+        onStart: (messageId, content) => {
+          upsertAssistantMessage(messageId, content, 'replace')
+        },
+        onSnapshot: (messageId, snapshot) => {
+          upsertAssistantMessage(messageId, snapshot, 'replace')
+        },
+        onDelta: (delta, messageId) => {
+          upsertAssistantMessage(messageId, delta, 'append')
+        },
+        onError: () => {
+          setStatus('error')
+        },
+      },
+      { signal: controller.signal },
+    )
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setStatus('error')
+        }
+      })
+      .finally(() => {
+        setWatching(false)
+      })
+    return () => {
+      controller.abort()
+      setWatching(false)
+    }
+  }, [messages, sessionId, streaming, token, upsertAssistantMessage])
 
 
   useEffect(() => {
@@ -272,8 +399,15 @@ export default function ChatPage() {
   const isError = status === 'error' || isSkillsError || isModelsError || isMessagesError || isSessionsError
   const viewStatus: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
 
-  const handleSend = async () => {
-    if (!draft.trim() || !selectedModelId) return
+  const sendMessageWithContent = async (
+    content: string,
+    skillId?: string | null,
+    options?: { preserveDraft?: boolean; preserveSkill?: boolean },
+  ) => {
+    if (!content.trim() || !selectedModelId) return
+    watchAbortRef.current?.abort()
+    setWatching(false)
+    streamErrorRef.current = false
     let activeSessionId = sessionId
     let shouldUpdateTitle = false
     if (!activeSessionId || isRootChat) {
@@ -291,7 +425,7 @@ export default function ChatPage() {
     if (activeSessionId && isRootChat) {
       navigate(`/chat/${activeSessionId}`)
     }
-    const content = draft.trim()
+    const trimmedContent = content.trim()
     const activeSession = sessions.find((session) => session.id === activeSessionId)
     if (activeSession && (!activeSession.title || activeSession.title === '对话')) {
       shouldUpdateTitle = true
@@ -299,21 +433,28 @@ export default function ChatPage() {
     const userMessage: ChatMessage = {
       id: `local-user-${Date.now()}`,
       role: 'user',
-      content,
-      skill_id: selectedSkill?.id ?? null,
+      content: trimmedContent,
+      skill_id: skillId ?? null,
     }
     const assistantId = `local-assistant-${Date.now()}`
+    pendingAssistantIdRef.current = assistantId
+    streamAssistantIdRef.current = assistantId
     setMessages((prev) => [
       ...prev,
       userMessage,
       { id: assistantId, role: 'assistant', content: '', skill_id: null },
     ])
-    setDraft('')
-    setSelectedSkill(null)
+    if (!options?.preserveDraft) {
+      setDraft('')
+    }
+    if (!options?.preserveSkill) {
+      setSelectedSkill(null)
+    }
     setStreaming(true)
     try {
       if (shouldUpdateTitle && activeSessionId) {
-        const nextTitle = content.length > 24 ? `${content.slice(0, 24)}...` : content
+        const nextTitle =
+          trimmedContent.length > 24 ? `${trimmedContent.slice(0, 24)}...` : trimmedContent
         updateChatSessionTitle({ sessionId: activeSessionId, title: nextTitle })
           .unwrap()
           .then((updated) => {
@@ -323,36 +464,69 @@ export default function ChatPage() {
       }
       setSessionPeek((prev) => ({
         ...prev,
-        [activeSessionId]: prev[activeSessionId] ?? content,
+        [activeSessionId]: prev[activeSessionId] ?? trimmedContent,
       }))
       await streamAiChat(
         {
           sessionId: activeSessionId,
-          content,
+          content: trimmedContent,
           model: selectedModelId,
           skillId: userMessage.skill_id ?? null,
         },
         {
-          onDelta: (delta) => {
-            setMessages((prev) =>
-              prev.map((message) =>
-                message.id === assistantId
-                  ? { ...message, content: `${message.content}${delta}` }
-                  : message,
-              ),
-            )
+          onStart: (messageId) => {
+            const pendingId = pendingAssistantIdRef.current
+            if (pendingId) {
+              replaceMessageId(pendingId, messageId)
+            }
+            pendingAssistantIdRef.current = messageId
+            streamAssistantIdRef.current = messageId
+          },
+          onSnapshot: (messageId, snapshot) => {
+            upsertAssistantMessage(messageId, snapshot, 'replace')
+          },
+          onDelta: (delta, messageId) => {
+            const targetId = messageId || streamAssistantIdRef.current || assistantId
+            upsertAssistantMessage(targetId, delta, 'append')
           },
           onError: () => {
+            streamErrorRef.current = true
             setStatus('error')
           },
         },
       )
     } catch {
+      streamErrorRef.current = true
       setStatus('error')
     } finally {
+      const completedId = streamAssistantIdRef.current
+      if (completedId && !streamErrorRef.current) {
+        completedStreamIdsRef.current.add(completedId)
+      }
+      pendingAssistantIdRef.current = null
+      streamAssistantIdRef.current = null
       setStreaming(false)
     }
   }
+
+  const handleSend = async () => {
+    await sendMessageWithContent(draft, selectedSkill?.id ?? null)
+  }
+
+  const handleClarifyComplete = useCallback(
+    async (payload: { selection: string | null; ranking: string[]; freeText: string }) => {
+      const response = {
+        clarify_chain_response: {
+          single_choice: payload.selection,
+          ranking: payload.ranking,
+          free_text: payload.freeText,
+        },
+      }
+      const content = `\`\`\`json\n${JSON.stringify(response, null, 2)}\n\`\`\``
+      await sendMessageWithContent(content, null, { preserveDraft: true, preserveSkill: true })
+    },
+    [sendMessageWithContent],
+  )
 
   const handlePick = (skill: SkillItem) => {
     setSelectedSkill(skill)
@@ -567,7 +741,7 @@ export default function ChatPage() {
                   models={models}
                   selectedModelId={selectedModelId}
                   onModelChange={setSelectedModelId}
-                  disabled={streaming}
+                  disabled={streaming || watching}
                   selectedSkillName={selectedSkill?.name ?? null}
                 />
               </>
@@ -584,17 +758,13 @@ export default function ChatPage() {
                     const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
                     return (
                       <Message key={message.id} from={message.role}>
-                        <div className="flex flex-col items-start gap-2">
-                          <MessageContent>{message.content}</MessageContent>
-                          {badgeSkill && (
-                            <Badge
-                              variant={message.role === 'assistant' ? 'secondary' : 'outline'}
-                              className={message.role === 'assistant' ? '' : 'border-white/40 text-white'}
-                            >
-                              {badgeSkill.name}
-                            </Badge>
-                          )}
-                        </div>
+                        <ChatBubble
+                          role={message.role}
+                          content={message.content}
+                          skillName={badgeSkill?.name ?? undefined}
+                          messageId={message.id}
+                          onClarifyComplete={handleClarifyComplete}
+                        />
                       </Message>
                     )
                   })}
@@ -610,7 +780,7 @@ export default function ChatPage() {
                   models={models}
                   selectedModelId={selectedModelId}
                   onModelChange={setSelectedModelId}
-                  disabled={streaming}
+                  disabled={streaming || watching}
                   selectedSkillName={selectedSkill?.name ?? null}
                 />
               </>

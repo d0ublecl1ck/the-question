@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     DB_URL: str = 'sqlite:///./app.db'
     LOG_LEVEL: str = 'INFO'
     CORS_ORIGINS: list[str] = ['*']
+    AI_DEBUG_LOG_PATH: str = 'reports/ai-debug.jsonl'
 
     SECRET_KEY: str = 'change-me'
     ALGORITHM: str = 'HS256'

@@ -120,7 +120,7 @@ export default function SkillFormDialog({
       ].join('\n')
       await streamAiChat(
         { sessionId: session.id, content: prompt, model: modelId },
-        { onDelta: (delta) => (responseText += delta) },
+        { onDelta: (delta, _messageId) => (responseText += delta) },
       )
       const start = responseText.indexOf('{')
       const end = responseText.lastIndexOf('}')
