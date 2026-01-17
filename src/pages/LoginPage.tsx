@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/authStore'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -135,7 +135,14 @@ export default function LoginPage() {
           </button>
         </div>
         <p className="mt-5 text-center text-[11px] text-muted-foreground">
-          继续即表示你同意我们的服务条款和隐私政策
+          继续即表示你同意我们的
+          <Link className="font-medium text-foreground hover:underline" to="/terms">
+            服务条款
+          </Link>
+          和
+          <Link className="font-medium text-foreground hover:underline" to="/privacy">
+            隐私政策
+          </Link>
         </p>
       </div>
     </section>

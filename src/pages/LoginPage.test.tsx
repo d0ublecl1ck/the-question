@@ -55,3 +55,13 @@ it('centers login content within the page', () => {
   expect(container).toHaveClass('justify-center')
   expect(card).toHaveClass('max-w-sm')
 })
+
+it('renders terms and privacy links', () => {
+  render(
+    <MemoryRouter>
+      <LoginPage />
+    </MemoryRouter>,
+  )
+  expect(screen.getByRole('link', { name: '服务条款' })).toHaveAttribute('href', '/terms')
+  expect(screen.getByRole('link', { name: '隐私政策' })).toHaveAttribute('href', '/privacy')
+})

@@ -134,7 +134,7 @@ export default function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-[90%] flex-1 pb-20 pt-8">
+      <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-[90%] flex-1 justify-center pb-20 pt-8">
         <Outlet />
       </main>
     </div>
