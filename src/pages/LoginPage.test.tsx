@@ -105,10 +105,20 @@ it('centers login content within the page', () => {
 })
 
 it('renders terms and privacy links', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
-    <MemoryRouter>
-      <LoginPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
   )
   expect(screen.getByRole('link', { name: '服务条款' })).toHaveAttribute('href', '/terms')
   expect(screen.getByRole('link', { name: '隐私政策' })).toHaveAttribute('href', '/privacy')
