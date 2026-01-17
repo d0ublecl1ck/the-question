@@ -15,6 +15,7 @@ import {
 export type AiModelOption = {
   id: string
   name: string
+  host: string
 }
 
 interface UseAutoResizeTextareaProps {
@@ -106,6 +107,7 @@ type AiPromptProps = {
   selectedModelId: string | null
   onModelChange: (modelId: string) => void
   disabled?: boolean
+  surface?: 'default' | 'flat'
 }
 
 export function AI_Prompt({
@@ -117,12 +119,14 @@ export function AI_Prompt({
   selectedModelId,
   onModelChange,
   disabled,
+  surface = 'default',
 }: AiPromptProps) {
   const safeModels = Array.isArray(models) ? models : []
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 72,
     maxHeight: 300,
   })
+  const surfaceClassName = surface === 'flat' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5'
 
   const selectedModel = useMemo(() => {
     if (!selectedModelId) return null
@@ -141,7 +145,7 @@ export function AI_Prompt({
 
   return (
     <div className="w-full py-4">
-      <div className="rounded-lg bg-black/5 p-1.5 dark:bg-white/5">
+      <div className={cn('rounded-lg p-1.5', surfaceClassName)}>
         <div className="relative">
           <div className="relative flex flex-col">
             <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
@@ -150,7 +154,8 @@ export function AI_Prompt({
                 value={value}
                 placeholder="输入内容，回车发送"
                 className={cn(
-                  'w-full resize-none rounded-lg rounded-b-none border-none bg-black/5 px-4 py-3 placeholder:text-black/70 focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-white/5 dark:text-white dark:placeholder:text-white/70',
+                  'w-full resize-none rounded-lg rounded-b-none border-none px-4 py-3 placeholder:text-black/70 focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white dark:placeholder:text-white/70',
+                  surface === 'flat' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5',
                   'min-h-[72px]',
                 )}
                 ref={textareaRef}
@@ -162,7 +167,7 @@ export function AI_Prompt({
               />
             </div>
 
-            <div className="flex h-14 items-center rounded-b-lg bg-black/5 dark:bg-white/5">
+            <div className={cn('flex h-14 items-center rounded-b-lg', surfaceClassName)}>
               <div className="absolute bottom-3 left-3 right-3 flex w-[calc(100%-24px)] items-center justify-between">
                 <div className="flex items-center gap-2">
                   <DropdownMenu>
@@ -219,7 +224,25 @@ export function AI_Prompt({
                     )}
                     aria-label="Attach file"
                   >
-                    <input type="file" className="hidden" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                          const result = typeof reader.result === 'string' ? reader.result : ''
+                          if (!result) return
+                          const nextValue = `${value}${value ? '\n' : ''}![image](${result})\n`
+                          onChange(nextValue)
+                          adjustHeight()
+                        }
+                        reader.readAsDataURL(file)
+                        event.target.value = ''
+                      }}
+                    />
                     <Paperclip className="h-4 w-4 transition-colors" />
                   </label>
                   <button

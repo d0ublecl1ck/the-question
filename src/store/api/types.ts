@@ -17,17 +17,6 @@ export type MarketSkill = {
   favorited_at?: string
 }
 
-export type SearchSkill = {
-  id: string
-  name: string
-  description: string
-  tags: string[]
-  visibility: string
-  owner_id?: string | null
-  created_at?: string
-  updated_at?: string
-}
-
 export type MeProfile = {
   id: string
   email: string
@@ -55,6 +44,7 @@ export type ChatMessage = {
   role: 'user' | 'assistant' | 'system'
   content: string
   skill_id?: string | null
+  image_base64?: string | null
 }
 
 export type SkillItem = {
@@ -86,4 +76,5 @@ export type SkillDetail = SkillOut & {
 export type AiModelOption = {
   id: string
   name: string
+  host: string
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,10 +18,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sparkles } from 'lucide-react'
 import { useAppSelector } from '@/store/hooks'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AI_Prompt } from '@/components/ui/animated-ai-input'
+import ChatComposer from '@/components/chat/ChatComposer'
+import { Message, MessageContent } from '@/components/ui/message'
+import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/conversation'
 import { streamAiChat } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
@@ -34,7 +35,6 @@ import {
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import type { ChatMessage as ApiChatMessage, ChatSession } from '@/store/api/types'
-import ChatBubble from '@/components/chat/ChatBubble'
 
 export type SkillItem = {
   id: string
@@ -117,6 +117,7 @@ const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>
 
 export default function ChatPage() {
   const token = useAppSelector((state) => state.auth.token)
+  const user = useAppSelector((state) => state.auth.user)
   const navigate = useNavigate()
   const location = useLocation()
   const { sessionId: routeSessionId } = useParams()
@@ -134,6 +135,7 @@ export default function ChatPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
   const isRootChat = location.pathname === '/chat'
+  const messagesRef = useRef<ChatMessage[]>([])
 
   const [createChatSession, { isLoading: isCreatingSession }] = useCreateChatSessionMutation()
   const [updateChatSessionTitle] = useUpdateChatSessionTitleMutation()
@@ -172,17 +174,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (!token) return
     if (sessionsData.length === 0) {
-      if (!sessionId && !isCreatingSession) {
-        setStatus('loading')
-        createChatSession({ title: '对话' })
-          .unwrap()
-          .then((session) => {
-            setSessions([session])
-            setSessionId(session.id)
-            setStatus('ready')
-          })
-          .catch(() => setStatus('error'))
-      }
+      setSessions((prev) => (prev.length === 0 ? prev : []))
+      setStatus((prev) => (prev === 'ready' ? prev : 'ready'))
       return
     }
     const ordered = sortSessions(sessionsData)
@@ -205,10 +198,27 @@ export default function ChatPage() {
   }, [models])
 
   useEffect(() => {
+    setMessages([])
+  }, [sessionId])
+
+  useEffect(() => {
     if (!sessionId) return
     const nextMessages = messagesData.map(toLocalMessage)
+    const currentMessages = messagesRef.current
+    if (
+      nextMessages.length === 0 &&
+      currentMessages.length > 0 &&
+      currentMessages.some((message) => message.id.startsWith('local-'))
+    ) {
+      return
+    }
     setMessages((prev) => (areMessagesEqual(prev, nextMessages) ? prev : nextMessages))
   }, [messagesData, sessionId])
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
 
   useEffect(() => {
     if (sessions.length === 0) return
@@ -252,7 +262,7 @@ export default function ChatPage() {
     if (!draft.trim() || !selectedModelId) return
     let activeSessionId = sessionId
     let shouldUpdateTitle = false
-    if (!activeSessionId) {
+    if (!activeSessionId || isRootChat) {
       try {
         const session = await createChatSession({ title: '对话' }).unwrap()
         activeSessionId = session.id
@@ -335,23 +345,19 @@ export default function ChatPage() {
     setOpen(false)
   }
 
-  const handleCreateSession = async () => {
-    setStatus('loading')
-    try {
-      const session = await createChatSession({ title: '对话' }).unwrap()
-      setSessionId(session.id)
-      setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
-      setMessages([])
-      setStatus('ready')
-    } catch {
-      setStatus('error')
-    }
+  const handleCreateSession = () => {
+    navigate('/chat')
   }
 
   const handleSelectSession = (session: ChatSession) => {
-    if (session.id === sessionId) return
-    setSessionId(session.id)
-    setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
+    const isSameSession = session.id === sessionId
+    if (!isSameSession) {
+      setSessionId(session.id)
+      setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
+    }
+    if (!isSameSession || isRootChat) {
+      navigate(`/chat/${session.id}`)
+    }
   }
 
   const handleRequestDeleteSession = (session: ChatSession) => {
@@ -448,8 +454,24 @@ export default function ChatPage() {
                             ? 'bg-muted/60 text-foreground'
                             : 'text-muted-foreground hover:bg-muted/50',
                         ].join(' ')}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleSelectSession(session)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            handleSelectSession(session)
+                          }
+                        }}
                       >
-                        <button className="flex-1 text-left" onClick={() => handleSelectSession(session)}>
+                        <button
+                          type="button"
+                          className="flex-1 text-left"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            handleSelectSession(session)
+                          }}
+                        >
                           <div className="text-sm font-medium">{title}</div>
                           {sessionPeek[session.id] && (
                             <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
@@ -494,17 +516,22 @@ export default function ChatPage() {
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1 flex-col w-full" data-testid="chat-right-panel">
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground">
-                <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
-                  2026
-                </span>
-                快来领取最高价值 348 美元的奖励
-              </div>
-            </div>
-
             {isRootChat ? (
               <>
+                <div className="flex justify-center">
+                  <a
+                    className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground transition hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    href="https://watcha.cn/"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="前往 watcha.cn"
+                  >
+                    <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
+                      2026
+                    </span>
+                    深蓝的天空中挂着一轮金黄的圆月......
+                  </a>
+                </div>
                 <div className="mt-8 text-center">
                   <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
                   <p className="mt-3 text-sm text-muted-foreground">
@@ -512,70 +539,60 @@ export default function ChatPage() {
                   </p>
                 </div>
 
-                <div className="mt-8 rounded-[24px] border border-border/40 bg-white/70 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {selectedSkill && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Sparkles className="h-3 w-3" />
-                        {selectedSkill.name}
-                      </Badge>
-                    )}
-                  </div>
-                  <AI_Prompt
-                    value={draft}
-                    onChange={setDraft}
-                    onSend={handleSend}
-                    onTriggerSkill={() => setOpen(true)}
-                    models={models}
-                    selectedModelId={selectedModelId}
-                    onModelChange={setSelectedModelId}
-                    disabled={streaming}
-                  />
-                </div>
+                <ChatComposer
+                  value={draft}
+                  onChange={setDraft}
+                  onSend={handleSend}
+                  onTriggerSkill={() => setOpen(true)}
+                  models={models}
+                  selectedModelId={selectedModelId}
+                  onModelChange={setSelectedModelId}
+                  disabled={streaming}
+                  selectedSkillName={selectedSkill?.name ?? null}
+                />
               </>
             ) : (
               <>
-                <ScrollArea className="mt-6 min-h-0 flex-1 rounded-[26px] border border-border/60 bg-white/70 p-5">
-                  <div className="flex flex-col gap-4">
-                    {messages.length === 0 && viewStatus === 'ready' && (
-                      <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
-                        还没有消息，开始你的第一条对话。
-                      </div>
-                    )}
+              <Conversation className="mt-6 min-h-0 flex-1">
+                <ConversationContent className="flex flex-col gap-4">
+                  {messages.length === 0 && viewStatus === 'ready' && (
+                    <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
+                      还没有消息，开始你的第一条对话。
+                    </div>
+                  )}
                   {messages.map((message) => {
                     const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
                     return (
-                      <ChatBubble
-                        key={message.id}
-                        role={message.role}
-                        content={message.content}
-                        skillName={badgeSkill?.name}
-                      />
+                      <Message key={message.id} from={message.role}>
+                        <div className="flex flex-col items-start gap-2">
+                          <MessageContent>{message.content}</MessageContent>
+                          {badgeSkill && (
+                            <Badge
+                              variant={message.role === 'assistant' ? 'secondary' : 'outline'}
+                              className={message.role === 'assistant' ? '' : 'border-white/40 text-white'}
+                            >
+                              {badgeSkill.name}
+                            </Badge>
+                          )}
+                        </div>
+                      </Message>
                     )
                   })}
-                </div>
-              </ScrollArea>
+                </ConversationContent>
+                <ConversationScrollButton />
+              </Conversation>
 
-                <div className="mt-6 rounded-[24px] border border-border/40 bg-white/70 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {selectedSkill && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Sparkles className="h-3 w-3" />
-                        {selectedSkill.name}
-                      </Badge>
-                    )}
-                  </div>
-                  <AI_Prompt
-                    value={draft}
-                    onChange={setDraft}
-                    onSend={handleSend}
-                    onTriggerSkill={() => setOpen(true)}
-                    models={models}
-                    selectedModelId={selectedModelId}
-                    onModelChange={setSelectedModelId}
-                    disabled={streaming}
-                  />
-                </div>
+                <ChatComposer
+                  value={draft}
+                  onChange={setDraft}
+                  onSend={handleSend}
+                  onTriggerSkill={() => setOpen(true)}
+                  models={models}
+                  selectedModelId={selectedModelId}
+                  onModelChange={setSelectedModelId}
+                  disabled={streaming}
+                  selectedSkillName={selectedSkill?.name ?? null}
+                />
               </>
             )}
           </div>

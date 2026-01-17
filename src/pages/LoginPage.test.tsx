@@ -52,8 +52,8 @@ it('renders larger logo and brand styles', () => {
       </MemoryRouter>
     </Provider>,
   )
-  expect(screen.getByTestId('login-logo')).toHaveClass('h-20')
-  expect(screen.getByTestId('login-logo')).toHaveClass('w-20')
+  expect(screen.getByTestId('login-logo')).toHaveClass('h-40')
+  expect(screen.getByTestId('login-logo')).toHaveClass('w-40')
   expect(screen.getByTestId('login-brand')).toHaveClass('text-3xl')
 })
 

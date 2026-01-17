@@ -1,11 +1,60 @@
+import json
+import os
+from contextlib import contextmanager
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.core.config import settings
-from app.core.ai_models import _parse_models
+from app.core.providers import get_provider_registry, reset_provider_registry
 from app.db.init_db import init_db
+from app.main import app
+
+PROVIDERS_JSON = json.dumps(
+    [
+        {
+            "host": "openai",
+            "base_url": "https://api.openai.com/v1",
+            "api_key_env": "OPENAI_API_KEY",
+            "models": [{"id": "gpt-5.2-2025-12-11", "name": "GPT-5.2"}],
+        },
+        {
+            "host": "minimax",
+            "base_url": "https://api.minimaxi.com/v1",
+            "api_key_env": "MINIMAX_API_KEY",
+            "models": [{"id": "MiniMax-M2.1-lightning", "name": "MiniMax M2.1 Lightning"}],
+        },
+    ]
+)
+
+
+@contextmanager
+def _temp_providers(value: str):
+    previous = settings.PROVIDERS
+    settings.PROVIDERS = value
+    reset_provider_registry()
+    try:
+        yield
+    finally:
+        settings.PROVIDERS = previous
+        reset_provider_registry()
+
+
+@contextmanager
+def _temp_env(key: str, value: str | None):
+    previous = os.environ.get(key)
+    if value is None:
+        os.environ.pop(key, None)
+    else:
+        os.environ[key] = value
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = previous
 
 
 def _auth_headers(client: TestClient) -> dict:
@@ -18,49 +67,59 @@ def _auth_headers(client: TestClient) -> dict:
 
 def test_ai_models():
     init_db(drop_all=True)
-    with TestClient(app) as client:
-        response = client.get('/api/v1/ai/models')
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-        assert data
-        assert data[0]['id']
-        assert data[0]['name']
+    with _temp_providers(PROVIDERS_JSON):
+        with TestClient(app) as client:
+            response = client.get('/api/v1/ai/models')
+            assert response.status_code == 200
+            data = response.json()
+            assert isinstance(data, list)
+            assert data
+            assert data[0]['id']
+            assert data[0]['name']
+            assert data[0]['host']
 
 
 def test_ai_stream_missing_key_returns_error():
     init_db(drop_all=True)
-    previous_key = settings.OPENAI_API_KEY
-    settings.OPENAI_API_KEY = ''
     try:
-        with TestClient(app) as client:
-            headers = _auth_headers(client)
-            session = client.post('/api/v1/chats', json={'title': 'test'}, headers=headers)
-            assert session.status_code == 201
-            model = client.get('/api/v1/ai/models').json()[0]['id']
-            response = client.post(
-                '/api/v1/ai/chat/stream',
-                json={'session_id': session.json()['id'], 'content': 'hello', 'model': model},
-                headers=headers,
-            )
-            assert response.status_code == 200
-            assert '"type": "error"' in response.text
+        with _temp_providers(PROVIDERS_JSON), _temp_env('OPENAI_API_KEY', None):
+            with TestClient(app) as client:
+                headers = _auth_headers(client)
+                session = client.post('/api/v1/chats', json={'title': 'test'}, headers=headers)
+                assert session.status_code == 201
+                model = client.get('/api/v1/ai/models').json()[0]['id']
+                response = client.post(
+                    '/api/v1/ai/chat/stream',
+                    json={'session_id': session.json()['id'], 'content': 'hello', 'model': model},
+                    headers=headers,
+                )
+                assert response.status_code == 200
+                assert '"type": "error"' in response.text
     finally:
-        settings.OPENAI_API_KEY = previous_key
+        pass
 
 
-def test_parse_models_supports_name_and_code():
-    models = _parse_models('GPT-5.2|gpt-5.2-2025-12-11')
-    assert models == [
-        {'id': 'gpt-5.2-2025-12-11', 'name': 'GPT-5.2'},
-    ]
+def test_provider_registry_rejects_duplicate_models():
+    payload = json.dumps(
+        [
+            {
+                "host": "openai",
+                "base_url": "https://api.openai.com/v1",
+                "api_key_env": "OPENAI_API_KEY",
+                "models": [
+                    {"id": "gpt-5.2-2025-12-11", "name": "GPT-5.2"},
+                    {"id": "gpt-5.2-2025-12-11", "name": "GPT-5.2-Duplicate"},
+                ],
+            }
+        ]
+    )
+    with _temp_providers(payload):
+        with pytest.raises(RuntimeError, match="Duplicate model id"):
+            get_provider_registry()
 
 
-def test_parse_models_skips_invalid_entries():
-    models = _parse_models('gpt-5.2-2025-12-11, |gpt-5.2-2025-12-11, GPT-5.2|')
-    assert models == []
-
-
-def test_parse_models_json_format():
-    models = _parse_models('[{"name":"GPT-5.2","code":"gpt-5.2-2025-12-11"}]')
-    assert models == [{'id': 'gpt-5.2-2025-12-11', 'name': 'GPT-5.2'}]
+def test_provider_registry_requires_json_array():
+    payload = json.dumps({"host": "openai"})
+    with _temp_providers(payload):
+        with pytest.raises(RuntimeError, match="JSON array"):
+            get_provider_registry()

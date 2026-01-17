@@ -10,9 +10,9 @@ import MarketPage from '../pages/MarketPage'
 import AboutPage from '../pages/AboutPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import PricePage from '../pages/PricePage'
-import SearchPage from '../pages/SearchPage'
 import SettingsPage from '../pages/SettingsPage'
 import SkillDetailPage from '../pages/SkillDetailPage'
+import BubbleDemoPage from '../pages/BubbleDemoPage'
 import { useAppSelector } from '@/store/hooks'
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
@@ -35,6 +35,7 @@ export const routes: RouteObject[] = [
       { path: 'about', element: <AboutPage /> },
       { path: 'price', element: <PricePage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'bubble-demo', element: <BubbleDemoPage /> },
       {
         element: (
           <RequireAuth>
@@ -48,7 +49,6 @@ export const routes: RouteObject[] = [
           { path: 'skills/:id', element: <SkillDetailPage /> },
           { path: 'library', element: <LibraryPage /> },
           { path: 'settings', element: <SettingsPage /> },
-          { path: 'search', element: <SearchPage /> },
         ],
       },
     ],

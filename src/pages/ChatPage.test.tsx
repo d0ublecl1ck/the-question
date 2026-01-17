@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { expect, it, vi, beforeEach } from 'vitest'
 import ChatPage, { __testables__ } from './ChatPage'
 import { store } from '@/store/appStore'
@@ -16,6 +16,11 @@ import {
   useUpdateChatSessionTitleMutation,
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
+
+const LocationDisplay = () => {
+  const location = useLocation()
+  return <div data-testid="location-display">{location.pathname}</div>
+}
 
 vi.mock('@/store/api/chatApi', () => ({
   useCreateChatSessionMutation: vi.fn(),
@@ -66,7 +71,7 @@ it('renders chat page with composer', async () => {
     isError: false,
   } as ReturnType<typeof useListSkillsQuery>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
-    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2' }],
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useListAiModelsQuery>)
@@ -79,6 +84,8 @@ it('renders chat page with composer', async () => {
     </Provider>,
   )
   expect(await screen.findByText('今天可以帮你做什么？')).toBeInTheDocument()
+  const bannerLink = screen.getByRole('link', { name: '前往 watcha.cn' })
+  expect(bannerLink).toHaveAttribute('href', 'https://watcha.cn/')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('w-full')
   expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
   expect(screen.queryByText('以访客身份探索？登录以获取完整体验')).not.toBeInTheDocument()
@@ -117,7 +124,7 @@ it('asks for confirmation before deleting a session', async () => {
     isError: false,
   } as ReturnType<typeof useListSkillsQuery>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
-    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2' }],
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useListAiModelsQuery>)
@@ -138,6 +145,109 @@ it('asks for confirmation before deleting a session', async () => {
   const dialog = await screen.findByRole('dialog')
   await user.click(within(dialog).getByRole('button', { name: '删除' }))
   expect(deleteMutation).toHaveBeenCalledWith('s1')
+})
+
+it('hides the promo banner on a session route', async () => {
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [{ id: 's1', title: '历史对话' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([previewTrigger, { isFetching: false }])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/chat/session-1']}>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  expect(await screen.findByTestId('chat-right-panel')).toBeInTheDocument()
+  expect(screen.queryByText('今天可以帮你做什么？')).not.toBeInTheDocument()
+  expect(screen.queryByText('深蓝的天空中挂着一轮金黄的圆月......')).not.toBeInTheDocument()
+})
+
+it('navigates to the session route and shows messages when selecting history', async () => {
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [
+      { id: 's1', title: '历史对话一' },
+      { id: 's2', title: '历史对话二' },
+    ],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([previewTrigger, { isFetching: false }])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [{ id: 'm1', role: 'assistant', content: '历史消息', skill_id: null }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/chat']}>
+        <LocationDisplay />
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: '历史对话二' }))
+  expect(await screen.findByTestId('location-display')).toHaveTextContent('/chat/s2')
+  expect(await screen.findByText('历史消息')).toBeInTheDocument()
 })
 
 it('renders login entry when unauthenticated', () => {

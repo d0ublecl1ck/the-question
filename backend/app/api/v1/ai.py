@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
-from app.core.ai_models import available_openai_models
+from app.core.providers import available_models, is_model_available
 from app.db.session import get_session
 from app.models.enums import ChatRole
 from app.models.user import User
 from app.schemas.ai import AiChatStreamRequest, AiModelOut
 from app.services.auth_service import get_current_user
 from app.services.chat_service import create_message, get_session as get_chat_session, list_messages
-from app.services.openai_stream import stream_chat_completion
+from app.services.llm_gateway import stream_chat_completion
 
 router = APIRouter(prefix='/ai', tags=['ai'])
 
@@ -26,12 +26,12 @@ def _ensure_session(session: Session, session_id: str, user: User):
 
 
 def _allowed_model(model: str) -> bool:
-    return any(item['id'] == model for item in available_openai_models())
+    return is_model_available(model)
 
 
 @router.get('/models', response_model=list[AiModelOut])
 def list_models() -> list[AiModelOut]:
-    return [AiModelOut(**item) for item in available_openai_models()]
+    return [AiModelOut(**item) for item in available_models()]
 
 
 @router.post('/chat/stream')
