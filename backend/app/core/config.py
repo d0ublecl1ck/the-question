@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     SKILL_CONTENT_MAX_LEN: int = 20000
+    OPENAI_API_KEY: str = ''
+    OPENAI_BASE_URL: str = 'https://api.openai.com/v1'
 
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod

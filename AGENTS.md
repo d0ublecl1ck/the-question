@@ -47,3 +47,4 @@
 - Store event handlers in refs to keep subscriptions stable.
 - Use useLatest-style refs for stable callback references.
 - Centralize user response mapping via `backend/app/services/user_service.py` helpers when adding user-related endpoints.
+- After each modification, start the project and open it via Chrome MCP.

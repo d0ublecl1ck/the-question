@@ -1,106 +1,111 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { BookOpen, MessageSquare, Search, Settings, Store, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/stores/authStore'
 
 const navItems = [
-  { to: '/', label: '对话', icon: MessageSquare },
-  { to: '/market', label: '市场', icon: Store },
-  { to: '/library', label: '技能库', icon: BookOpen },
-  { to: '/search', label: '搜索', icon: Search },
-  { to: '/settings', label: '设置', icon: Settings },
+  { to: '/', label: '首页' },
+  { to: '/chat', label: '对话' },
+  { to: '/market', label: '市场' },
+  { to: '/library', label: '技能库' },
+  { to: '/search', label: '搜索' },
+  { to: '/settings', label: '设置' },
 ]
 
 export default function AppShell() {
+  const status = useAuthStore((state) => state.status)
+  const user = useAuthStore((state) => state.user)
+  const clearAuth = useAuthStore((state) => state.clearAuth)
+  const navigate = useNavigate()
+  const [panelOpen, setPanelOpen] = useState(false)
+  const email = user?.email ?? ''
+  const avatarSeed = email || 'anonymous'
+  const accent = Array.from(avatarSeed).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360
+  const initials = email ? email.slice(0, 1).toUpperCase() : '?'
+
   return (
-    <div className="min-h-screen">
-      <div className="relative flex min-h-screen">
-        <aside className="hidden w-72 flex-col border-r border-border/60 bg-white/70 px-6 py-8 backdrop-blur lg:flex">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background shadow-md">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-lg font-semibold tracking-tight">问对 · WenDui</p>
-              <p className="text-xs text-muted-foreground">对话驱动的技能中枢</p>
-            </div>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Badge variant="secondary">MVP</Badge>
-            <Badge variant="outline">AI 协作</Badge>
-          </div>
-          <Separator className="my-6" />
-          <nav className="flex flex-1 flex-col gap-2">
+    <div className="min-h-screen bg-white">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-white/90 backdrop-blur">
+        <div className="flex items-center justify-between gap-6 px-6">
+          <Link to="/" className="flex h-14 items-center text-2xl font-semibold tracking-tight">
+            WenDui
+          </Link>
+          <div className="flex items-center gap-6">
+            <nav className="flex h-14 items-end gap-8 text-sm font-medium text-muted-foreground">
             {navItems.map((item) => {
-              const Icon = item.icon
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
                     [
-                      'group flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition',
-                      isActive
-                        ? 'bg-foreground text-background shadow'
-                        : 'text-foreground/80 hover:bg-muted/60',
+                      'group relative flex items-center pb-3 transition',
+                      isActive ? 'text-foreground' : 'hover:text-foreground',
                     ].join(' ')
                   }
                 >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      <span>{item.label}</span>
+                      <span
+                        className={[
+                          'absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-foreground transition',
+                          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-60',
+                        ].join(' ')}
+                      />
+                    </>
+                  )}
                 </NavLink>
               )
             })}
           </nav>
-          <div className="mt-auto rounded-2xl border border-border/60 bg-white/80 p-4 shadow-sm">
-            <p className="text-xs text-muted-foreground">今日状态</p>
-            <p className="mt-1 text-sm font-semibold">技能匹配 92%</p>
-            <Button className="mt-4 w-full rounded-full" size="sm">
-              新建会话
-            </Button>
-          </div>
-        </aside>
-
-        <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/60 bg-white/80 px-6 py-4 backdrop-blur">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Workspace</p>
-              <h1 className="text-xl font-semibold tracking-tight">技能驱动对话</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">已连接本地后端</Badge>
-              <Button variant="ghost" size="sm">
-                通知
-              </Button>
-            </div>
-          </header>
-          <main className="flex-1 px-6 pb-24 pt-6">
-            <Outlet />
-          </main>
-        </div>
-      </div>
-
-      <nav className="fixed bottom-4 left-1/2 z-40 flex w-[92%] -translate-x-1/2 items-center justify-between rounded-2xl border border-border/60 bg-white/90 px-4 py-3 shadow-lg backdrop-blur lg:hidden">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                [
-                  'flex flex-col items-center gap-1 text-xs font-medium',
-                  isActive ? 'text-foreground' : 'text-muted-foreground',
-                ].join(' ')
-              }
+            <div
+              className="relative"
+              onMouseEnter={() => setPanelOpen(true)}
+              onMouseLeave={() => setPanelOpen(false)}
             >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          )
-        })}
-      </nav>
+              <button
+                type="button"
+                data-testid="account-trigger"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white"
+                style={{ backgroundColor: `hsl(${accent} 55% 55%)` }}
+              >
+                {initials}
+              </button>
+              {panelOpen && (
+                <div className="absolute right-0 top-11 w-56 rounded-2xl border border-border/60 bg-white p-4 text-sm shadow-lg">
+                  <div className="text-xs text-muted-foreground">
+                    {status === 'authenticated' ? email : '未登录'}
+                  </div>
+                  {status === 'authenticated' ? (
+                    <button
+                      type="button"
+                      className="mt-3 w-full rounded-full border border-border/70 px-3 py-2 text-sm text-foreground hover:bg-muted/60"
+                      onClick={() => {
+                        clearAuth()
+                        navigate('/login')
+                      }}
+                    >
+                      退出账号
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mt-3 w-full rounded-full border border-border/70 px-3 py-2 text-sm text-foreground hover:bg-muted/60"
+                      onClick={() => navigate('/login')}
+                    >
+                      去登录
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-[90%] flex-1 pb-20 pt-8">
+        <Outlet />
+      </main>
     </div>
   )
 }

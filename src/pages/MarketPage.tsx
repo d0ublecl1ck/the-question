@@ -1,10 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import MarketFeatured from '@/components/market/MarketFeatured'
-import MarketList from '@/components/market/MarketList'
-import MarketTable from '@/components/market/MarketTable'
-import MarketToolbar from '@/components/market/MarketToolbar'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { fetchMarketSkills } from '@/services/market'
 
 export type MarketSkill = {
@@ -19,11 +13,6 @@ export type MarketSkill = {
 }
 
 export default function MarketPage() {
-  const [view, setView] = useState<'list' | 'table'>('list')
-  const [query, setQuery] = useState('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [sort, setSort] = useState<'recent' | 'rating' | 'favorites'>('recent')
-
   const [skills, setSkills] = useState<MarketSkill[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
 
@@ -47,96 +36,117 @@ export default function MarketPage() {
     }
   }, [])
 
-  const featured = useMemo(() => skills.slice(0, 4), [skills])
+  const highlights = useMemo(() => skills.slice(0, 3), [skills])
 
-  const availableTags = useMemo(() => {
-    const tagSet = new Set<string>()
-    skills.forEach((skill) => skill.tags.forEach((tag) => tagSet.add(tag)))
-    return Array.from(tagSet)
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>()
+    skills.forEach((skill) =>
+      skill.tags.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1)),
+    )
+    return Array.from(counts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .toSorted((a, b) => b.count - a.count)
+      .slice(0, 6)
   }, [skills])
 
-  const filteredSkills = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    const matchQuery = (skill: MarketSkill) =>
-      !normalized ||
-      skill.name.toLowerCase().includes(normalized) ||
-      skill.description.toLowerCase().includes(normalized) ||
-      skill.tags.some((tag) => tag.toLowerCase().includes(normalized))
-    const matchTags = (skill: MarketSkill) =>
-      selectedTags.length === 0 || selectedTags.every((tag) => skill.tags.includes(tag))
-    const list = skills.filter((skill) => matchQuery(skill) && matchTags(skill))
-
-    if (sort === 'rating') {
-      return list.toSorted((a, b) => b.rating.average - a.rating.average)
+  const paletteFor = (seed: string) => {
+    const hue = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360
+    return {
+      background: `linear-gradient(135deg, hsla(${hue}, 70%, 90%, 0.9), hsla(${hue + 25}, 80%, 85%, 0.7))`,
+      accent: `hsl(${hue}, 65%, 45%)`,
     }
-    if (sort === 'favorites') {
-      return list.toSorted((a, b) => b.favorites_count - a.favorites_count)
-    }
-    return list
-  }, [query, selectedTags, skills, sort])
+  }
 
   return (
-    <section className="space-y-8 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
-      <header className="space-y-2">
+    <section className="space-y-8">
+      <header className="page-card">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Market</p>
-        <h2 className="text-3xl font-semibold">市场</h2>
-        <p className="text-sm text-muted-foreground">
-          官方技能与社区生态的入口。发现可复用流程并快速进入详情。
-        </p>
+        <h2 className="page-title">市场</h2>
+        <p className="page-subtitle">官方技能与社区生态的入口。发现可复用流程并快速进入详情。</p>
       </header>
 
-      <MarketToolbar
-        query={query}
-        onQueryChange={setQuery}
-        tags={availableTags}
-        selectedTags={selectedTags}
-        onToggleTag={(tag) =>
-          setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
-        }
-        view={view}
-        onViewChange={setView}
-        sort={sort}
-        onSortChange={setSort}
-      />
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">官方精选</h3>
-        </div>
-        <MarketFeatured items={featured} />
-      </section>
-
-      <Separator />
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">全部技能</h3>
-          <span className="text-xs text-muted-foreground">{filteredSkills.length} 项</span>
-        </div>
-        {status === 'error' ? (
-          <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-            加载失败，请稍后重试
+      <section className="page-card space-y-8">
+        <section className="space-y-4">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-lg font-semibold">Highlights</h3>
+            <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              精选推荐
+            </span>
           </div>
-        ) : filteredSkills.length === 0 && (query.trim() || selectedTags.length > 0) ? (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-sm text-muted-foreground">
-            <div>无匹配结果</div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => {
-                setQuery('')
-                setSelectedTags([])
-              }}
-            >
-              清除筛选
-            </Button>
+          {status === 'error' ? (
+            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
+              加载失败，请稍后重试
+            </div>
+          ) : highlights.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
+              暂无内容
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr]">
+              {highlights.map((item) => {
+                const palette = paletteFor(item.id)
+                return (
+                  <article
+                    key={item.id}
+                    className="relative overflow-hidden rounded-3xl border border-border/60 bg-white/80 p-6 shadow-sm"
+                    style={{ background: palette.background }}
+                  >
+                    <div className="absolute inset-0 opacity-30" />
+                    <div className="relative space-y-2">
+                      <h4 className="text-lg font-semibold">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                      <span
+                        className="inline-flex items-center text-xs font-semibold"
+                        style={{ color: palette.accent }}
+                      >
+                        {item.tags[0] ?? '精选'}
+                      </span>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-lg font-semibold">Categories</h3>
+            <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              分类导航
+            </span>
           </div>
-        ) : view === 'list' ? (
-          <MarketList items={filteredSkills} />
-        ) : (
-          <MarketTable items={filteredSkills} />
-        )}
+          {status === 'error' ? (
+            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
+              加载失败，请稍后重试
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
+              暂无内容
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {categories.map((item) => {
+                const palette = paletteFor(item.tag)
+                return (
+                  <article
+                    key={item.tag}
+                    className="overflow-hidden rounded-3xl border border-border/60 bg-white/80 p-5 shadow-sm"
+                  >
+                    <div
+                      className="mb-4 h-28 w-full rounded-2xl"
+                      style={{ background: palette.background }}
+                    />
+                    <div className="space-y-1">
+                      <h4 className="text-base font-semibold">{item.tag}</h4>
+                      <p className="text-xs text-muted-foreground">{item.count} 项</p>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
       </section>
     </section>
   )
