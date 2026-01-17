@@ -6,6 +6,7 @@ export type MarketSkill = {
   name: string
   description: string
   tags: string[]
+  avatar?: string | null
   favorites_count: number
   rating: { average: number; count: number }
   comments_count: number
