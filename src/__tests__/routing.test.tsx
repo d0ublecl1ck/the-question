@@ -12,5 +12,5 @@ it('renders chat page at root', () => {
 it('renders login page at /login', () => {
   const router = createMemoryRouter(routes, { initialEntries: ['/login'] })
   render(<RouterProvider router={router} />)
-  expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '登录' })).toBeInTheDocument()
 })

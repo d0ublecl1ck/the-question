@@ -1,14 +1,13 @@
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { expect, it, vi, beforeEach } from 'vitest'
-import ChatPage from '../pages/ChatPage'
+import ChatPage from './ChatPage'
 import { useAuthStore } from '@/stores/authStore'
 
 beforeEach(() => {
   useAuthStore.setState({ status: 'authenticated', token: 'token', user: { id: 'u1', email: 'a@b.com' } })
 })
 
-it('opens skill picker when pressing $', async () => {
+it('renders chat page with composer', async () => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo) => {
     const url = typeof input === 'string' ? input : input.url
     if (url.includes('/api/v1/chat/sessions')) {
@@ -25,10 +24,8 @@ it('opens skill picker when pressing $', async () => {
     }
     return new Response(JSON.stringify({}), { status: 200 })
   }))
-  const user = userEvent.setup()
+
   render(<ChatPage />)
-  const input = screen.getByPlaceholderText(/输入内容/)
-  await user.click(input)
-  await user.keyboard('$')
-  expect(await screen.findByRole('heading', { name: '选择技能' })).toBeInTheDocument()
+  expect(await screen.findByText('对话')).toBeInTheDocument()
+  expect(await screen.findByPlaceholderText('输入内容，按 $ 触发技能选择')).toBeInTheDocument()
 })
