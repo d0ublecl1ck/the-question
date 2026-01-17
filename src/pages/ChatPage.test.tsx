@@ -71,7 +71,7 @@ it('renders chat page with composer', async () => {
     isError: false,
   } as ReturnType<typeof useListSkillsQuery>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
-    data: [{ id: 'gpt-5.2-2025-12-11', label: 'GPT-5.2' }],
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2' }],
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useListAiModelsQuery>)
@@ -87,7 +87,7 @@ it('renders chat page with composer', async () => {
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('w-full')
   expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
   expect(screen.queryByText('以访客身份探索？登录以获取完整体验')).not.toBeInTheDocument()
-  expect(await screen.findByPlaceholderText('输入内容，按 $ 触发技能选择')).toBeInTheDocument()
+  expect(await screen.findByPlaceholderText('输入内容，回车发送')).toBeInTheDocument()
 })
 
 it('renders login entry when unauthenticated', () => {

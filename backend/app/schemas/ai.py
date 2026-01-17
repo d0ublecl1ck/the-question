@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class AiModelOut(BaseModel):
     id: str
-    label: str
+    name: str
 
 
 class AiChatStreamRequest(BaseModel):
