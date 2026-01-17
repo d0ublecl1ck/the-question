@@ -27,6 +27,7 @@ _SKILL_INTENT_PATTERN = re.compile(
     r'生成技能|创建技能|保存技能|总结成技能|沉淀技能|技能库|技能模板)',
     re.IGNORECASE,
 )
+_FALLBACK_FLOW_PATTERN = re.compile(r'(步骤|流程|清单|计划|方案|第[一二三四五六七八九十]|\\n\\d+\\.|\\n\\d+、)')
 
 
 class SkillDraftSuggestionResult(BaseModel):
@@ -73,6 +74,31 @@ def _is_clarify_response(text: str) -> bool:
 
 def _looks_like_skill_intent(text: str) -> bool:
     return bool(_SKILL_INTENT_PATTERN.search(text))
+
+
+def _fallback_goal(prompt: str) -> str:
+    stripped = prompt.strip()
+    if not stripped:
+        return ''
+    short = re.split(r'[，。,；;！？!?]', stripped)[0].strip()
+    candidate = short or stripped
+    return candidate[:20]
+
+
+def _fallback_suggestion(prompt: str, assistant_content: str) -> SkillDraftSuggestionResult | None:
+    if not _FALLBACK_FLOW_PATTERN.search(assistant_content):
+        return None
+    if len(prompt.strip()) < 6:
+        return None
+    goal = _fallback_goal(prompt)
+    if not goal:
+        return None
+    return SkillDraftSuggestionResult(
+        should_suggest=True,
+        goal=goal,
+        constraints=None,
+        reason='检测到可复用流程',
+    )
 
 
 def _build_context_snippet(
@@ -142,6 +168,8 @@ async def maybe_create_skill_draft_suggestion(
 
     payload = result.output
     if not payload.should_suggest or not payload.goal:
+        payload = _fallback_suggestion(prompt, assistant_content)
+    if not payload or not payload.should_suggest or not payload.goal:
         return
 
     goal = payload.goal.strip()
