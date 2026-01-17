@@ -1,5 +1,5 @@
-from datetime import datetime
 from typing import Optional
+from datetime import datetime
 import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
 from app.models.base import IDModel, TimestampModel

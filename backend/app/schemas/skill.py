@@ -1,5 +1,5 @@
-from datetime import datetime
 from typing import Optional
+from datetime import datetime
 from pydantic import BaseModel, Field
 from app.core.config import settings
 from app.models.enums import SkillVisibility

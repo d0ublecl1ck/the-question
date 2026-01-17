@@ -1,3 +1,4 @@
+from typing import List, Optional, Tuple
 import json
 from datetime import datetime, timezone
 from typing import Iterable
@@ -8,13 +9,13 @@ from app.models.skill_version import SkillVersion
 from app.schemas.skill import SkillCreate, SkillImport, SkillUpdate
 
 
-def _serialize_tags(tags: list[str] | None) -> str | None:
+def _serialize_tags(tags:Optional[list[str]]) ->Optional[str]:
     if not tags:
         return None
     return json.dumps(tags)
 
 
-def _deserialize_tags(raw: str | None) -> list[str]:
+def _deserialize_tags(raw:Optional[str]) -> list[str]:
     if not raw:
         return []
     try:
@@ -30,7 +31,7 @@ def skill_tags_to_list(skill: Skill) -> list[str]:
     return _deserialize_tags(skill.tags)
 
 
-def create_skill(session: Session, payload: SkillCreate, owner_id: str | None) -> tuple[Skill, SkillVersion]:
+def create_skill(session: Session, payload: SkillCreate, owner_id:Optional[str]) -> tuple[Skill, SkillVersion]:
     skill = Skill(
         name=payload.name,
         description=payload.description,
@@ -59,10 +60,10 @@ def create_skill(session: Session, payload: SkillCreate, owner_id: str | None) -
 
 def list_skills(
     session: Session,
-    q: str | None = None,
-    visibility: SkillVisibility | None = None,
-    tags: list[str] | None = None,
-    owner_id: str | None = None,
+    q:Optional[str] = None,
+    visibility:Optional[SkillVisibility] = None,
+    tags:Optional[list[str]] = None,
+    owner_id:Optional[str] = None,
     include_deleted: bool = False,
     limit: int = 50,
     offset: int = 0,
@@ -84,7 +85,7 @@ def list_skills(
     return list(session.exec(statement).all())
 
 
-def get_skill(session: Session, skill_id: str, include_deleted: bool = False) -> Skill | None:
+def get_skill(session: Session, skill_id: str, include_deleted: bool = False) ->Optional[Skill]:
     statement = select(Skill).where(Skill.id == skill_id)
     if not include_deleted:
         statement = statement.where(Skill.deleted.is_(False))
@@ -113,7 +114,7 @@ def soft_delete_skill(session: Session, skill: Skill) -> Skill:
     return skill
 
 
-def get_latest_version(session: Session, skill_id: str) -> SkillVersion | None:
+def get_latest_version(session: Session, skill_id: str) ->Optional[SkillVersion]:
     statement = (
         select(SkillVersion)
         .where(SkillVersion.skill_id == skill_id)
@@ -126,7 +127,7 @@ def get_latest_version(session: Session, skill_id: str) -> SkillVersion | None:
 def list_versions(
     session: Session,
     skill_id: str,
-    limit: int | None = 50,
+    limit:Optional[int] = 50,
     offset: int = 0,
 ) -> list[SkillVersion]:
     statement = (
@@ -141,7 +142,7 @@ def list_versions(
     return list(session.exec(statement).all())
 
 
-def get_version(session: Session, skill_id: str, version: int) -> SkillVersion | None:
+def get_version(session: Session, skill_id: str, version: int) ->Optional[SkillVersion]:
     statement = select(SkillVersion).where(
         (SkillVersion.skill_id == skill_id) & (SkillVersion.version == version)
     )
@@ -152,8 +153,8 @@ def create_version(
     session: Session,
     skill_id: str,
     content: str,
-    created_by: str | None,
-    parent_version_id: str | None = None,
+    created_by:Optional[str],
+    parent_version_id:Optional[str] = None,
 ) -> SkillVersion:
     latest = get_latest_version(session, skill_id)
     next_version = 1 if latest is None else latest.version + 1
@@ -171,7 +172,7 @@ def create_version(
     return version
 
 
-def export_skill(session: Session, skill_id: str) -> tuple[Skill, list[SkillVersion]] | None:
+def export_skill(session: Session, skill_id: str) -> Optional[Tuple[Skill, List[SkillVersion]]]:
     skill = get_skill(session, skill_id, include_deleted=True)
     if not skill:
         return None
@@ -189,7 +190,7 @@ def _apply_versions(
     session.commit()
 
 
-def import_skill(session: Session, payload: SkillImport, owner_id: str | None) -> tuple[Skill, SkillVersion]:
+def import_skill(session: Session, payload: SkillImport, owner_id:Optional[str]) -> tuple[Skill, SkillVersion]:
     skill = Skill(
         name=payload.name,
         description=payload.description,

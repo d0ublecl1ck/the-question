@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from app.db.session import get_session
@@ -35,7 +36,7 @@ def create_report_endpoint(
 
 @router.get('', response_model=list[ReportOut])
 def list_reports_endpoint(
-    status: ReportStatus | None = None,
+    status:Optional[ReportStatus] = None,
     limit: int = 50,
     offset: int = 0,
     session: Session = Depends(get_session),

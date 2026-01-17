@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from app.db.session import get_session
@@ -177,7 +178,7 @@ def create_skill_suggestion(
 @router.get('/{session_id}/suggestions', response_model=list[SkillSuggestionOut])
 def list_skill_suggestions(
     session_id: str,
-    status: SkillSuggestionStatus | None = None,
+    status:Optional[SkillSuggestionStatus] = None,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ) -> list[SkillSuggestionOut]:

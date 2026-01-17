@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from app.db.session import get_session
@@ -33,7 +34,7 @@ def upsert_memory_endpoint(
 
 @router.get('', response_model=list[MemoryOut])
 def list_memory_endpoint(
-    scope: str | None = None,
+    scope:Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
     session: Session = Depends(get_session),

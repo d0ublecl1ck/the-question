@@ -1,38 +1,38 @@
-from enum import StrEnum
+from enum import Enum
 import sqlalchemy as sa
 from sqlalchemy import Column
 
 
-class UserRole(StrEnum):
+class UserRole(str, Enum):
     USER = 'user'
     ADMIN = 'admin'
 
 
-class SkillVisibility(StrEnum):
+class SkillVisibility(str, Enum):
     PUBLIC = 'public'
     PRIVATE = 'private'
     UNLISTED = 'unlisted'
 
 
-class SkillSuggestionStatus(StrEnum):
+class SkillSuggestionStatus(str, Enum):
     PENDING = 'pending'
     ACCEPTED = 'accepted'
     REJECTED = 'rejected'
 
 
-class ChatRole(StrEnum):
+class ChatRole(str, Enum):
     USER = 'user'
     ASSISTANT = 'assistant'
     SYSTEM = 'system'
 
 
-class ReportStatus(StrEnum):
+class ReportStatus(str, Enum):
     OPEN = 'open'
     RESOLVED = 'resolved'
     DISMISSED = 'dismissed'
 
 
-def enum_column(enum_cls: type[StrEnum], name: str) -> Column:
+def enum_column(enum_cls: type[Enum], name: str) -> Column:
     return Column(
         sa.Enum(
             enum_cls,

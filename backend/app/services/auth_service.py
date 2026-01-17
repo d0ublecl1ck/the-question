@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -62,7 +63,7 @@ def create_user(session: Session, email: str, password: str) -> User:
     return user
 
 
-def authenticate_user(session: Session, email: str, password: str) -> User | None:
+def authenticate_user(session: Session, email: str, password: str) ->Optional[User]:
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
         return None

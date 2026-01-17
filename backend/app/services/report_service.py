@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy import func
 from sqlmodel import Session, select
 from app.models.report import Report
@@ -28,8 +29,8 @@ def create_report(session: Session, user_id: str, payload: ReportCreate) -> Repo
 def list_reports(
     session: Session,
     user_id: str,
-    status: ReportStatus | None = None,
-    limit: int | None = 50,
+    status:Optional[ReportStatus] = None,
+    limit:Optional[int] = 50,
     offset: int = 0,
 ) -> list[Report]:
     statement = select(Report).where(Report.user_id == user_id)
@@ -42,7 +43,7 @@ def list_reports(
     return list(session.exec(statement).all())
 
 
-def get_report(session: Session, report_id: str) -> Report | None:
+def get_report(session: Session, report_id: str) ->Optional[Report]:
     return session.exec(select(Report).where(Report.id == report_id)).first()
 
 

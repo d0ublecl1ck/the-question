@@ -5,13 +5,13 @@ from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterRequest, RefreshRequest, TokenResponse, LogoutRequest
 from app.schemas.user import UserOut
 from app.services.auth_service import (
-    authenticate_user,
     create_access_token,
     create_refresh_token,
     create_user,
     revoke_refresh_token,
     store_refresh_token,
     validate_refresh_token,
+    verify_password,
 )
 
 router = APIRouter(prefix='/auth', tags=['auth'])
@@ -28,9 +28,11 @@ def register(payload: RegisterRequest, session: Session = Depends(get_session)) 
 
 @router.post('/login', response_model=TokenResponse)
 def login(payload: LoginRequest, session: Session = Depends(get_session)) -> TokenResponse:
-    user = authenticate_user(session, payload.email, payload.password)
+    user = session.exec(select(User).where(User.email == payload.email)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='账号不存在')
+    if not verify_password(payload.password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='密码错误')
     access_token = create_access_token(user.id)
     refresh_token, expires_at = create_refresh_token(user.id)
     store_refresh_token(session, refresh_token, user.id, expires_at)

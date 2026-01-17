@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
@@ -43,7 +44,7 @@ def update_me(
 
 @router.get('/memory', response_model=list[MemoryOut])
 def list_me_memory(
-    scope: str | None = None,
+    scope:Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
     session: Session = Depends(get_session),

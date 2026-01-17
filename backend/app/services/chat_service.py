@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlmodel import Session, select
 from app.models.chat_session import ChatSession
 from app.models.chat_message import ChatMessage
@@ -5,7 +6,7 @@ from app.models.skill_suggestion import SkillSuggestion
 from app.models.enums import SkillSuggestionStatus
 
 
-def create_session(session: Session, user_id: str, title: str | None) -> ChatSession:
+def create_session(session: Session, user_id: str, title:Optional[str]) -> ChatSession:
     record = ChatSession(user_id=user_id, title=title)
     session.add(record)
     session.commit()
@@ -16,7 +17,7 @@ def create_session(session: Session, user_id: str, title: str | None) -> ChatSes
 def list_sessions(
     session: Session,
     user_id: str,
-    limit: int | None = 50,
+    limit:Optional[int] = 50,
     offset: int = 0,
 ) -> list[ChatSession]:
     statement = select(ChatSession).where(ChatSession.user_id == user_id).order_by(ChatSession.created_at.desc())
@@ -27,11 +28,11 @@ def list_sessions(
     return list(session.exec(statement).all())
 
 
-def get_session(session: Session, session_id: str) -> ChatSession | None:
+def get_session(session: Session, session_id: str) ->Optional[ChatSession]:
     return session.exec(select(ChatSession).where(ChatSession.id == session_id)).first()
 
 
-def update_session_title(session: Session, record: ChatSession, title: str | None) -> ChatSession:
+def update_session_title(session: Session, record: ChatSession, title:Optional[str]) -> ChatSession:
     record.title = title
     session.add(record)
     session.commit()
@@ -55,7 +56,7 @@ def create_message(
     session_id: str,
     role: str,
     content: str,
-    skill_id: str | None,
+    skill_id:Optional[str],
 ) -> ChatMessage:
     record = ChatMessage(
         session_id=session_id,
@@ -72,7 +73,7 @@ def create_message(
 def list_messages(
     session: Session,
     session_id: str,
-    limit: int | None = 50,
+    limit:Optional[int] = 50,
     offset: int = 0,
 ) -> list[ChatMessage]:
     statement = (
@@ -90,7 +91,7 @@ def list_messages(
 def list_suggestions(
     session: Session,
     session_id: str,
-    status: SkillSuggestionStatus | None = None,
+    status:Optional[SkillSuggestionStatus] = None,
 ) -> list[SkillSuggestion]:
     statement = select(SkillSuggestion).where(SkillSuggestion.session_id == session_id)
     if status is not None:
@@ -113,7 +114,7 @@ def create_suggestion(
     session: Session,
     session_id: str,
     skill_id: str,
-    message_id: str | None,
+    message_id:Optional[str],
 ) -> SkillSuggestion:
     existing = session.exec(
         select(SkillSuggestion).where(
@@ -133,7 +134,7 @@ def create_suggestion(
     return record
 
 
-def get_suggestion(session: Session, suggestion_id: str) -> SkillSuggestion | None:
+def get_suggestion(session: Session, suggestion_id: str) ->Optional[SkillSuggestion]:
     return session.exec(select(SkillSuggestion).where(SkillSuggestion.id == suggestion_id)).first()
 
 
