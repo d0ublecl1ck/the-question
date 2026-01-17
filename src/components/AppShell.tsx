@@ -98,7 +98,7 @@ export default function AppShell() {
               <Icon className="h-4 w-4" />
               {item.label}
             </NavLink>
-          )}
+          )
         })}
       </nav>
     </div>
