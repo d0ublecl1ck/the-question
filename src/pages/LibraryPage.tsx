@@ -33,7 +33,7 @@ export default function LibraryPage() {
     isMySkillsError ? 'error' : isMySkillsLoading ? 'loading' : 'ready'
   const [query, setQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [view, setView] = useState<'list' | 'grid'>('list')
+  const [view, setView] = useState<'list' | 'grid'>('grid')
   const [sort, setSort] = useState<'recent' | 'rating' | 'favorites'>('recent')
   const [tab, setTab] = useState<'favorites' | 'mine'>('favorites')
 

@@ -1,3 +1,4 @@
+from typing import Optional
 import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
 from app.models.base import IDModel, TimestampModel
@@ -10,5 +11,5 @@ class SkillVersion(IDModel, TimestampModel, SQLModel, table=True):
     skill_id: str = Field(index=True)
     version: int = 1
     content: str
-    created_by: str | None = Field(default=None)
-    parent_version_id: str | None = Field(default=None, index=True)
+    created_by:Optional[str] = Field(default=None)
+    parent_version_id:Optional[str] = Field(default=None, index=True)

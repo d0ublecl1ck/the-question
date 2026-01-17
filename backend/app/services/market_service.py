@@ -1,3 +1,4 @@
+from typing import Optional, Tuple
 from sqlalchemy import func
 from sqlmodel import Session, select
 from app.models.skill_favorite import SkillFavorite
@@ -36,7 +37,7 @@ def remove_favorite(session: Session, user_id: str, skill_id: str) -> None:
         session.commit()
 
 
-def list_favorites(session: Session, user_id: str, limit: int | None = 50, offset: int = 0) -> list[SkillFavorite]:
+def list_favorites(session: Session, user_id: str, limit:Optional[int] = 50, offset: int = 0) -> list[SkillFavorite]:
     statement = select(SkillFavorite).where(SkillFavorite.user_id == user_id)
     if offset:
         statement = statement.offset(offset)
@@ -70,7 +71,7 @@ def upsert_rating(session: Session, user_id: str, skill_id: str, rating: int) ->
     return record
 
 
-def get_user_rating(session: Session, user_id: str, skill_id: str) -> SkillRating | None:
+def get_user_rating(session: Session, user_id: str, skill_id: str) ->Optional[SkillRating]:
     return session.exec(
         select(SkillRating).where(
             (SkillRating.user_id == user_id) & (SkillRating.skill_id == skill_id)
@@ -104,7 +105,7 @@ def count_comments(session: Session, skill_id: str) -> int:
 def list_comments(
     session: Session,
     skill_id: str,
-    limit: int | None = 50,
+    limit:Optional[int] = 50,
     offset: int = 0,
 ) -> list[SkillComment]:
     statement = (
@@ -119,7 +120,7 @@ def list_comments(
     return list(session.exec(statement).all())
 
 
-def get_comment(session: Session, comment_id: str) -> SkillComment | None:
+def get_comment(session: Session, comment_id: str) ->Optional[SkillComment]:
     return session.exec(select(SkillComment).where(SkillComment.id == comment_id)).first()
 
 
@@ -144,7 +145,7 @@ def toggle_comment_like(
     session: Session,
     user_id: str,
     comment_id: str,
-) -> tuple[SkillCommentLike | None, bool]:
+) -> Tuple[Optional[SkillCommentLike], bool]:
     existing = session.exec(
         select(SkillCommentLike).where(
             (SkillCommentLike.user_id == user_id) & (SkillCommentLike.comment_id == comment_id)

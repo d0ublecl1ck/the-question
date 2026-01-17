@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from app.db.session import get_session
@@ -70,10 +71,10 @@ def create_skill_endpoint(
 
 @router.get('', response_model=list[SkillOut])
 def list_skills_endpoint(
-    q: str | None = None,
-    visibility: SkillVisibility | None = None,
-    tags: str | None = None,
-    owner_id: str | None = None,
+    q:Optional[str] = None,
+    visibility:Optional[SkillVisibility] = None,
+    tags:Optional[str] = None,
+    owner_id:Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
     session: Session = Depends(get_session),

@@ -59,3 +59,8 @@ def test_parse_models_supports_name_and_code():
 def test_parse_models_skips_invalid_entries():
     models = _parse_models('gpt-5.2-2025-12-11, |gpt-5.2-2025-12-11, GPT-5.2|')
     assert models == []
+
+
+def test_parse_models_json_format():
+    models = _parse_models('[{"name":"GPT-5.2","code":"gpt-5.2-2025-12-11"}]')
+    assert models == [{'id': 'gpt-5.2-2025-12-11', 'name': 'GPT-5.2'}]

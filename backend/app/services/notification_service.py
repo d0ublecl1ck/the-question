@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlmodel import Session, select
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate, NotificationUpdate
@@ -15,7 +16,7 @@ def list_notifications(
     session: Session,
     user_id: str,
     unread_only: bool = False,
-    limit: int | None = 50,
+    limit:Optional[int] = 50,
     offset: int = 0,
 ) -> list[Notification]:
     statement = select(Notification).where(Notification.user_id == user_id)
@@ -28,7 +29,7 @@ def list_notifications(
     return list(session.exec(statement).all())
 
 
-def get_notification(session: Session, notification_id: str) -> Notification | None:
+def get_notification(session: Session, notification_id: str) ->Optional[Notification]:
     return session.exec(select(Notification).where(Notification.id == notification_id)).first()
 
 

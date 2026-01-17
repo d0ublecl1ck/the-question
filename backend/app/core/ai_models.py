@@ -1,8 +1,28 @@
+import json
+
 from app.core.config import settings
 
 
 def _parse_models(raw: str) -> list[dict[str, str]]:
     models: list[dict[str, str]] = []
+    if not raw:
+        return models
+    if raw.lstrip().startswith('['):
+        try:
+            items = json.loads(raw)
+        except json.JSONDecodeError:
+            return models
+        if not isinstance(items, list):
+            return models
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get('name', '')).strip()
+            code = str(item.get('code', '')).strip()
+            if not name or not code:
+                continue
+            models.append({'id': code, 'name': name})
+        return models
     for item in raw.split(','):
         entry = item.strip()
         if not entry:

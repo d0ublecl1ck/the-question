@@ -9,11 +9,18 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sparkles } from 'lucide-react'
 import { useAppSelector } from '@/store/hooks'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AI_Prompt } from '@/components/ui/animated-ai-input'
 import { streamAiChat } from '@/store/api/aiStream'
 import {
@@ -111,7 +118,11 @@ const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>
 export default function ChatPage() {
   const token = useAppSelector((state) => state.auth.token)
   const navigate = useNavigate()
+  const location = useLocation()
+  const { sessionId: routeSessionId } = useParams()
   const [open, setOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(null)
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -123,6 +134,7 @@ export default function ChatPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
+  const isRootChat = location.pathname === '/chat'
 
   const [createChatSession, { isLoading: isCreatingSession }] = useCreateChatSessionMutation()
   const [updateChatSessionTitle] = useUpdateChatSessionTitleMutation()
@@ -177,10 +189,17 @@ export default function ChatPage() {
     }
     const ordered = sortSessions(sessionsData)
     setSessions((prev) => (areSessionsEqual(prev, ordered) ? prev : ordered))
-    if (!sessionId) {
+    if (!sessionId && !routeSessionId) {
       setSessionId(ordered[0]?.id ?? null)
     }
-  }, [token, sessionsData, sessionId, isCreatingSession, createChatSession])
+  }, [token, sessionsData, sessionId, routeSessionId, isCreatingSession, createChatSession])
+
+  useEffect(() => {
+    if (!routeSessionId) return
+    if (routeSessionId !== sessionId) {
+      setSessionId(routeSessionId)
+    }
+  }, [routeSessionId, sessionId])
 
   useEffect(() => {
     if (models.length === 0) return
@@ -246,6 +265,9 @@ export default function ChatPage() {
         setStatus('error')
         return
       }
+    }
+    if (activeSessionId && isRootChat) {
+      navigate(`/chat/${activeSessionId}`)
     }
     const content = draft.trim()
     const activeSession = sessions.find((session) => session.id === activeSessionId)
@@ -343,6 +365,19 @@ export default function ChatPage() {
     if (session.id === sessionId) return
     setSessionId(session.id)
     setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
+  }
+
+  const handleRequestDeleteSession = (session: ChatSession) => {
+    setDeleteCandidate(session)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDeleteSession = async () => {
+    if (!deleteCandidate) return
+    const target = deleteCandidate
+    setDeleteDialogOpen(false)
+    setDeleteCandidate(null)
+    await handleDeleteSession(target)
   }
 
   const handleDeleteSession = async (session: ChatSession) => {
@@ -443,7 +478,7 @@ export default function ChatPage() {
                         <button
                           type="button"
                           className="mt-1 rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:border-border/70 hover:text-foreground"
-                          onClick={() => handleDeleteSession(session)}
+                          onClick={() => handleRequestDeleteSession(session)}
                         >
                           删除
                         </button>
@@ -481,68 +516,95 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="mt-8 text-center">
-              <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
-              <p className="mt-3 text-sm text-muted-foreground">
-                选择技能与模型，快速进入对话并保持连续行动。
-              </p>
-            </div>
+            {isRootChat ? (
+              <>
+                <div className="mt-8 text-center">
+                  <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    选择技能与模型，快速进入对话并保持连续行动。
+                  </p>
+                </div>
 
-            <div className="mt-8 rounded-[24px] border border-border/40 bg-white/70 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                {selectedSkill && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    {selectedSkill.name}
-                  </Badge>
-                )}
-              </div>
-              <AI_Prompt
-                value={draft}
-                onChange={setDraft}
-                onSend={handleSend}
-                onTriggerSkill={() => setOpen(true)}
-                models={models}
-                selectedModelId={selectedModelId}
-                onModelChange={setSelectedModelId}
-                disabled={streaming}
-              />
-            </div>
-
-            <ScrollArea className="mt-6 min-h-0 flex-1 rounded-[26px] border border-border/60 bg-white/70 p-5">
-              <div className="flex flex-col gap-4">
-                {messages.length === 0 && viewStatus === 'ready' && (
-                  <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
-                    还没有消息，开始你的第一条对话。
+                <div className="mt-8 rounded-[24px] border border-border/40 bg-white/70 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedSkill && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        {selectedSkill.name}
+                      </Badge>
+                    )}
                   </div>
-                )}
-                {messages.map((message) => {
-                  const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
-                  return (
-                    <div
-                      key={message.id}
-                      className={
-                        message.role === 'assistant'
-                          ? 'max-w-[78%] rounded-2xl border border-border/60 bg-white/80 p-4 text-foreground'
-                          : 'ml-auto max-w-[78%] rounded-2xl border border-foreground/10 bg-foreground text-background p-4'
-                      }
-                    >
-                      <p className="text-sm leading-relaxed">{message.content}</p>
-                      {badgeSkill && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Badge
-                            variant={message.role === 'assistant' ? 'secondary' : 'outline'}
-                            className={message.role === 'assistant' ? '' : 'border-white/40 text-white'}
-                          >
-                            {badgeSkill.name}
-                          </Badge>
+                  <AI_Prompt
+                    value={draft}
+                    onChange={setDraft}
+                    onSend={handleSend}
+                    onTriggerSkill={() => setOpen(true)}
+                    models={models}
+                    selectedModelId={selectedModelId}
+                    onModelChange={setSelectedModelId}
+                    disabled={streaming}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <ScrollArea className="mt-6 min-h-0 flex-1 rounded-[26px] border border-border/60 bg-white/70 p-5">
+                  <div className="flex flex-col gap-4">
+                    {messages.length === 0 && viewStatus === 'ready' && (
+                      <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
+                        还没有消息，开始你的第一条对话。
+                      </div>
+                    )}
+                    {messages.map((message) => {
+                      const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
+                      return (
+                        <div
+                          key={message.id}
+                          className={
+                            message.role === 'assistant'
+                              ? 'max-w-[78%] rounded-2xl border border-border/60 bg-white/80 p-4 text-foreground'
+                              : 'ml-auto max-w-[78%] rounded-2xl border border-foreground/10 bg-foreground text-background p-4'
+                          }
+                        >
+                          <p className="text-sm leading-relaxed">{message.content}</p>
+                          {badgeSkill && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Badge
+                                variant={message.role === 'assistant' ? 'secondary' : 'outline'}
+                                className={message.role === 'assistant' ? '' : 'border-white/40 text-white'}
+                              >
+                                {badgeSkill.name}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </ScrollArea>
+                      )
+                    })}
+                  </div>
+                </ScrollArea>
+
+                <div className="mt-6 rounded-[24px] border border-border/40 bg-white/70 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedSkill && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        {selectedSkill.name}
+                      </Badge>
+                    )}
+                  </div>
+                  <AI_Prompt
+                    value={draft}
+                    onChange={setDraft}
+                    onSend={handleSend}
+                    onTriggerSkill={() => setOpen(true)}
+                    models={models}
+                    selectedModelId={selectedModelId}
+                    onModelChange={setSelectedModelId}
+                    disabled={streaming}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-white/80 p-4">
               <Button
@@ -597,6 +659,35 @@ export default function ChatPage() {
               </CommandGroup>
             </CommandList>
           </Command>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(nextOpen) => {
+          setDeleteDialogOpen(nextOpen)
+          if (!nextOpen) {
+            setDeleteCandidate(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>确认删除对话？</DialogTitle>
+            <DialogDescription>
+              {deleteCandidate?.title?.trim()
+                ? `“${deleteCandidate.title.trim()}”将被永久删除，无法恢复。`
+                : '该对话将被永久删除，无法恢复。'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteSession}>
+              删除
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </section>
