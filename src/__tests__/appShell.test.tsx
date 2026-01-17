@@ -94,3 +94,21 @@ it('centers page content within the shell', () => {
   expect(main).toHaveClass('justify-center')
   expect(main).toHaveClass('w-full', 'px-[5%]')
 })
+
+it('uses full-height layout on chat route', () => {
+  render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/chat']}>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route path="chat" element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  const main = screen.getByRole('main')
+  expect(main).toHaveClass('h-[calc(100dvh-3.5rem)]')
+  expect(main).toHaveClass('overflow-hidden')
+})

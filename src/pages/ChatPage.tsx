@@ -69,6 +69,45 @@ const toLocalMessage = (message: ApiChatMessage): ChatMessage => {
   }
 }
 
+const areSessionsEqual = (prev: ChatSession[], next: ChatSession[]) => {
+  if (prev.length !== next.length) return false
+  for (let i = 0; i < prev.length; i += 1) {
+    const previous = prev[i]
+    const current = next[i]
+    if (!previous || !current) return false
+    if (previous.id !== current.id) return false
+    if ((previous.title ?? null) !== (current.title ?? null)) return false
+    if ((previous.created_at ?? null) !== (current.created_at ?? null)) return false
+    if ((previous.updated_at ?? null) !== (current.updated_at ?? null)) return false
+  }
+  return true
+}
+
+const areMessagesEqual = (prev: ChatMessage[], next: ChatMessage[]) => {
+  if (prev.length !== next.length) return false
+  for (let i = 0; i < prev.length; i += 1) {
+    const previous = prev[i]
+    const current = next[i]
+    if (!previous || !current) return false
+    if (previous.id !== current.id) return false
+    if (previous.role !== current.role) return false
+    if (previous.content !== current.content) return false
+    if ((previous.skill_id ?? null) !== (current.skill_id ?? null)) return false
+  }
+  return true
+}
+
+const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>) => {
+  const prevKeys = Object.keys(prev)
+  const nextKeys = Object.keys(next)
+  if (prevKeys.length !== nextKeys.length) return false
+  for (const key of prevKeys) {
+    if (!(key in next)) return false
+    if (prev[key] !== next[key]) return false
+  }
+  return true
+}
+
 export default function ChatPage() {
   const token = useAppSelector((state) => state.auth.token)
   const navigate = useNavigate()
@@ -137,7 +176,7 @@ export default function ChatPage() {
       return
     }
     const ordered = sortSessions(sessionsData)
-    setSessions(ordered)
+    setSessions((prev) => (areSessionsEqual(prev, ordered) ? prev : ordered))
     if (!sessionId) {
       setSessionId(ordered[0]?.id ?? null)
     }
@@ -150,7 +189,8 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!sessionId) return
-    setMessages(messagesData.map(toLocalMessage))
+    const nextMessages = messagesData.map(toLocalMessage)
+    setMessages((prev) => (areMessagesEqual(prev, nextMessages) ? prev : nextMessages))
   }, [messagesData, sessionId])
 
   useEffect(() => {
@@ -169,7 +209,10 @@ export default function ChatPage() {
         }),
       )
       if (alive) {
-        setSessionPeek(Object.fromEntries(results))
+        setSessionPeek((prev) => {
+          const next = Object.fromEntries(results)
+          return arePeekEqual(prev, next) ? prev : next
+        })
       }
     }
     loadPreview()
@@ -340,15 +383,15 @@ export default function ChatPage() {
   }
 
   return (
-    <section className="grid w-full gap-8 lg:grid-cols-[2fr_8fr]">
+    <section className="grid h-full min-h-0 w-full gap-8 lg:grid-cols-[2fr_8fr]">
       <h2 className="sr-only">对话</h2>
-      <aside className="hidden h-full flex-col justify-between rounded-[28px] border border-border/70 bg-white/80 px-5 py-6 text-sm text-muted-foreground lg:flex">
-        <div className="space-y-6">
+      <aside className="hidden h-full min-h-0 flex-col rounded-[28px] border border-border/70 bg-white/80 px-5 py-6 text-sm text-muted-foreground lg:flex">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-[0.35em]">WenDui</p>
             <p className="text-base font-semibold text-foreground">对话台</p>
           </div>
-          <div className="space-y-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
             <button
               className="flex w-full items-center justify-between rounded-full bg-muted/60 px-4 py-2 text-left text-foreground"
               onClick={handleCreateSession}
@@ -356,7 +399,7 @@ export default function ChatPage() {
               新建
               <span className="text-xs text-muted-foreground">+</span>
             </button>
-            <div className="space-y-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-2">
               <div className="text-xs uppercase tracking-[0.35em]">历史对话</div>
               <input
                 value={sessionQuery}
@@ -364,7 +407,7 @@ export default function ChatPage() {
                 placeholder="搜索对话"
                 className="h-9 w-full rounded-full border border-border/70 bg-white px-3 text-xs text-foreground placeholder:text-muted-foreground"
               />
-              <ScrollArea className="h-[360px] pr-2">
+              <ScrollArea className="min-h-0 flex-1 pr-2">
                 <div className="space-y-2 text-sm">
                   {filteredSessions.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground">
@@ -412,10 +455,10 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
-        <div className="text-xs text-muted-foreground">Powered by WenDui</div>
+        <div className="pt-4 text-xs text-muted-foreground">Powered by WenDui</div>
       </aside>
 
-      <div className="space-y-8">
+      <div className="flex h-full min-h-0 flex-col gap-8">
         {!token && (
           <div className="flex items-center justify-between">
             <div className="hidden h-9 items-center rounded-full border border-border/70 bg-white px-4 text-xs text-muted-foreground lg:flex">
@@ -427,8 +470,8 @@ export default function ChatPage() {
           </div>
         )}
 
-        <div className="w-full">
-          <div className="w-full" data-testid="chat-right-panel">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col" data-testid="chat-right-panel">
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-4 py-1 text-xs text-muted-foreground">
                 <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
@@ -470,7 +513,7 @@ export default function ChatPage() {
               />
             </div>
 
-            <ScrollArea className="mt-6 h-[460px] rounded-[26px] border border-border/60 bg-white/70 p-5">
+            <ScrollArea className="mt-6 min-h-0 flex-1 rounded-[26px] border border-border/60 bg-white/70 p-5">
               <div className="flex flex-col gap-4">
                 {messages.length === 0 && viewStatus === 'ready' && (
                   <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
@@ -566,4 +609,10 @@ export default function ChatPage() {
       </Dialog>
     </section>
   )
+}
+
+export const __testables__ = {
+  areSessionsEqual,
+  areMessagesEqual,
+  arePeekEqual,
 }

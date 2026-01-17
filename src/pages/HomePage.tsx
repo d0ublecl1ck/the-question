@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
+import skillHubCard from '@/assets/skill-hub-card.png'
 
 const roleHighlights = [
   {
@@ -106,18 +107,11 @@ export default function HomePage() {
             <span>知识治理</span>
           </div>
         </div>
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[36px] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.9),rgba(235,240,255,0.7),rgba(235,245,240,0.8))] shadow-[0_40px_90px_-40px_rgba(15,23,42,0.4)]">
-          <div className="absolute left-[8%] top-[12%] h-24 w-24 rounded-full bg-[rgba(120,175,255,0.35)] blur-2xl" />
-          <div className="absolute bottom-[18%] right-[12%] h-40 w-40 rounded-[60px] bg-[rgba(159,230,190,0.45)] blur-2xl" />
-          <div className="absolute left-[12%] top-[52%] h-28 w-28 rounded-[36px] bg-white/60 blur-2xl" />
-          <div className="absolute inset-0 flex items-end justify-start p-8">
-            <div className="max-w-sm space-y-2 text-sm text-slate-600">
-              <div className="text-xs uppercase tracking-[0.3em] text-slate-500">Skill Hub</div>
-              <div className="text-lg font-semibold text-slate-700">对话即执行</div>
-              <div>对话、技能、知识统一在一个可控的工作台里。</div>
-            </div>
-          </div>
-        </div>
+        <div
+          className="relative aspect-[4/3] w-full overflow-hidden rounded-[36px] bg-cover bg-center shadow-[0_40px_90px_-40px_rgba(15,23,42,0.4)]"
+          style={{ backgroundImage: `url(${skillHubCard})` }}
+          data-testid="skill-hub-hero"
+        />
       </header>
 
       <section className="space-y-6">

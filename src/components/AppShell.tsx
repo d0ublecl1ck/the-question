@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { clearAuth } from '@/store/slices/authSlice'
 
@@ -23,6 +23,7 @@ export default function AppShell() {
   const status = useAppSelector((state) => state.auth.status)
   const user = useAppSelector((state) => state.auth.user)
   const navigate = useNavigate()
+  const location = useLocation()
   const [panelOpen, setPanelOpen] = useState(false)
   const isAuthed = status === 'authenticated'
   const navItems = isAuthed ? authedNavItems : publicNavItems
@@ -30,6 +31,13 @@ export default function AppShell() {
   const avatarSeed = email || 'anonymous'
   const accent = Array.from(avatarSeed).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360
   const initials = email ? email.slice(0, 1).toUpperCase() : '?'
+  const isChatRoute = location.pathname.startsWith('/chat')
+  const mainClassName = [
+    'mx-auto flex w-full flex-1 justify-center px-[5%]',
+    isChatRoute
+      ? 'h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden py-6'
+      : 'min-h-[calc(100vh-3.5rem)] pb-20 pt-8',
+  ].join(' ')
 
   return (
     <div className="min-h-screen bg-white">
@@ -135,7 +143,7 @@ export default function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full flex-1 justify-center px-[5%] pb-20 pt-8">
+      <main className={mainClassName}>
         <Outlet />
       </main>
     </div>

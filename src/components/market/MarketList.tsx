@@ -2,13 +2,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Link } from 'react-router-dom'
-import type { MarketSkill } from '@/pages/MarketPage'
+import type { ReactNode } from 'react'
+import type { MarketSkill } from '@/store/api/types'
 
 type MarketListProps = {
   items: MarketSkill[]
+  renderActions?: (item: MarketSkill) => ReactNode
 }
 
-export default function MarketList({ items }: MarketListProps) {
+export default function MarketList({ items, renderActions }: MarketListProps) {
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
@@ -41,9 +43,13 @@ export default function MarketList({ items }: MarketListProps) {
               <span className="text-muted-foreground">
                 收藏 {item.favorites_count} · 评论 {item.comments_count}
               </span>
-              <Button asChild variant="outline" size="sm" className="rounded-full">
-                <Link to={`/skills/${item.id}`}>查看详情</Link>
-              </Button>
+              {renderActions ? (
+                renderActions(item)
+              ) : (
+                <Button asChild variant="outline" size="sm" className="rounded-full">
+                  <Link to={`/skills/${item.id}`}>查看详情</Link>
+                </Button>
+              )}
             </div>
           </div>
           {index < items.length - 1 && <Separator className="mt-5" />}
