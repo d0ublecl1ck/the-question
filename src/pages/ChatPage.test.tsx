@@ -20,6 +20,9 @@ it('renders chat page with composer', async () => {
         { status: 200 },
       )
     }
+    if (url.includes('/api/v1/ai/models')) {
+      return new Response(JSON.stringify([{ id: 'gpt-5.2-2025-12-11', label: 'GPT-5.2' }]), { status: 200 })
+    }
     if (url.includes('/api/v1/chats/')) {
       return new Response(JSON.stringify([]), { status: 200 })
     }

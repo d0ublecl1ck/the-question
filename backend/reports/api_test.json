@@ -1,0 +1,397 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "total": 64,
+  "passed": 64,
+  "failed": 0,
+  "results": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "status": 201,
+      "ok": true,
+      "error": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "ok": true,
+      "error": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "status": 200,
+      "ok": true,
+      "error": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/chat/stream",
+      "status": 500,
+      "ok": true,
+      "skipped": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/models",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chat/sessions",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chat/sessions/{session_id}/messages",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chats",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/chats",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/chats/{session_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chats/{session_id}/messages",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/chats/{session_id}/messages",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/chats/{session_id}/suggestions",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/chats/{session_id}/suggestions",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/chats/{session_id}/suggestions/{suggestion_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/comments/{comment_id}/like",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/comments/{comment_id}/replies",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/health",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/comments",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/comments/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/favorites",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/favorites",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/market/ratings",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/ratings/me/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/ratings/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/skills",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/skills/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/market/skills/{skill_id}/stats",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/me",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/me/memory",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/me/memory",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/memory",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/memory",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/memory/{memory_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/memory/{memory_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/notifications/{notification_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/reports",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reports",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/reports/{report_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/search/skills",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/skill-suggestions",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/skills",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skills",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/skills/import",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skills/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/skills/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skills/{skill_id}/export",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/skills/{skill_id}/versions",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skills/{skill_id}/versions",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skills/{skill_id}/versions/tree",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/skills/{skill_id}/versions/{version}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/users/me",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/chats/{session_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/market/favorites/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/memory/{memory_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/notifications/{notification_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/reports/{report_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/skills/{skill_id}",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "status": 200,
+      "ok": true,
+      "error": null
+    }
+  ]
+}

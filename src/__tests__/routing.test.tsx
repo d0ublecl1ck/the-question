@@ -1,16 +1,41 @@
 import { render, screen } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
-import { expect, it } from 'vitest'
+import { beforeEach, expect, it } from 'vitest'
 import { routes } from '../app/routes'
+import { useAuthStore } from '../stores/authStore'
 
-it('renders chat page at root', () => {
+beforeEach(() => {
+  useAuthStore.getState().clearAuth()
+})
+
+it('redirects to login when unauthenticated at root', () => {
   const router = createMemoryRouter(routes, { initialEntries: ['/'] })
   render(<RouterProvider router={router} />)
-  expect(screen.getByRole('heading', { name: /chat/i })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'WenDui' })).toBeInTheDocument()
+})
+
+it('renders home page at root when authenticated', () => {
+  useAuthStore.getState().setAuth({
+    token: 'token-1',
+    user: { id: 'u1', email: 'user@example.com' },
+  })
+  const router = createMemoryRouter(routes, { initialEntries: ['/'] })
+  render(<RouterProvider router={router} />)
+  expect(screen.getByRole('heading', { name: '首页' })).toBeInTheDocument()
+})
+
+it('renders chat page at /chat when authenticated', () => {
+  useAuthStore.getState().setAuth({
+    token: 'token-1',
+    user: { id: 'u1', email: 'user@example.com' },
+  })
+  const router = createMemoryRouter(routes, { initialEntries: ['/chat'] })
+  render(<RouterProvider router={router} />)
+  expect(screen.getByRole('heading', { name: '对话' })).toBeInTheDocument()
 })
 
 it('renders login page at /login', () => {
   const router = createMemoryRouter(routes, { initialEntries: ['/login'] })
   render(<RouterProvider router={router} />)
-  expect(screen.getByRole('heading', { name: '登录' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'WenDui' })).toBeInTheDocument()
 })

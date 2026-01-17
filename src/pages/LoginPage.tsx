@@ -13,8 +13,27 @@ export default function LoginPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [error, setError] = useState('')
 
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+
+  const extractErrorMessage = async (response: Response, fallback: string) => {
+    try {
+      const data = (await response.json()) as { detail?: string }
+      if (data?.detail) {
+        return data.detail
+      }
+    } catch {
+      // ignore invalid json
+    }
+    return fallback
+  }
+
   const submit = async () => {
     if (!email.trim() || !password.trim()) return
+    if (!isValidEmail(email)) {
+      setStatus('error')
+      setError('请输入有效的邮箱地址')
+      return
+    }
     setStatus('loading')
     setError('')
     try {
@@ -25,7 +44,11 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
       if (!response.ok) {
-        throw new Error('Request failed')
+        const message = await extractErrorMessage(
+          response,
+          mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试',
+        )
+        throw new Error(message)
       }
       const data = (await response.json()) as { access_token?: string }
       const resolveUser = async (token: string) => {
@@ -45,7 +68,8 @@ export default function LoginPage() {
           body: JSON.stringify({ email, password }),
         })
         if (!loginResponse.ok) {
-          throw new Error('Login failed')
+          const message = await extractErrorMessage(loginResponse, '登录失败，请检查账号信息')
+          throw new Error(message)
         }
         const loginData = (await loginResponse.json()) as { access_token: string }
         const user = await resolveUser(loginData.access_token)
@@ -57,7 +81,7 @@ export default function LoginPage() {
       navigate('/')
     } catch (err) {
       setStatus('error')
-      setError(mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试')
+      setError(err instanceof Error && err.message ? err.message : '登录失败，请检查账号信息')
     } finally {
       setStatus('idle')
     }
@@ -65,32 +89,51 @@ export default function LoginPage() {
 
   return (
     <section className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-md rounded-3xl border border-border/60 bg-white/85 p-8 shadow-xl backdrop-blur">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">{mode === 'login' ? '登录' : '注册'}</h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-full"
-            onClick={() => setMode((prev) => (prev === 'login' ? 'register' : 'login'))}
-          >
-            {mode === 'login' ? '去注册' : '去登录'}
-          </Button>
+      <div className="w-full max-w-md text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-900 text-white">
+            <span className="text-2xl font-semibold">W</span>
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight">WenDui</h1>
+          <p className="text-sm text-muted-foreground">
+            {mode === 'login' ? '问对问题，遇见专家' : '创建账号，开始你的智能工作流'}
+          </p>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">登录后同步记忆与个人技能库。</p>
-        <div className="mt-6 space-y-4">
-          <Input placeholder="邮箱" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+
+        <div className="mt-10 space-y-3">
+          <Input
+            placeholder="邮箱"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="h-12 rounded-2xl"
+          />
           <Input
             placeholder="密码"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            className="h-12 rounded-2xl"
           />
           {status === 'error' && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="w-full" onClick={submit} disabled={status === 'loading'}>
-            {status === 'loading' ? '处理中...' : '进入工作台'}
+          <Button className="h-12 w-full rounded-full" onClick={submit} disabled={status === 'loading'}>
+            {mode === 'login' ? '邮箱登录' : '邮箱注册'}
           </Button>
         </div>
+
+        <div className="mt-6 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <span>{mode === 'login' ? '还没有账号？' : '已有账号？'}</span>
+          <button
+            type="button"
+            className="text-foreground hover:underline"
+            onClick={() => setMode((prev) => (prev === 'login' ? 'register' : 'login'))}
+          >
+            {mode === 'login' ? '去注册' : '去登录'}
+          </button>
+        </div>
+        <p className="mt-6 text-center text-[11px] text-muted-foreground">
+          继续即表示你同意我们的服务条款和隐私政策
+        </p>
       </div>
     </section>
   )

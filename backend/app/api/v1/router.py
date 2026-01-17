@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import health, auth, users, skills, market, chats, memory, notifications, reports, me, chat_aliases, search, comments
+from app.api.v1 import health, auth, users, skills, market, chats, memory, notifications, reports, me, chat_aliases, search, comments, ai
 from app.core.config import settings
 
 api_router = APIRouter(prefix=settings.API_V1_PREFIX)
@@ -17,3 +17,4 @@ api_router.include_router(notifications.router)
 api_router.include_router(reports.router)
 api_router.include_router(search.router)
 api_router.include_router(comments.router)
+api_router.include_router(ai.router)

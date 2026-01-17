@@ -11,11 +11,13 @@ import {
 } from '@/components/ui/command'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Textarea } from '@/components/ui/textarea'
-import { Sparkles, Tag, Wand2 } from 'lucide-react'
+import { Sparkles, Tag } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
-import { createChatMessage, createChatSession, createSkillSuggestion, listChatMessages } from '@/services/chat'
+import { createChatSession, createSkillSuggestion, listChatMessages } from '@/services/chat'
 import { useNavigate } from 'react-router-dom'
+import { AI_Prompt } from '@/components/ui/animated-ai-input'
+import { listAiModels, streamAiChat, type AiModelOption } from '@/services/ai'
+import { authFetch } from '@/services/http'
 
 export type SkillItem = {
   id: string
@@ -39,9 +41,12 @@ export default function ChatPage() {
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [skills, setSkills] = useState<SkillItem[]>([])
+  const [models, setModels] = useState<AiModelOption[]>([])
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [suggestionStatus, setSuggestionStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [streaming, setStreaming] = useState(false)
 
   const skillById = useMemo(() => Object.fromEntries(skills.map((skill) => [skill.id, skill])), [skills])
 
@@ -51,17 +56,31 @@ export default function ChatPage() {
     const load = async () => {
       setStatus('loading')
       try {
-        const [session, skillResponse] = await Promise.all([
+        const [sessionResult, skillResult, modelResult] = await Promise.allSettled([
           createChatSession('对话'),
-          fetch('/api/v1/skills'),
+          authFetch('/api/v1/skills'),
+          listAiModels(),
         ])
-        if (!skillResponse.ok) {
+
+        const modelList = modelResult.status === 'fulfilled' ? modelResult.value : []
+        if (!alive) return
+        setModels(modelList)
+        setSelectedModelId((prev) => prev ?? modelList[0]?.id ?? null)
+
+        if (sessionResult.status !== 'fulfilled') {
+          throw new Error('Create session failed')
+        }
+        const session = sessionResult.value
+
+        if (skillResult.status !== 'fulfilled' || !skillResult.value.ok) {
           throw new Error('Load skills failed')
         }
-        const skillData = (await skillResponse.json()) as SkillItem[]
+        const skillData = (await skillResult.value.json()) as SkillItem[]
         if (!alive) return
+
         setSessionId(session.id)
         setSkills(skillData)
+
         const history = await listChatMessages(session.id)
         if (!alive) return
         setMessages(history)
@@ -78,18 +97,61 @@ export default function ChatPage() {
   }, [token])
 
   const handleSend = async () => {
-    if (!draft.trim() || !sessionId) return
+    if (!draft.trim() || !selectedModelId) return
+    let activeSessionId = sessionId
+    if (!activeSessionId) {
+      try {
+        const session = await createChatSession('对话')
+        activeSessionId = session.id
+        setSessionId(session.id)
+      } catch (error) {
+        setStatus('error')
+        return
+      }
+    }
+    const content = draft.trim()
+    const userMessage: ChatMessage = {
+      id: `local-user-${Date.now()}`,
+      role: 'user',
+      content,
+      skill_id: selectedSkill?.id ?? null,
+    }
+    const assistantId = `local-assistant-${Date.now()}`
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { id: assistantId, role: 'assistant', content: '', skill_id: null },
+    ])
+    setDraft('')
+    setSelectedSkill(null)
+    setStreaming(true)
     try {
-      const sent = await createChatMessage(sessionId, {
-        role: 'user',
-        content: draft,
-        skill_id: selectedSkill?.id ?? null,
-      })
-      setMessages((prev) => [...prev, sent])
-      setDraft('')
-      setSelectedSkill(null)
+      await streamAiChat(
+        {
+          sessionId: activeSessionId,
+          content,
+          model: selectedModelId,
+          skillId: userMessage.skill_id ?? null,
+        },
+        {
+          onDelta: (delta) => {
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === assistantId
+                  ? { ...message, content: `${message.content}${delta}` }
+                  : message,
+              ),
+            )
+          },
+          onError: () => {
+            setStatus('error')
+          },
+        },
+      )
     } catch (error) {
       setStatus('error')
+    } finally {
+      setStreaming(false)
     }
   }
 
@@ -111,9 +173,9 @@ export default function ChatPage() {
 
   if (!token) {
     return (
-      <section className="rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg">
-        <h2 className="text-2xl font-semibold">Chat</h2>
-        <p className="mt-2 text-sm text-muted-foreground">请先登录以同步技能与对话。</p>
+      <section className="page-card">
+        <h2 className="page-title">Chat</h2>
+        <p className="page-subtitle">请先登录以同步技能与对话。</p>
         <Button variant="outline" className="mt-4 rounded-full" onClick={() => navigate('/login')}>
           去登录
         </Button>
@@ -123,13 +185,11 @@ export default function ChatPage() {
 
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="flex flex-col gap-6 rounded-3xl border border-border/60 bg-white/80 p-6 shadow-lg backdrop-blur">
+      <div className="page-card flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold">对话</h2>
-            <p className="text-sm text-muted-foreground">
-              在对话中调用技能，气泡仅展示 tag，SKILL 原文由系统注入。
-            </p>
+            <h2 className="page-title">对话</h2>
+            <p className="page-subtitle">在对话中调用技能，气泡仅展示 tag，SKILL 原文由系统注入。</p>
           </div>
           <Button variant="secondary" className="gap-2" onClick={() => setOpen(true)}>
             <Sparkles className="h-4 w-4" />
@@ -137,10 +197,10 @@ export default function ChatPage() {
           </Button>
         </div>
 
-        <ScrollArea className="h-[420px] rounded-2xl border border-border/60 bg-white/70 p-4">
+        <ScrollArea className="h-[420px] rounded-2xl border border-border/70 bg-white p-4">
           <div className="flex flex-col gap-4">
             {messages.length === 0 && status === 'ready' && (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
                 还没有消息，开始你的第一条对话。
               </div>
             )}
@@ -151,7 +211,7 @@ export default function ChatPage() {
                   key={message.id}
                   className={
                     message.role === 'assistant'
-                      ? 'self-start rounded-2xl bg-muted/80 p-4 shadow-sm'
+                      ? 'self-start rounded-2xl bg-muted/70 p-4 shadow-sm'
                       : 'self-end rounded-2xl bg-foreground text-background p-4 shadow-sm'
                   }
                 >
@@ -172,46 +232,34 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <div className="rounded-2xl border border-border/60 bg-white/80 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                <Tag className="h-3 w-3" />
-                使用 $ 快捷触发
+        <div className="rounded-2xl border border-border/70 bg-white p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="gap-1">
+              <Tag className="h-3 w-3" />
+              使用 $ 快捷触发
+            </Badge>
+            {selectedSkill && (
+              <Badge variant="secondary" className="gap-1">
+                <Sparkles className="h-3 w-3" />
+                {selectedSkill.name}
               </Badge>
-              {selectedSkill && (
-                <Badge variant="secondary" className="gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  {selectedSkill.name}
-                </Badge>
-              )}
-            </div>
-            <Button className="gap-2" onClick={handleSend}>
-              <Wand2 className="h-4 w-4" />
-              发送
-            </Button>
+            )}
           </div>
-          <Textarea
-            className="mt-3 min-h-[110px]"
-            placeholder="输入内容，按 $ 触发技能选择"
+          <AI_Prompt
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === '$') {
-                event.preventDefault()
-                setOpen(true)
-              }
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-                event.preventDefault()
-                handleSend()
-              }
-            }}
+            onChange={setDraft}
+            onSend={handleSend}
+            onTriggerSkill={() => setOpen(true)}
+            models={models}
+            selectedModelId={selectedModelId}
+            onModelChange={setSelectedModelId}
+            disabled={streaming}
           />
         </div>
       </div>
 
       <aside className="flex flex-col gap-4">
-        <div className="rounded-3xl border border-border/60 bg-white/80 p-5">
+        <div className="page-card-soft">
           <h3 className="text-sm uppercase tracking-[0.3em] text-muted-foreground">实时提示</h3>
           <p className="mt-3 text-base font-semibold">技能建议</p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -233,16 +281,16 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-border/60 bg-white/80 p-5">
+        <div className="page-card-soft">
           <h3 className="text-sm uppercase tracking-[0.3em] text-muted-foreground">技能库快照</h3>
           <div className="mt-4 space-y-3">
             {skills.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-3 text-xs text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-3 text-xs text-muted-foreground">
                 暂无可用技能
               </div>
             ) : (
               skills.slice(0, 4).map((skill) => (
-                <div key={skill.id} className="rounded-2xl border border-border/70 bg-background/70 p-3">
+                <div key={skill.id} className="rounded-2xl border border-border/70 bg-background/60 p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold">{skill.name}</p>
                     <Badge variant="secondary">{skill.tags[0] ?? '通用'}</Badge>
