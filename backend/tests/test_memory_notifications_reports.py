@@ -71,7 +71,12 @@ def test_memory_notifications_reports_flow():
 
         report = client.post(
             '/api/v1/reports',
-            json={'title': 'Bug', 'content': 'Something broke'},
+            json={
+                'target_type': 'system',
+                'target_id': 'system-issue',
+                'title': 'Bug',
+                'content': 'Something broke',
+            },
             headers=headers,
         )
         assert report.status_code == 201
