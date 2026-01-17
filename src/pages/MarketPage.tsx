@@ -1,40 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { fetchMarketSkills } from '@/services/market'
-
-export type MarketSkill = {
-  id: string
-  name: string
-  description: string
-  tags: string[]
-  favorites_count: number
-  rating: { average: number; count: number }
-  comments_count: number
-  updated_at?: string
-}
+import { useMemo } from 'react'
+import { useGetMarketSkillsQuery } from '@/store/api/marketApi'
+import type { MarketSkill } from '@/store/api/types'
 
 export default function MarketPage() {
-  const [skills, setSkills] = useState<MarketSkill[]>([])
-  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
-
-  useEffect(() => {
-    let alive = true
-    const load = async () => {
-      setStatus('loading')
-      try {
-        const data = await fetchMarketSkills()
-        if (!alive) return
-        setSkills(data)
-        setStatus('ready')
-      } catch (error) {
-        if (!alive) return
-        setStatus('error')
-      }
-    }
-    load()
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: skills = [], isLoading, isError } = useGetMarketSkillsQuery()
+  const status: 'loading' | 'ready' | 'error' = isError ? 'error' : isLoading ? 'loading' : 'ready'
 
   const highlights = useMemo(() => skills.slice(0, 3), [skills])
 

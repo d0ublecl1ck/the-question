@@ -2,22 +2,35 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { expect, it, vi } from 'vitest'
 import MarketPage from './MarketPage'
-import * as marketApi from '@/services/market'
+import { useGetMarketSkillsQuery } from '@/store/api/marketApi'
+
+vi.mock('@/store/api/marketApi', () => ({
+  useGetMarketSkillsQuery: vi.fn(),
+}))
 
 it('renders market page sections', async () => {
-  vi.spyOn(marketApi, 'fetchMarketSkills').mockResolvedValue([])
+  vi.mocked(useGetMarketSkillsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetMarketSkillsQuery>)
   render(
     <MemoryRouter>
       <MarketPage />
     </MemoryRouter>,
   )
+  expect(useGetMarketSkillsQuery).toHaveBeenCalled()
   expect(await screen.findByText('市场')).toBeInTheDocument()
   expect(screen.getByText('Highlights')).toBeInTheDocument()
   expect(screen.getByText('Categories')).toBeInTheDocument()
 })
 
 it('loads market skills', async () => {
-  vi.spyOn(marketApi, 'fetchMarketSkills').mockResolvedValue([])
+  vi.mocked(useGetMarketSkillsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetMarketSkillsQuery>)
   render(
     <MemoryRouter>
       <MarketPage />
@@ -28,7 +41,11 @@ it('loads market skills', async () => {
 })
 
 it('does not wrap sections in cards', async () => {
-  vi.spyOn(marketApi, 'fetchMarketSkills').mockResolvedValue([])
+  vi.mocked(useGetMarketSkillsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetMarketSkillsQuery>)
   const { container } = render(
     <MemoryRouter>
       <MarketPage />
