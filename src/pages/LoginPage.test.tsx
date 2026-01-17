@@ -1,14 +1,18 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import LoginPage from './LoginPage'
+import { store } from '@/store/appStore'
 
 it('renders login page', () => {
   render(
-    <MemoryRouter>
-      <LoginPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
   )
   expect(screen.getByText('WenDui')).toBeInTheDocument()
   expect(screen.getByPlaceholderText('邮箱')).toBeInTheDocument()
@@ -20,9 +24,11 @@ it('renders login page', () => {
 
 it('renders larger logo and brand styles', () => {
   render(
-    <MemoryRouter>
-      <LoginPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
   )
   expect(screen.getByTestId('login-logo')).toHaveClass('h-20')
   expect(screen.getByTestId('login-logo')).toHaveClass('w-20')
@@ -32,9 +38,11 @@ it('renders larger logo and brand styles', () => {
 it('shows email validation error on submit', async () => {
   const user = userEvent.setup()
   render(
-    <MemoryRouter>
-      <LoginPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
   )
   await user.type(screen.getByPlaceholderText('邮箱'), 'not-an-email')
   await user.type(screen.getByPlaceholderText('密码'), 'secret123')
@@ -44,9 +52,11 @@ it('shows email validation error on submit', async () => {
 
 it('centers login content within the page', () => {
   render(
-    <MemoryRouter>
-      <LoginPage />
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
   )
   const container = screen.getByTestId('login-page')
   const card = screen.getByTestId('login-card')
