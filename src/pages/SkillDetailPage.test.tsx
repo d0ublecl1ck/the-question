@@ -38,4 +38,7 @@ it('renders report entry', async () => {
 
   expect(useGetMarketSkillDetailQuery).toHaveBeenCalled()
   expect(await screen.findByText('举报')).toBeInTheDocument()
+  expect(screen.getByText('Skill Detail')).toBeInTheDocument()
+  expect(screen.getAllByText('技能概览').length).toBeGreaterThan(0)
+  expect(screen.getByText('收藏技能')).toBeInTheDocument()
 })

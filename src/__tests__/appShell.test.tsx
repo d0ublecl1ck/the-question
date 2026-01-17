@@ -26,12 +26,12 @@ it('renders the top bar with title and nav', () => {
   const title = screen.getByText('WenDui')
   expect(title).toBeInTheDocument()
   expect(title).toHaveClass('text-2xl', 'font-semibold')
-  expect(screen.getByText('Home')).toBeInTheDocument()
+  expect(screen.getByText('首页')).toBeInTheDocument()
   expect(screen.getByText('About')).toBeInTheDocument()
   expect(screen.getByText('Price')).toBeInTheDocument()
   expect(screen.getByText('Login')).toBeInTheDocument()
   expect(screen.queryByText('未登录')).not.toBeInTheDocument()
-  fireEvent.mouseEnter(screen.getByTestId('account-trigger'))
+  fireEvent.click(screen.getByTestId('account-trigger'))
   expect(screen.getByText('未登录')).toBeInTheDocument()
   expect(screen.getByRole('navigation').querySelector('svg')).toBeNull()
 })
@@ -73,7 +73,7 @@ it('shows account email when authenticated', () => {
   )
 
   expect(screen.queryByText('admin@admin.com')).not.toBeInTheDocument()
-  fireEvent.mouseEnter(screen.getByTestId('account-trigger'))
+  fireEvent.click(screen.getByTestId('account-trigger'))
   expect(screen.getByText('admin@admin.com')).toBeInTheDocument()
 })
 
@@ -96,13 +96,55 @@ it('renders authenticated nav without search', () => {
     </Provider>,
   )
 
-  expect(screen.getByText('Home')).toBeInTheDocument()
-  expect(screen.getByText('Chat')).toBeInTheDocument()
-  expect(screen.getByText('Market')).toBeInTheDocument()
-  expect(screen.getByText('Library')).toBeInTheDocument()
-  expect(screen.getByText('Settings')).toBeInTheDocument()
+  expect(screen.getByText('首页')).toBeInTheDocument()
+  expect(screen.getByText('对话')).toBeInTheDocument()
+  expect(screen.getByText('专家广场')).toBeInTheDocument()
   expect(screen.queryByText('Search')).not.toBeInTheDocument()
   expect(screen.queryByText('Login')).not.toBeInTheDocument()
+})
+
+it('shows settings entry in account panel when authenticated', () => {
+  store.dispatch(
+    setAuth({
+      token: 'token-3',
+      user: { id: 'u3', email: 'owner@example.com' },
+    }),
+  )
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  expect(screen.queryByRole('link', { name: '设置' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByTestId('account-trigger'))
+  const settingsLink = screen.getByRole('link', { name: '设置' })
+  expect(settingsLink).toHaveAttribute('href', '/settings')
+})
+
+it('closes the account panel when clicking outside', () => {
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  fireEvent.click(screen.getByTestId('account-trigger'))
+  expect(screen.getByText('未登录')).toBeInTheDocument()
+  fireEvent.pointerDown(document.body)
+  expect(screen.queryByText('未登录')).not.toBeInTheDocument()
 })
 
 it('centers page content within the shell', () => {
