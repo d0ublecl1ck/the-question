@@ -9,8 +9,8 @@ type MarketToolbarProps = {
   tags: string[]
   selectedTags: string[]
   onToggleTag: (tag: string) => void
-  view: 'list' | 'table'
-  onViewChange: (value: 'list' | 'table') => void
+  view: 'list' | 'grid'
+  onViewChange: (value: 'list' | 'grid') => void
   sort: 'recent' | 'rating' | 'favorites'
   onSortChange: (value: 'recent' | 'rating' | 'favorites') => void
 }
@@ -60,22 +60,22 @@ export default function MarketToolbar({
           </div>
         </div>
         <div className="flex items-center gap-2 self-end">
-          <Button
-            variant={view === 'list' ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-full"
-            onClick={() => onViewChange('list')}
-          >
-            列表
-          </Button>
-          <Button
-            variant={view === 'table' ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-full"
-            onClick={() => onViewChange('table')}
-          >
-            表格
-          </Button>
+        <Button
+          variant={view === 'grid' ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-full"
+          onClick={() => onViewChange('grid')}
+        >
+          网格
+        </Button>
+        <Button
+          variant={view === 'list' ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-full"
+          onClick={() => onViewChange('list')}
+        >
+          列表
+        </Button>
         </div>
       </div>
 

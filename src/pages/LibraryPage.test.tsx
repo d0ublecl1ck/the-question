@@ -8,7 +8,7 @@ vi.mock('@/store/api/marketApi', () => ({
   useGetFavoriteSkillDetailsQuery: vi.fn(),
 }))
 
-it('renders library hero headline', async () => {
+it('renders library headline', async () => {
   vi.mocked(useGetFavoriteSkillDetailsQuery).mockReturnValue({
     data: [
       {
@@ -29,7 +29,7 @@ it('renders library hero headline', async () => {
       <LibraryPage />
     </MemoryRouter>,
   )
-  expect(await screen.findByRole('heading', { name: '收藏工作台' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: '技能库' })).toBeInTheDocument()
 })
 
 it('renders library with empty state', async () => {
@@ -44,5 +44,5 @@ it('renders library with empty state', async () => {
     </MemoryRouter>,
   )
   expect(useGetFavoriteSkillDetailsQuery).toHaveBeenCalled()
-  expect(await screen.findByText('暂无收藏技能')).toBeInTheDocument()
+  expect(await screen.findByText('暂无技能')).toBeInTheDocument()
 })

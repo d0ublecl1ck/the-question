@@ -21,8 +21,9 @@ it('renders market page sections', async () => {
   )
   expect(useGetMarketSkillsQuery).toHaveBeenCalled()
   expect(await screen.findByText('市场')).toBeInTheDocument()
-  expect(screen.getByText('Highlights')).toBeInTheDocument()
-  expect(screen.getByText('Categories')).toBeInTheDocument()
+  expect(screen.getByText('分类')).toBeInTheDocument()
+  expect(screen.getByText('排序')).toBeInTheDocument()
+  expect(screen.getByText('技能列表')).toBeInTheDocument()
 })
 
 it('loads market skills', async () => {
@@ -36,8 +37,7 @@ it('loads market skills', async () => {
       <MarketPage />
     </MemoryRouter>,
   )
-  const placeholders = await screen.findAllByText('暂无内容')
-  expect(placeholders).toHaveLength(2)
+  expect(await screen.findByText('暂无技能')).toBeInTheDocument()
 })
 
 it('does not wrap sections in cards', async () => {

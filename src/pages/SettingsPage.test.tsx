@@ -27,3 +27,19 @@ it('renders settings sections', async () => {
   expect(screen.getByText('偏好记忆')).toBeInTheDocument()
   expect(screen.getByText('默认技能')).toBeInTheDocument()
 })
+
+it('renders error state when loading fails', async () => {
+  vi.mocked(useGetMeQuery).mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isError: true,
+  } as ReturnType<typeof useGetMeQuery>)
+  vi.mocked(useGetMemoryQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetMemoryQuery>)
+
+  render(<SettingsPage />)
+  expect(await screen.findByText('加载失败，请稍后重试')).toBeInTheDocument()
+})

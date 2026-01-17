@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router-dom'
 import { expect, it, vi, beforeEach } from 'vitest'
-import ChatPage from './ChatPage'
+import ChatPage, { __testables__ } from './ChatPage'
 import { store } from '@/store/appStore'
 import { clearAuth, setAuth } from '@/store/slices/authSlice'
 import {
@@ -139,4 +139,39 @@ it('renders login entry when unauthenticated', () => {
     </Provider>,
   )
   expect(screen.getByRole('button', { name: '去登录' })).toBeInTheDocument()
+})
+
+it('compares session lists for equality', () => {
+  const { areSessionsEqual } = __testables__
+  const base = [{ id: 's1', title: '对话', created_at: '1', updated_at: '2' }]
+  expect(areSessionsEqual(base, base)).toBe(true)
+  expect(areSessionsEqual(base, [{ id: 's1', title: '对话', created_at: '1', updated_at: '2' }])).toBe(true)
+  expect(areSessionsEqual(base, [{ id: 's1', title: '变更', created_at: '1', updated_at: '2' }])).toBe(
+    false,
+  )
+  expect(areSessionsEqual(base, [{ id: 's2', title: '对话' }])).toBe(false)
+})
+
+it('compares message lists for equality', () => {
+  const { areMessagesEqual } = __testables__
+  const base = [{ id: 'm1', role: 'user', content: 'hi', skill_id: null }]
+  expect(areMessagesEqual(base, base)).toBe(true)
+  expect(areMessagesEqual(base, [{ id: 'm1', role: 'user', content: 'hi', skill_id: null }])).toBe(
+    true,
+  )
+  expect(areMessagesEqual(base, [{ id: 'm1', role: 'user', content: 'hello', skill_id: null }])).toBe(
+    false,
+  )
+  expect(areMessagesEqual(base, [{ id: 'm2', role: 'assistant', content: 'hi', skill_id: null }])).toBe(
+    false,
+  )
+})
+
+it('compares session preview maps for equality', () => {
+  const { arePeekEqual } = __testables__
+  const base = { s1: 'a', s2: 'b' }
+  expect(arePeekEqual(base, { s1: 'a', s2: 'b' })).toBe(true)
+  expect(arePeekEqual(base, { s2: 'b', s1: 'a' })).toBe(true)
+  expect(arePeekEqual(base, { s1: 'a' })).toBe(false)
+  expect(arePeekEqual(base, { s1: 'a', s2: 'c' })).toBe(false)
 })
