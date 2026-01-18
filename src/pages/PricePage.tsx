@@ -11,7 +11,7 @@ export default function PricePage() {
             未来可能的收费方式
           </h1>
         </div>
-        <p className="max-w-2xl text-base text-muted-foreground">
+        <p className="max-w-3xl text-base text-muted-foreground whitespace-nowrap">
           当前阶段全部功能免费开放，欢迎尽情体验。以下是我们计划中的收费方向，最终以正式上线为准。
         </p>
       </header>
