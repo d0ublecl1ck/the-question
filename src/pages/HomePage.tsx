@@ -6,6 +6,22 @@ import expertDesigner from '@/assets/experts/expert-designer.png'
 import expertPainter from '@/assets/experts/expert-painter.png'
 import expertArchitect from '@/assets/experts/expert-architect.png'
 import expertWriter from '@/assets/experts/expert-writer.png'
+import modelScopeLogo from '@/assets/ModelScopeIcon.svg'
+import watchaLogo from '@/assets/Watcha.svg'
+import { LogoCloud } from '@/components/ui/logo-cloud-3'
+
+const acknowledgementLogos = [
+  {
+    src: modelScopeLogo,
+    alt: 'ModelScope',
+    href: 'https://community.modelscope.cn/?utm_source=wendui',
+  },
+  {
+    src: watchaLogo,
+    alt: 'Watcha',
+    href: 'https://watcha.cn/?utm_source=wendui',
+  },
+]
 
 const roleHighlights = [
   {
@@ -244,6 +260,19 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+      <section className="space-y-6">
+        <div className="flex items-baseline justify-between">
+          <h3 className="text-2xl font-semibold">鸣谢</h3>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            Acknowledgements
+          </span>
+        </div>
+        <LogoCloud
+          data-testid="acknowledgements-logo-cloud"
+          className="py-6"
+          logos={acknowledgementLogos}
+        />
       </section>
     </section>
   )

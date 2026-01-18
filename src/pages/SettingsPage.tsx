@@ -163,7 +163,7 @@ export default function SettingsPage() {
             <div className="flex items-baseline justify-between">
               <h3 className="text-lg font-semibold">偏好记忆</h3>
               <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Preferences
+                Memory
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
