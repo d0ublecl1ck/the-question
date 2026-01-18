@@ -6,32 +6,41 @@ import expertDesigner from '@/assets/experts/expert-designer.png'
 import expertPainter from '@/assets/experts/expert-painter.png'
 import expertArchitect from '@/assets/experts/expert-architect.png'
 import expertWriter from '@/assets/experts/expert-writer.png'
-import modelScopeLogo from '@/assets/ModelScopeIcon.svg'
 import watchaLogo from '@/assets/Watcha.svg'
-import minimaxLogo from '@/assets/MiniMax.svg'
-import openaiLogo from '@/assets/openai-fill.svg'
 import { LogoCloud } from '@/components/ui/logo-cloud-3'
+import { Minimax, OpenAI, ModelScope } from '@lobehub/icons'
 
 const acknowledgementLogos = [
   {
-    src: modelScopeLogo,
     alt: 'ModelScope',
     href: 'https://community.modelscope.cn/?utm_source=wendui',
+    node: (
+      <ModelScope.Combine
+        size={60}
+        type="color"
+        style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }}
+      />
+    ),
   },
   {
     src: watchaLogo,
     alt: 'Watcha',
     href: 'https://watcha.cn/?utm_source=wendui',
+    height: 56,
   },
   {
-    src: minimaxLogo,
     alt: 'MiniMax',
     href: 'https://www.minimax.io/?utm_source=wendui',
+    node: (
+      <Minimax.Combine size={60} type="color" style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }} />
+    ),
   },
   {
-    src: openaiLogo,
     alt: 'OpenAI',
     href: 'https://openai.com/?utm_source=wendui',
+    node: (
+      <OpenAI.Combine size={60} type="color" style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }} />
+    ),
   },
 ]
 
