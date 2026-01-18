@@ -30,7 +30,7 @@
     },
     {
       "name": "SECRET_KEY",
-      ***REMOVED***
+      "value": "***REMOVED***"
     },
     {
       "name": "PROVIDERS",
