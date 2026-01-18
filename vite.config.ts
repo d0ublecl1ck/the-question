@@ -28,5 +28,8 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/setupTests.ts',
     exclude: [...configDefaults.exclude, '**/.worktrees/**', '**/worktrees/**'],
+    deps: {
+      inline: ['@lobehub/icons', '@lobehub/ui', '@emoji-mart/data', '@emoji-mart/react'],
+    },
   },
 })

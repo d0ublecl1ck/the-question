@@ -120,6 +120,13 @@ pre {
   font-size: 0.95rem;
 }
 
+.logo-cloud-item .lobe-flex {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
 
 
 @layer base {
