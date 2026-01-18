@@ -8,6 +8,8 @@ import expertArchitect from '@/assets/experts/expert-architect.png'
 import expertWriter from '@/assets/experts/expert-writer.png'
 import modelScopeLogo from '@/assets/ModelScopeIcon.svg'
 import watchaLogo from '@/assets/Watcha.svg'
+import minimaxLogo from '@/assets/MiniMax.svg'
+import openaiLogo from '@/assets/openai-fill.svg'
 import { LogoCloud } from '@/components/ui/logo-cloud-3'
 
 const acknowledgementLogos = [
@@ -20,6 +22,16 @@ const acknowledgementLogos = [
     src: watchaLogo,
     alt: 'Watcha',
     href: 'https://watcha.cn/?utm_source=wendui',
+  },
+  {
+    src: minimaxLogo,
+    alt: 'MiniMax',
+    href: 'https://www.minimax.io/?utm_source=wendui',
+  },
+  {
+    src: openaiLogo,
+    alt: 'OpenAI',
+    href: 'https://openai.com/?utm_source=wendui',
   },
 ]
 

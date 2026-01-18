@@ -22,7 +22,7 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
       {...props}
       className={cn("overflow-hidden py-4", className)}
     >
-      <InfiniteSlider gap={80} reverse speed={360} speedOnHover={60}>
+      <InfiniteSlider gap={80} reverse duration={800} durationOnHover={1200}>
         {repeatedLogos.map((logo, index) => (
           <a
             key={`logo-${logo.alt}-${index}`}
