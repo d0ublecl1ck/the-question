@@ -28,20 +28,20 @@ const acknowledgementLogos = [
     href: 'https://watcha.cn/?utm_source=wendui',
     height: 56,
   },
-  {
-    alt: 'MiniMax',
-    href: 'https://www.minimax.io/?utm_source=wendui',
-    node: (
-      <Minimax.Combine size={60} type="color" style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }} />
-    ),
-  },
-  {
-    alt: 'OpenAI',
-    href: 'https://openai.com/?utm_source=wendui',
-    node: (
-      <OpenAI.Combine size={60} type="color" style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }} />
-    ),
-  },
+  // {
+  //   alt: 'MiniMax',
+  //   href: 'https://www.minimax.io/?utm_source=wendui',
+  //   node: (
+  //     <Minimax.Combine size={60} type="color" style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }} />
+  //   ),
+  // },
+  // {
+  //   alt: 'OpenAI',
+  //   href: 'https://openai.com/?utm_source=wendui',
+  //   node: (
+  //     <OpenAI.Combine size={60} type="color" style={{ flexWrap: 'nowrap', whiteSpace: 'nowrap' }} />
+  //   ),
+  // },
 ]
 
 const roleHighlights = [
