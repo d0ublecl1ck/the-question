@@ -134,7 +134,7 @@ export default function HomePage() {
               <textarea
                 name="prompt"
                 aria-label="AI 对话输入"
-                placeholder="输入你的问题，回车开始对话"
+                placeholder="写下你的痛点，立刻拿到行动计划"
                 rows={2}
                 className="min-h-[72px] w-full resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
                 value={prompt}

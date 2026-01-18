@@ -11,8 +11,6 @@ import MarketToolbar from '@/components/market/MarketToolbar'
 import MarketList from '@/components/market/MarketList'
 import MarketTable from '@/components/market/MarketTable'
 import ExpertPlazaLayout from '@/components/market/ExpertPlazaLayout'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { enqueueToast } from '@/store/slices/toastSlice'
 
@@ -32,17 +30,15 @@ export default function MarketPage() {
   const [sort, setSort] = useState<'recent' | 'rating' | 'favorites'>('recent')
   const [pendingFavoriteIds, setPendingFavoriteIds] = useState<string[]>([])
 
-  const categories = useMemo(() => {
+  const tags = useMemo(() => {
     const counts = new Map<string, number>()
     skills.forEach((skill) =>
       skill.tags.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1)),
     )
     return Array.from(counts.entries())
-      .map(([tag, count]) => ({ tag, count }))
-      .toSorted((a, b) => b.count - a.count)
+      .map(([tag]) => tag)
+      .toSorted()
   }, [skills])
-
-  const tags = useMemo(() => categories.map((item) => item.tag), [categories])
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -72,7 +68,7 @@ export default function MarketPage() {
   }, [query, selectedTags, skills, sort])
 
   const selectedSummary =
-    selectedTags.length === 0 ? '全部分类' : `已选 ${selectedTags.length} 个分类`
+    selectedTags.length === 0 ? '全部标签' : `已选 ${selectedTags.length} 个标签`
 
   const favoriteIds = favoriteSkills.map((item) => item.skill_id)
   const favoriteSet = new Set(favoriteIds)
@@ -118,7 +114,7 @@ export default function MarketPage() {
             <div>
               <h2 className="text-3xl font-semibold">社区</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                以分类、排序与视图切换快速筛选技能资产。
+                以标签、排序与视图切换快速筛选技能资产。
               </p>
             </div>
             <span className="rounded-full border border-border/60 bg-white/80 px-4 py-2 text-xs text-muted-foreground shadow-sm">
@@ -128,43 +124,6 @@ export default function MarketPage() {
         </header>
 
         <section className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-white/70 p-3 backdrop-blur">
-            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">分类</span>
-            <Button
-              variant={selectedTags.length === 0 ? 'default' : 'ghost'}
-              size="sm"
-              className="rounded-full"
-              onClick={() => setSelectedTags([])}
-            >
-              全部
-            </Button>
-            {categories.length === 0 ? (
-              <span className="text-xs text-muted-foreground">暂无分类</span>
-            ) : (
-              categories.map((item) => {
-                const active = selectedTags.includes(item.tag)
-                return (
-                  <Button
-                    key={item.tag}
-                    variant={active ? 'default' : 'ghost'}
-                    size="sm"
-                    className={cn('rounded-full text-xs', active ? '' : 'text-muted-foreground')}
-                    onClick={() =>
-                      setSelectedTags((prev) =>
-                        prev.includes(item.tag)
-                          ? prev.filter((tag) => tag !== item.tag)
-                          : [...prev, item.tag],
-                      )
-                    }
-                  >
-                    {item.tag}
-                    <span className="ml-2 text-[10px] text-muted-foreground">{item.count}</span>
-                  </Button>
-                )
-              })
-            )}
-          </div>
-
           <MarketToolbar
             query={query}
             onQueryChange={setQuery}
