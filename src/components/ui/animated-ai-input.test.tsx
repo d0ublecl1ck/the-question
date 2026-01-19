@@ -39,3 +39,21 @@ it('renders MiniMax icon when MiniMax model is selected', () => {
 
   expect(screen.getByLabelText('MiniMax Icon')).toBeInTheDocument()
 })
+
+it('collapses textarea when collapsed is true', () => {
+  render(
+    <AI_Prompt
+      value=""
+      onChange={() => undefined}
+      onSend={() => undefined}
+      models={models}
+      selectedModelId={models[0]?.id ?? null}
+      onModelChange={() => undefined}
+      collapsed
+    />,
+  )
+
+  const textarea = screen.getByPlaceholderText('输入内容，回车发送')
+  expect(textarea).toHaveClass('min-h-[40px]')
+  expect(textarea).toHaveAttribute('rows', '1')
+})

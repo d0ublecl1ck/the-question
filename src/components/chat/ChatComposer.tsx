@@ -12,6 +12,8 @@ type ChatComposerProps = {
   onModelChange: (modelId: string) => void
   disabled?: boolean
   selectedSkillName?: string | null
+  collapsed?: boolean
+  onFocusChange?: (focused: boolean) => void
 }
 
 export default function ChatComposer({
@@ -24,6 +26,8 @@ export default function ChatComposer({
   onModelChange,
   disabled,
   selectedSkillName,
+  collapsed,
+  onFocusChange,
 }: ChatComposerProps) {
   return (
     <div className="mt-6">
@@ -45,6 +49,9 @@ export default function ChatComposer({
           selectedModelId={selectedModelId}
           onModelChange={onModelChange}
           disabled={disabled}
+          collapsed={collapsed}
+          onFocus={() => onFocusChange?.(true)}
+          onBlur={() => onFocusChange?.(false)}
         />
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { ArrowDownIcon } from 'lucide-react'
 import type { ComponentProps } from 'react'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom'
 import { cn } from '@/lib/utils'
 
@@ -54,4 +54,18 @@ export const ConversationScrollButton = ({
       </Button>
     )
   )
+}
+
+export type ConversationScrollStateProps = {
+  onAtBottomChange?: (isAtBottom: boolean) => void
+}
+
+export const ConversationScrollState = ({ onAtBottomChange }: ConversationScrollStateProps) => {
+  const { isAtBottom } = useStickToBottomContext()
+
+  useEffect(() => {
+    onAtBottomChange?.(isAtBottom)
+  }, [isAtBottom, onAtBottomChange])
+
+  return null
 }

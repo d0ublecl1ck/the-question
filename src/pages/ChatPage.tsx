@@ -25,7 +25,12 @@ import ChatBubble from '@/components/chat/ChatBubble'
 import SkillSuggestionCard from '@/components/chat/SkillSuggestionCard'
 import SkillDraftSuggestionCard from '@/components/chat/SkillDraftSuggestionCard'
 import { Message } from '@/components/ui/message'
-import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/conversation'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+  ConversationScrollState,
+} from '@/components/ui/conversation'
 import { streamAiChat, watchAiChatStream } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
@@ -151,7 +156,11 @@ export default function ChatPage() {
   const [watching, setWatching] = useState(false)
   const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<string[]>([])
   const [dismissedDraftSuggestionIds, setDismissedDraftSuggestionIds] = useState<string[]>([])
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [isComposerFocused, setIsComposerFocused] = useState(false)
   const isRootChat = location.pathname === '/chat'
+  const hasDraft = draft.trim().length > 0
+  const isComposerCollapsed = !isRootChat && !isAtBottom && !isComposerFocused && !hasDraft
   const messagesRef = useRef<ChatMessage[]>([])
   const lastAppliedDraftRef = useRef<string | null>(null)
   const pendingAssistantIdRef = useRef<string | null>(null)
@@ -922,6 +931,8 @@ export default function ChatPage() {
                   onModelChange={setSelectedModelId}
                   disabled={streaming || watching}
                   selectedSkillName={selectedSkill?.name ?? null}
+                  collapsed={isComposerCollapsed}
+                  onFocusChange={setIsComposerFocused}
                 />
               </>
             ) : (
@@ -974,7 +985,8 @@ export default function ChatPage() {
                     )
                   })}
                 </ConversationContent>
-                <ConversationScrollButton />
+                <ConversationScrollButton className="bottom-6 right-6 left-auto translate-x-0 shadow-md" />
+                <ConversationScrollState onAtBottomChange={setIsAtBottom} />
               </Conversation>
 
                 <ChatComposer
@@ -987,6 +999,8 @@ export default function ChatPage() {
                   onModelChange={setSelectedModelId}
                   disabled={streaming || watching}
                   selectedSkillName={selectedSkill?.name ?? null}
+                  collapsed={isComposerCollapsed}
+                  onFocusChange={setIsComposerFocused}
                 />
               </>
             )}
