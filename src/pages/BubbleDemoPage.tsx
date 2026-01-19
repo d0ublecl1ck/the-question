@@ -24,6 +24,30 @@ const demoBubbles = [
     name: 'AI',
   },
   {
+    id: 'assistant-markdown',
+    role: 'assistant' as const,
+    content: `# Markdown 支持
+
+- **强调**：用粗体突出重点
+- \`inline\` 代码与 [链接](https://example.com)
+- ~~删除线~~ 与多行换行
+
+> 引用可以承载提示语
+> 并保留换行节奏
+
+\`\`\`ts
+const total = 3 + 5
+console.log(total)
+\`\`\`
+
+| 字段 | 值 |
+| --- | --- |
+| 状态 | OK |
+| 耗时 | 120ms |
+`,
+    name: 'AI',
+  },
+  {
     id: 'assistant-long',
     role: 'assistant' as const,
     content:
@@ -70,6 +94,12 @@ const demoBubbles = [
     name: 'ME',
   },
   {
+    id: 'user-markdown',
+    role: 'user' as const,
+    content: '用户也可以发送 Markdown，比如 `code` 与 **强调**。',
+    name: 'ME',
+  },
+  {
     id: 'user-long',
     role: 'user' as const,
     content:
@@ -84,7 +114,7 @@ export default function BubbleDemoPage() {
       <header className="space-y-2">
         <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">WenDui</p>
         <h1 className="text-2xl font-semibold text-foreground">Bubble Demo</h1>
-        <p className="text-sm text-muted-foreground">纯静态展示，覆盖当前所有气泡组合。</p>
+        <p className="text-sm text-muted-foreground">纯静态展示，覆盖当前所有气泡组合与 Markdown 渲染。</p>
       </header>
       <Conversation className="">
         <ConversationContent className="flex flex-col gap-4">

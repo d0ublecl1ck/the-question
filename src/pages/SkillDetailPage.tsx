@@ -1,14 +1,25 @@
 import { useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import type { MarketSkill } from '@/store/api/types'
 import { useGetMarketSkillDetailQuery } from '@/store/api/marketApi'
+import { useGetSkillDetailQuery } from '@/store/api/skillsApi'
 import ReportDialog from '@/components/market/ReportDialog'
+
+const FRONTMATTER_REGEX = /^---\n[\s\S]*?\n---\n?/
+const SKILL_PREVIEW_MAX_LINES = 10
 
 export default function SkillDetailPage() {
   const { id } = useParams()
   const { data, isLoading, isError } = useGetMarketSkillDetailQuery(id ?? '', { skip: !id })
+  const {
+    data: skillDetail,
+    isLoading: isSkillLoading,
+    isError: isSkillError,
+  } = useGetSkillDetailQuery(id ?? '', { skip: !id })
   const status: 'loading' | 'ready' | 'error' = !id || isError ? 'error' : isLoading ? 'loading' : 'ready'
 
   if (status === 'loading') {
@@ -53,6 +64,20 @@ export default function SkillDetailPage() {
       body: detail.updated_at ? `最近更新：${detail.updated_at}` : '暂无更新时间信息。',
     },
   ]
+  const rawSkillContent = (skillDetail?.content ?? '').trim()
+  const strippedSkillContent = rawSkillContent ? rawSkillContent.replace(FRONTMATTER_REGEX, '').trim() : ''
+  const skillContentSource = strippedSkillContent || rawSkillContent
+  const skillPreviewLines = skillContentSource ? skillContentSource.split('\n') : []
+  const skillPreviewText = skillPreviewLines.slice(0, SKILL_PREVIEW_MAX_LINES).join('\n')
+  const isPreviewTrimmed = skillPreviewLines.length > SKILL_PREVIEW_MAX_LINES
+  const hasSkillContent = Boolean(skillContentSource)
+  const skillPreviewBody = isSkillLoading
+    ? 'SKILL.md 加载中...'
+    : isSkillError
+      ? 'SKILL.md 加载失败。'
+      : hasSkillContent
+        ? `${skillPreviewText}${isPreviewTrimmed ? '\n...' : ''}`
+        : '发布者尚未提供 SKILL.md 内容。'
 
   return (
     <section className="space-y-8">
@@ -96,9 +121,35 @@ export default function SkillDetailPage() {
               </a>
             ))}
           </nav>
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-4 text-xs text-muted-foreground">
-            SKILL.md 预览入口（即将接入）
-          </div>
+          <Dialog>
+            <div className="rounded-2xl border border-border/70 bg-muted/10 p-4 text-xs text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">SKILL.md</p>
+                {hasSkillContent && (
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]">
+                      查看完整
+                    </Button>
+                  </DialogTrigger>
+                )}
+              </div>
+              <pre className="mt-3 whitespace-pre-wrap text-[11px] leading-relaxed text-foreground/70">
+                {skillPreviewBody}
+              </pre>
+            </div>
+            {hasSkillContent && (
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle className="text-base">SKILL.md 预览</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh] pr-3">
+                  <pre className="whitespace-pre-wrap text-xs leading-relaxed text-foreground/80">
+                    {rawSkillContent || skillContentSource}
+                  </pre>
+                </ScrollArea>
+              </DialogContent>
+            )}
+          </Dialog>
         </aside>
 
         <div className="space-y-6">
