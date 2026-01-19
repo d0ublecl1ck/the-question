@@ -46,8 +46,4 @@
 - Use transitions for non-urgent updates to keep UI responsive.
 - Store event handlers in refs to keep subscriptions stable.
 - Use useLatest-style refs for stable callback references.
-- Centralize user response mapping via `backend/app/services/user_service.py` helpers when adding user-related endpoints.
-- Add Python dependencies with `uv add --default-index https://mirrors.aliyun.com/pypi/simple/`.
-- Run Python scripts with `uv run xx.py`.
-- Run `uv add --default-index https://mirrors.aliyun.com/pypi/simple/` and `uv run` only from the backend directory.
 - Use Alert instead of toast for user-facing notices.
