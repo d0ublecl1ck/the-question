@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, expect, it } from 'vitest'
@@ -185,4 +185,64 @@ it('uses full-height layout on chat route', () => {
   expect(main).toHaveClass('overflow-hidden')
   expect(main).toHaveClass('px-0')
   expect(main).not.toHaveClass('px-[5%]')
+})
+
+it('locks page scroll on chat route', async () => {
+  const previousBodyOverflow = document.body.style.overflow
+  const previousRootOverflow = document.documentElement.style.overflow
+  document.body.style.overflow = 'scroll'
+  document.documentElement.style.overflow = 'auto'
+
+  const { unmount } = render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/chat']}>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route path="chat" element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  try {
+    await waitFor(() => {
+      expect(document.body.style.overflow).toBe('hidden')
+      expect(document.documentElement.style.overflow).toBe('hidden')
+    })
+  } finally {
+    unmount()
+    document.body.style.overflow = previousBodyOverflow
+    document.documentElement.style.overflow = previousRootOverflow
+  }
+})
+
+it('clears locked scroll on non-chat routes', async () => {
+  const previousBodyOverflow = document.body.style.overflow
+  const previousRootOverflow = document.documentElement.style.overflow
+  document.body.style.overflow = 'hidden'
+  document.documentElement.style.overflow = 'hidden'
+
+  const { unmount } = render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/market']}>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route path="market" element={<div />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  try {
+    await waitFor(() => {
+      expect(document.body.style.overflow).not.toBe('hidden')
+      expect(document.documentElement.style.overflow).not.toBe('hidden')
+    })
+  } finally {
+    unmount()
+    document.body.style.overflow = previousBodyOverflow
+    document.documentElement.style.overflow = previousRootOverflow
+  }
 })
