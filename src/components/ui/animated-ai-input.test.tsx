@@ -21,18 +21,20 @@ it('renders flat surface without background class', () => {
   expect(textarea).toHaveClass('bg-transparent')
 })
 
-it('renders MiniMax icon when MiniMax model is selected', () => {
-  const minimaxModels = [
-    { id: 'MiniMax-M2.1-lightning', name: 'MiniMax M2.1 Lightning', host: 'minimax' },
-  ]
+const minimaxModels = [
+  { id: 'MiniMax-M2.1-lightning', name: 'MiniMax M2.1 Lightning', host: 'minimax' },
+  { id: 'MiniMax-M2.1', name: 'MiniMax M2.1', host: 'minimax' },
+  { id: 'MiniMax-M2', name: 'MiniMax M2', host: 'minimax' },
+]
 
+it.each(minimaxModels.map((model) => model.id))('renders MiniMax icon for %s model', (modelId) => {
   render(
     <AI_Prompt
       value=""
       onChange={() => undefined}
       onSend={() => undefined}
       models={minimaxModels}
-      selectedModelId={minimaxModels[0]?.id ?? null}
+      selectedModelId={modelId}
       onModelChange={() => undefined}
     />,
   )
