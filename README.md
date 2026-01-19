@@ -13,6 +13,10 @@ Ask once, answer with skills. WenDui is a skill-native chat product that turns r
 - Frontend: React + Vite + Tailwind
 - Runtime: Node.js
 
+## Repositories
+
+- Backend: https://github.com/d0ublecl1ck/the-question-backend
+
 ## Local Development
 
 ### Frontend
