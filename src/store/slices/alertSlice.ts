@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { AppDispatch } from '../appStore'
 
-export type AlertVariant = 'default' | 'destructive'
+export type AlertVariant = 'secondary' | 'destructive'
 
 export type AlertItem = {
   id: string
@@ -41,7 +41,7 @@ export const { pushAlert, removeAlert } = alertSlice.actions
 export const alertReducer = alertSlice.reducer
 
 export const enqueueAlert =
-  ({ description, title, variant = 'default', durationMs = DEFAULT_DURATION }: EnqueueAlertOptions) =>
+  ({ description, title, variant = 'secondary', durationMs = DEFAULT_DURATION }: EnqueueAlertOptions) =>
   (dispatch: AppDispatch) => {
     const id = `alert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const resolvedTitle = title ?? (variant === 'destructive' ? '操作失败' : '提示')

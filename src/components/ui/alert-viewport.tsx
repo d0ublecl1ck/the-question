@@ -5,7 +5,7 @@ import type { AlertVariant } from '@/store/slices/alertSlice'
 import { AlertTriangle, Info } from 'lucide-react'
 
 const icons: Record<AlertVariant, ComponentType<{ className?: string }>> = {
-  default: Info,
+  secondary: Info,
   destructive: AlertTriangle,
 }
 
