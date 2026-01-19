@@ -11,8 +11,9 @@ import MarketToolbar from '@/components/market/MarketToolbar'
 import MarketList from '@/components/market/MarketList'
 import MarketTable from '@/components/market/MarketTable'
 import ExpertPlazaLayout from '@/components/market/ExpertPlazaLayout'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 
 export default function MarketPage() {
   const dispatch = useAppDispatch()
@@ -76,7 +77,7 @@ export default function MarketPage() {
 
   const handleToggleFavorite = async (skill: MarketSkill) => {
     if (!isAuthed) {
-      dispatch(enqueueToast('登录后才可以收藏'))
+      dispatch(enqueueAlert({ description: '登录后才可以收藏' }))
       navigate('/login')
       return
     }
@@ -85,20 +86,20 @@ export default function MarketPage() {
     try {
       if (favoriteSet.has(skill.id)) {
         await deleteFavorite({ skill_id: skill.id }).unwrap()
-        dispatch(enqueueToast('已取消收藏'))
+        dispatch(enqueueAlert({ description: '已取消收藏' }))
       } else {
         await createFavorite({ skill_id: skill.id }).unwrap()
-        dispatch(enqueueToast('已收藏'))
+        dispatch(enqueueAlert({ description: '已收藏' }))
       }
     } catch {
-      dispatch(enqueueToast('收藏操作失败'))
+      dispatch(enqueueAlert({ description: '收藏操作失败', variant: 'destructive' }))
     } finally {
       setPendingFavoriteIds((prev) => prev.filter((id) => id !== skill.id))
     }
   }
 
   const handleUnauthorizedLibraryClick = () => {
-    dispatch(enqueueToast('本功能登录才可以使用'))
+    dispatch(enqueueAlert({ description: '本功能登录才可以使用' }))
     navigate('/login')
   }
 
@@ -147,13 +148,13 @@ export default function MarketPage() {
             <span className="text-xs text-muted-foreground">共 {filtered.length} 项</span>
           </div>
           {status === 'loading' ? (
-            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-              正在加载中...
-            </div>
+            <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+              <AlertDescription className="text-muted-foreground">正在加载中...</AlertDescription>
+            </Alert>
           ) : status === 'error' ? (
-            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-              加载失败，请稍后重试
-            </div>
+            <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
+              <AlertDescription>加载失败，请稍后重试</AlertDescription>
+            </Alert>
           ) : view === 'grid' ? (
             <MarketTable
               items={filtered}

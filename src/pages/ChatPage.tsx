@@ -26,6 +26,7 @@ import SkillSuggestionCard from '@/components/chat/SkillSuggestionCard'
 import SkillDraftSuggestionCard from '@/components/chat/SkillDraftSuggestionCard'
 import { Message } from '@/components/ui/message'
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/conversation'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { streamAiChat, watchAiChatStream } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
@@ -43,7 +44,7 @@ import {
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import type { ChatMessage as ApiChatMessage, ChatSession, SkillSuggestion, SkillDraftSuggestion } from '@/store/api/types'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 
 export type SkillItem = {
   id: string
@@ -616,7 +617,7 @@ export default function ChatPage() {
       if (!sessionId) return
       const skill = skillById[suggestion.skill_id]
       if (!skill) {
-        dispatch(enqueueToast('技能未加载，请稍后重试'))
+        dispatch(enqueueAlert({ description: '技能未加载，请稍后重试', variant: 'destructive' }))
         return
       }
       setSelectedSkill(skill)
@@ -627,9 +628,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'accepted',
         }).unwrap()
-        dispatch(enqueueToast(`已选择技能：${skill.name}`))
+        dispatch(enqueueAlert({ description: `已选择技能：${skill.name}` }))
       } catch {
-        dispatch(enqueueToast('更新技能建议失败'))
+        dispatch(enqueueAlert({ description: '更新技能建议失败', variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, skillById, updateSkillSuggestion],
@@ -645,9 +646,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast('已关闭该技能推荐'))
+        dispatch(enqueueAlert({ description: '已关闭该技能推荐' }))
       } catch {
-        dispatch(enqueueToast('更新技能建议失败'))
+        dispatch(enqueueAlert({ description: '更新技能建议失败', variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, updateSkillSuggestion],
@@ -663,11 +664,11 @@ export default function ChatPage() {
   const handleAcceptDraftSuggestion = useCallback(
     async (suggestion: SkillDraftSuggestion) => {
       if (!sessionId) return
-      const modelId = selectedModelId ?? models[0]?.id ?? null
-      if (!modelId) {
-        dispatch(enqueueToast('模型不可用，请稍后重试'))
-        return
-      }
+    const modelId = selectedModelId ?? models[0]?.id ?? null
+    if (!modelId) {
+      dispatch(enqueueAlert({ description: '模型不可用，请稍后重试', variant: 'destructive' }))
+      return
+    }
       setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
       try {
         const result = await acceptSkillDraftSuggestion({
@@ -675,9 +676,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           modelId,
         }).unwrap()
-        dispatch(enqueueToast(`已生成技能：${result.name}`))
+        dispatch(enqueueAlert({ description: `已生成技能：${result.name}` }))
       } catch {
-        dispatch(enqueueToast('生成技能失败'))
+        dispatch(enqueueAlert({ description: '生成技能失败', variant: 'destructive' }))
       }
     },
     [acceptSkillDraftSuggestion, dispatch, models, selectedModelId, sessionId],
@@ -693,9 +694,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast('已关闭沉淀建议'))
+        dispatch(enqueueAlert({ description: '已关闭沉淀建议' }))
       } catch {
-        dispatch(enqueueToast('更新沉淀建议失败'))
+        dispatch(enqueueAlert({ description: '更新沉淀建议失败', variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, updateSkillDraftSuggestion],
@@ -806,9 +807,11 @@ export default function ChatPage() {
               <ScrollArea className="min-h-0 flex-1 pr-2">
                 <div className="space-y-2 text-sm">
                   {filteredSessions.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground">
-                      暂无历史对话
-                    </div>
+                    <Alert className="rounded-2xl border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground shadow-none">
+                      <AlertDescription className="text-xs text-muted-foreground">
+                        暂无历史对话
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {filteredSessions.map((session) => {
                     const sessionTitle = session.title?.trim()
@@ -929,9 +932,11 @@ export default function ChatPage() {
               <Conversation className="mt-6 min-h-0 flex-1">
                 <ConversationContent className="flex flex-col gap-4">
                   {messages.length === 0 && viewStatus === 'ready' && (
-                    <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
-                      还没有消息，开始你的第一条对话。
-                    </div>
+                    <Alert className="rounded-2xl border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground shadow-none">
+                      <AlertDescription className="text-muted-foreground">
+                        还没有消息，开始你的第一条对话。
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {messages.map((message) => {
                     const badgeSkill = message.skill_id ? skillById[message.skill_id] : null

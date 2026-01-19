@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppDispatch } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { useImportSkillMutation } from '@/store/api/skillsApi'
 
 type SkillImportDialogProps = {
@@ -39,7 +39,7 @@ export default function SkillImportDialog({ triggerLabel, onCompleted }: SkillIm
 
   const handleSubmit = async () => {
     if (!name.trim() || !content.trim()) {
-      dispatch(enqueueToast('名称与内容不能为空'))
+      dispatch(enqueueAlert({ description: '名称与内容不能为空', variant: 'destructive' }))
       return
     }
     setSaving(true)
@@ -52,12 +52,12 @@ export default function SkillImportDialog({ triggerLabel, onCompleted }: SkillIm
         content: content.trim(),
         versions: [],
       }).unwrap()
-      dispatch(enqueueToast('导入完成'))
+      dispatch(enqueueAlert({ description: '导入完成' }))
       setOpen(false)
       resetForm()
       onCompleted?.()
     } catch {
-      dispatch(enqueueToast('导入失败，请稍后重试'))
+      dispatch(enqueueAlert({ description: '导入失败，请稍后重试', variant: 'destructive' }))
     } finally {
       setSaving(false)
     }

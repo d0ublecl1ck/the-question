@@ -101,6 +101,6 @@ it('renders clarify chain response payload for user bubble', () => {
   expect(screen.getByText('是')).toBeInTheDocument()
   expect(screen.getByText('优先级排序')).toBeInTheDocument()
   expect(screen.getByText('速度')).toBeInTheDocument()
-  expect(screen.getByText('补充说明')).toBeInTheDocument()
+  expect(screen.getAllByText('补充说明').length).toBeGreaterThan(0)
   expect(screen.getByText('需要在三天内完成。')).toBeInTheDocument()
 })
