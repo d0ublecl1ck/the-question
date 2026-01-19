@@ -190,14 +190,20 @@ interface AlertProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<
 
 interface AlertIconProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {}
 
-function Alert({ className, variant, size, icon, appearance, close = false, onClose, children, ...props }: AlertProps) {
+function Alert({
+  className,
+  variant,
+  size,
+  icon,
+  appearance,
+  close = false,
+  onClose,
+  role,
+  children,
+  ...props
+}: AlertProps) {
   return (
-    <div
-      data-slot="alert"
-      role="alert"
-      className={cn(alertVariants({ variant, size, icon, appearance }), className)}
-      {...props}
-    >
+    <div data-slot="alert" role={role} className={cn(alertVariants({ variant, size, icon, appearance }), className)} {...props}>
       {children}
       {close && (
         <Button
