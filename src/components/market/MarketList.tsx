@@ -4,6 +4,37 @@ import { Separator } from '@/components/ui/separator'
 import { useNavigate } from 'react-router-dom'
 import type { KeyboardEvent, ReactNode, SyntheticEvent } from 'react'
 import type { MarketSkill } from '@/store/api/types'
+import { useTranslation } from 'react-i18next'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('marketList', {
+  zh: {
+    empty: '暂无技能',
+    aria: {
+      viewSkill: '查看技能 {{name}}',
+    },
+    meta: {
+      rating: '评分 {{rating}}',
+      engagement: '收藏 {{favorites}} · 评论 {{comments}}',
+    },
+    actions: {
+      viewDetails: '查看详情',
+    },
+  },
+  en: {
+    empty: 'No skills yet.',
+    aria: {
+      viewSkill: 'View skill {{name}}',
+    },
+    meta: {
+      rating: 'Rating {{rating}}',
+      engagement: 'Favorites {{favorites}} · Comments {{comments}}',
+    },
+    actions: {
+      viewDetails: 'View details',
+    },
+  },
+})
 
 type MarketListProps = {
   items: MarketSkill[]
@@ -11,11 +42,12 @@ type MarketListProps = {
 }
 
 export default function MarketList({ items, renderActions }: MarketListProps) {
+  const { t } = useTranslation('marketList')
   const navigate = useNavigate()
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-        暂无技能
+        {t('empty')}
       </div>
     )
   }
@@ -35,7 +67,7 @@ export default function MarketList({ items, renderActions }: MarketListProps) {
             key={item.id}
             role="link"
             tabIndex={0}
-            aria-label={`查看技能 ${item.name}`}
+            aria-label={t('aria.viewSkill', { name: item.name })}
             onClick={handleOpen}
             onKeyDown={handleKeyDown}
             className="cursor-pointer rounded-2xl border border-border/60 bg-white/80 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
@@ -53,16 +85,19 @@ export default function MarketList({ items, renderActions }: MarketListProps) {
                 </div>
               </div>
               <div className="flex flex-col items-start gap-2 text-sm lg:items-end">
-                <span>评分 {item.rating.average.toFixed(1)}</span>
+                <span>{t('meta.rating', { rating: item.rating.average.toFixed(1) })}</span>
                 <span className="text-muted-foreground">
-                  收藏 {item.favorites_count} · 评论 {item.comments_count}
+                  {t('meta.engagement', {
+                    favorites: item.favorites_count,
+                    comments: item.comments_count,
+                  })}
                 </span>
                 <div onClick={stopPropagation} onKeyDown={stopPropagation}>
                   {renderActions ? (
                     renderActions(item)
                   ) : (
                     <Button variant="outline" size="sm" className="rounded-full" onClick={handleOpen}>
-                      查看详情
+                      {t('actions.viewDetails')}
                     </Button>
                   )}
                 </div>

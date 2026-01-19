@@ -1,6 +1,7 @@
 import { ArrowRight, Bot, Check, ChevronDown, Paperclip } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
@@ -11,6 +12,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('aiPrompt', {
+  zh: {
+    placeholder: '输入内容，回车发送',
+    model: {
+      placeholder: '选择模型',
+    },
+    aria: {
+      attachFile: '添加附件',
+      selectSkill: '选择技能',
+      send: '发送消息',
+    },
+  },
+  en: {
+    placeholder: 'Type a message, press Enter to send',
+    model: {
+      placeholder: 'Select model',
+    },
+    aria: {
+      attachFile: 'Attach file',
+      selectSkill: 'Select skill',
+      send: 'Send message',
+    },
+  },
+})
 
 export type AiModelOption = {
   id: string
@@ -159,6 +186,7 @@ export function AI_Prompt({
   onFocus,
   onBlur,
 }: AiPromptProps) {
+  const { t } = useTranslation('aiPrompt')
   const safeModels = Array.isArray(models) ? models : []
   const isCollapsed = Boolean(collapsed && value.trim().length === 0)
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -202,7 +230,7 @@ export function AI_Prompt({
               <Textarea
                 id="ai-input-15"
                 value={value}
-                placeholder="输入内容，回车发送"
+                placeholder={t('placeholder')}
                 className={cn(
                   'w-full resize-none rounded-lg rounded-b-none border-none px-4 py-3 placeholder:text-black/70 focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white dark:placeholder:text-white/70',
                   'transition-[height] duration-200 ease-out will-change-[height]',
@@ -247,7 +275,7 @@ export function AI_Prompt({
                             className="flex items-center gap-1"
                           >
                             {getModelIcon(selectedModel) ?? <Bot className="h-4 w-4 opacity-50" />}
-                            <span>{selectedModel?.name ?? '选择模型'}</span>
+                            <span>{selectedModel?.name ?? t('model.placeholder')}</span>
                             <ChevronDown className="h-3 w-3 opacity-50" />
                           </motion.div>
                         </AnimatePresence>
@@ -282,7 +310,7 @@ export function AI_Prompt({
                       'text-black/40 hover:bg-black/10 hover:text-black focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0',
                       'dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white',
                     )}
-                    aria-label="Attach file"
+                    aria-label={t('aria.attachFile')}
                   >
                     <input
                       type="file"
@@ -313,7 +341,7 @@ export function AI_Prompt({
                       'disabled:cursor-not-allowed disabled:opacity-40',
                       'dark:bg-white/5 dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white',
                     )}
-                    aria-label="选择技能"
+                    aria-label={t('aria.selectSkill')}
                     disabled={!onTriggerSkill}
                     onClick={() => onTriggerSkill?.()}
                   >
@@ -332,16 +360,16 @@ export function AI_Prompt({
                     </svg>
                   </button>
                 </div>
-                <button
-                  type="button"
-                  className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-[8px] bg-black/5',
-                    'hover:bg-black/10 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-white/5 dark:hover:bg-white/10',
-                  )}
-                  aria-label="Send message"
-                  disabled={!canSend}
-                  onClick={() => {
-                    if (!canSend) return
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-[8px] bg-black/5',
+                      'hover:bg-black/10 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0 dark:bg-white/5 dark:hover:bg-white/10',
+                    )}
+                    aria-label={t('aria.send')}
+                    disabled={!canSend}
+                    onClick={() => {
+                      if (!canSend) return
                     onSend()
                     adjustHeight(true)
                   }}

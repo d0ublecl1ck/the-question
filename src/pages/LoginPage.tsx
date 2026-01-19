@@ -7,8 +7,74 @@ import { enqueueToast } from '@/store/slices/toastSlice'
 import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import logoUrl from '@/assets/logo.svg'
+import { useTranslation } from 'react-i18next'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('login', {
+  zh: {
+    tagline: '问对问题，遇见专家',
+    fields: {
+      email: '邮箱',
+      password: '密码',
+    },
+    errors: {
+      invalidEmail: '请输入有效的邮箱地址',
+    },
+    actions: {
+      login: '邮箱登录',
+      register: '邮箱注册',
+    },
+    toggle: {
+      noAccount: '还没有账号？',
+      hasAccount: '已有账号？',
+      goRegister: '去注册',
+      goLogin: '去登录',
+    },
+    legal: {
+      prefix: '继续即表示你同意我们的',
+      terms: '服务条款',
+      and: '和',
+      privacy: '隐私政策',
+    },
+    toasts: {
+      loginFailed: '登录失败，请检查账号信息',
+      registerFailed: '注册失败，请稍后重试',
+    },
+  },
+  en: {
+    tagline: 'Ask the right questions, meet the experts',
+    fields: {
+      email: 'Email',
+      password: 'Password',
+    },
+    errors: {
+      invalidEmail: 'Please enter a valid email address.',
+    },
+    actions: {
+      login: 'Sign in with email',
+      register: 'Sign up with email',
+    },
+    toggle: {
+      noAccount: 'No account yet?',
+      hasAccount: 'Already have an account?',
+      goRegister: 'Create one',
+      goLogin: 'Sign in',
+    },
+    legal: {
+      prefix: 'By continuing, you agree to our',
+      terms: 'Terms of Service',
+      and: 'and',
+      privacy: 'Privacy Policy',
+    },
+    toasts: {
+      loginFailed: 'Login failed. Please check your credentials.',
+      registerFailed: 'Registration failed. Please try again.',
+    },
+  },
+})
 
 export default function LoginPage() {
+  const { t } = useTranslation('login')
   const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useAppDispatch()
@@ -36,7 +102,7 @@ export default function LoginPage() {
     if (!email.trim() || !password.trim()) return
     if (!isValidEmail(email)) {
       setStatus('error')
-      setError('请输入有效的邮箱地址')
+      setError(t('errors.invalidEmail'))
       return
     }
     setStatus('loading')
@@ -66,7 +132,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       setStatus('error')
-      const fallback = mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试'
+      const fallback =
+        mode === 'login' ? t('toasts.loginFailed') : t('toasts.registerFailed')
       const message = extractErrorMessage(err, fallback)
       setError('')
       dispatch(enqueueToast(message))
@@ -88,19 +155,19 @@ export default function LoginPage() {
           <h1 className="text-3xl font-semibold tracking-tight" data-testid="login-brand">
             WenDui
           </h1>
-          <p className="text-sm text-muted-foreground">{'问对问题，遇见专家'}</p>
+          <p className="text-sm text-muted-foreground">{t('tagline')}</p>
         </div>
 
         <div className="mt-8 space-y-3">
           <Input
-            placeholder="邮箱"
+            placeholder={t('fields.email')}
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="h-11 rounded-[16px] text-sm"
           />
           <Input
-            placeholder="密码"
+            placeholder={t('fields.password')}
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -112,28 +179,28 @@ export default function LoginPage() {
             onClick={submit}
             disabled={status === 'loading' || isLoginLoading || isRegisterLoading}
           >
-            {mode === 'login' ? '邮箱登录' : '邮箱注册'}
+            {mode === 'login' ? t('actions.login') : t('actions.register')}
           </Button>
         </div>
 
         <div className="mt-5 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-          <span>{mode === 'login' ? '还没有账号？' : '已有账号？'}</span>
+          <span>{mode === 'login' ? t('toggle.noAccount') : t('toggle.hasAccount')}</span>
           <button
             type="button"
             className="text-foreground hover:underline"
             onClick={() => setMode((prev) => (prev === 'login' ? 'register' : 'login'))}
           >
-            {mode === 'login' ? '去注册' : '去登录'}
+            {mode === 'login' ? t('toggle.goRegister') : t('toggle.goLogin')}
           </button>
         </div>
         <p className="mt-5 text-center text-[11px] text-muted-foreground">
-          继续即表示你同意我们的
+          {t('legal.prefix')}
           <Link className="font-medium text-foreground hover:underline" to="/terms">
-            服务条款
+            {t('legal.terms')}
           </Link>
-          和
+          {t('legal.and')}
           <Link className="font-medium text-foreground hover:underline" to="/privacy">
-            隐私政策
+            {t('legal.privacy')}
           </Link>
         </p>
       </div>

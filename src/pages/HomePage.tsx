@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import skillHubCard from '@/assets/skill-hub-card.png'
 import expertDebater from '@/assets/experts/expert-debater.png'
 import expertDesigner from '@/assets/experts/expert-designer.png'
@@ -9,6 +10,196 @@ import expertWriter from '@/assets/experts/expert-writer.png'
 import watchaLogo from '@/assets/Watcha.svg'
 import { LogoCloud } from '@/components/ui/logo-cloud-3'
 import { ModelScope } from '@lobehub/icons'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('home', {
+  zh: {
+    brand: {
+      subtitle: '问对',
+    },
+    hero: {
+      title: '问对问题，遇见专家',
+      description: '我们帮您从提问中生成技能专家，让每个问题都有专家级的解决方案。',
+      promptAria: 'AI 对话输入',
+      promptPlaceholder: '写下你的痛点，立刻拿到行动计划',
+      sendAria: '发送',
+      cardAria: '进入技能市场',
+      cardLabel: 'Expert Market',
+      cardTitle: '开始探索',
+      cardDescription: '创建、搜集、分享你的专家团队。',
+    },
+    sections: {
+      capabilitiesTitle: '为团队设计的对话式技能平台',
+      capabilitiesLabel: '核心能力',
+      picksTitle: '专家精选',
+      picksLabel: "Today's top picks",
+      picksIntro: '今日精选',
+      metricsTitle: '清晰、可控、可规模化',
+      metricsLabel: '关键指标',
+      acknowledgementsTitle: '鸣谢',
+      acknowledgementsLabel: 'Acknowledgements',
+    },
+    roleHighlights: [
+      {
+        label: 'Skill Flow',
+        title: '技能化工作流',
+        description: '把重复流程沉淀成 Skill，随时复用并持续优化。',
+      },
+      {
+        label: 'Dialogue Ops',
+        title: '对话式执行',
+        description: '在一个对话里完成拆解、推进、复盘与交付。',
+      },
+      {
+        label: 'Market & Ecosystem',
+        title: '市场与生态',
+        description: '浏览官方技能，快速对接成熟的解决方案。',
+      },
+      {
+        label: 'Collaboration',
+        title: '协作与治理',
+        description: '团队共享、权限控制与数据可追溯。',
+      },
+    ],
+    capabilityItems: [
+      {
+        title: '对话会话',
+        metric: '24/7',
+        detail: '随时开聊，明确上下文与行动链路。',
+      },
+      {
+        title: '技能市场',
+        metric: '1-Click',
+        detail: '快速加载可复用技能，缩短启动成本。',
+      },
+      {
+        title: '私有知识',
+        metric: 'Secure',
+        detail: '知识沉淀与权限管理并行，保证稳定可控。',
+      },
+    ],
+    expertPicks: [
+      {
+        name: '辩论者 · 云澈',
+        title: '论证与反驳',
+        description: '快速拆解观点，构建有力论证链路。',
+      },
+      {
+        name: '设计师 · 黎安',
+        title: '视觉与体验',
+        description: '把想法转成清晰、可落地的设计语言。',
+      },
+      {
+        name: '画家 · 牧青',
+        title: '画面与风格',
+        description: '捕捉情绪与氛围，输出有温度的视觉表达。',
+      },
+      {
+        name: '架构师 · 星河',
+        title: '系统与治理',
+        description: '设计稳健架构，平衡扩展与成本。',
+      },
+      {
+        name: '作家 · 山海',
+        title: '叙事与表达',
+        description: '将复杂信息写成可读、可感的故事。',
+      },
+    ],
+  },
+  en: {
+    brand: {
+      subtitle: 'WenDui',
+    },
+    hero: {
+      title: 'Ask the right questions, meet the experts',
+      description: 'We turn your questions into skill experts so every problem has an expert solution.',
+      promptAria: 'AI chat input',
+      promptPlaceholder: 'Describe your pain point and get an action plan instantly',
+      sendAria: 'Send',
+      cardAria: 'Open expert market',
+      cardLabel: 'Expert Market',
+      cardTitle: 'Start exploring',
+      cardDescription: 'Create, collect, and share your expert team.',
+    },
+    sections: {
+      capabilitiesTitle: 'A conversational skill platform built for teams',
+      capabilitiesLabel: 'Core capabilities',
+      picksTitle: 'Expert picks',
+      picksLabel: "Today's top picks",
+      picksIntro: "Today's picks",
+      metricsTitle: 'Clear, controlled, and scalable',
+      metricsLabel: 'Key metrics',
+      acknowledgementsTitle: 'Acknowledgements',
+      acknowledgementsLabel: 'Acknowledgements',
+    },
+    roleHighlights: [
+      {
+        label: 'Skill Flow',
+        title: 'Skillified workflows',
+        description: 'Turn repeated flows into Skills you can reuse and refine.',
+      },
+      {
+        label: 'Dialogue Ops',
+        title: 'Conversational execution',
+        description: 'Handle breakdowns, execution, review, and delivery in one chat.',
+      },
+      {
+        label: 'Market & Ecosystem',
+        title: 'Market & ecosystem',
+        description: 'Browse official skills and connect to proven solutions fast.',
+      },
+      {
+        label: 'Collaboration',
+        title: 'Collaboration & governance',
+        description: 'Share across teams with permissions and traceability.',
+      },
+    ],
+    capabilityItems: [
+      {
+        title: 'Conversations',
+        metric: '24/7',
+        detail: 'Chat anytime with clear context and an action trail.',
+      },
+      {
+        title: 'Skill market',
+        metric: '1-Click',
+        detail: 'Load reusable skills quickly and cut startup cost.',
+      },
+      {
+        title: 'Private knowledge',
+        metric: 'Secure',
+        detail: 'Retention plus access control for stable governance.',
+      },
+    ],
+    expertPicks: [
+      {
+        name: 'Debater · Yunche',
+        title: 'Argument & rebuttal',
+        description: 'Break down viewpoints fast and build strong reasoning chains.',
+      },
+      {
+        name: 'Designer · Lian',
+        title: 'Visuals & experience',
+        description: 'Turn ideas into clear, shippable design language.',
+      },
+      {
+        name: 'Painter · Muqing',
+        title: 'Imagery & style',
+        description: 'Capture mood and deliver warm visual expression.',
+      },
+      {
+        name: 'Architect · Xinghe',
+        title: 'Systems & governance',
+        description: 'Design robust architecture balancing scale and cost.',
+      },
+      {
+        name: 'Writer · Shanhai',
+        title: 'Narrative & expression',
+        description: 'Turn complex info into readable, felt stories.',
+      },
+    ],
+  },
+})
 
 const acknowledgementLogos = [
   {
@@ -44,83 +235,37 @@ const acknowledgementLogos = [
   // },
 ]
 
-const roleHighlights = [
-  {
-    label: 'Skill Flow',
-    title: '技能化工作流',
-    description: '把重复流程沉淀成 Skill，随时复用并持续优化。',
-  },
-  {
-    label: 'Dialogue Ops',
-    title: '对话式执行',
-    description: '在一个对话里完成拆解、推进、复盘与交付。',
-  },
-  {
-    label: 'Market & Ecosystem',
-    title: '市场与生态',
-    description: '浏览官方技能，快速对接成熟的解决方案。',
-  },
-  {
-    label: 'Collaboration',
-    title: '协作与治理',
-    description: '团队共享、权限控制与数据可追溯。',
-  },
-]
-
-const capabilityItems = [
-  {
-    title: '对话会话',
-    metric: '24/7',
-    detail: '随时开聊，明确上下文与行动链路。',
-  },
-  {
-    title: '技能市场',
-    metric: '1-Click',
-    detail: '快速加载可复用技能，缩短启动成本。',
-  },
-  {
-    title: '私有知识',
-    metric: 'Secure',
-    detail: '知识沉淀与权限管理并行，保证稳定可控。',
-  },
-]
-
-const expertPicks = [
-  {
-    name: '辩论者 · 云澈',
-    title: '论证与反驳',
-    description: '快速拆解观点，构建有力论证链路。',
-    image: expertDebater,
-  },
-  {
-    name: '设计师 · 黎安',
-    title: '视觉与体验',
-    description: '把想法转成清晰、可落地的设计语言。',
-    image: expertDesigner,
-  },
-  {
-    name: '画家 · 牧青',
-    title: '画面与风格',
-    description: '捕捉情绪与氛围，输出有温度的视觉表达。',
-    image: expertPainter,
-  },
-  {
-    name: '架构师 · 星河',
-    title: '系统与治理',
-    description: '设计稳健架构，平衡扩展与成本。',
-    image: expertArchitect,
-  },
-  {
-    name: '作家 · 山海',
-    title: '叙事与表达',
-    description: '将复杂信息写成可读、可感的故事。',
-    image: expertWriter,
-  },
+const expertImages = [
+  expertDebater,
+  expertDesigner,
+  expertPainter,
+  expertArchitect,
+  expertWriter,
 ]
 
 export default function HomePage() {
+  const { t } = useTranslation('home')
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState('')
+  const roleHighlights = t('roleHighlights', { returnObjects: true }) as Array<{
+    label: string
+    title: string
+    description: string
+  }>
+  const capabilityItems = t('capabilityItems', { returnObjects: true }) as Array<{
+    title: string
+    metric: string
+    detail: string
+  }>
+  const expertPickTexts = t('expertPicks', { returnObjects: true }) as Array<{
+    name: string
+    title: string
+    description: string
+  }>
+  const expertPicks = expertPickTexts.map((expert, index) => ({
+    ...expert,
+    image: expertImages[index] ?? expertImages[0],
+  }))
   const handleSubmit = () => {
     const nextDraft = prompt.trim()
     if (!nextDraft) {
@@ -136,13 +281,13 @@ export default function HomePage() {
         <div className="space-y-8">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">WenDui</p>
-            <h2 className="text-sm font-medium text-muted-foreground">问对</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">{t('brand.subtitle')}</h2>
           </div>
           <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
-            问对问题，遇见专家
+            {t('hero.title')}
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-            我们帮您从提问中生成技能专家，让每个问题都有专家级的解决方案。
+            {t('hero.description')}
           </p>
           <div className="rounded-[28px] bg-slate-100/70 p-2 shadow-sm">
             <form
@@ -154,8 +299,8 @@ export default function HomePage() {
             >
               <textarea
                 name="prompt"
-                aria-label="AI 对话输入"
-                placeholder="写下你的痛点，立刻拿到行动计划"
+                aria-label={t('hero.promptAria')}
+                placeholder={t('hero.promptPlaceholder')}
                 rows={2}
                 className="min-h-[72px] w-full resize-none bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
                 value={prompt}
@@ -171,7 +316,7 @@ export default function HomePage() {
                 <button
                   type="submit"
                   className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-black/5 text-slate-600 hover:bg-black/10"
-                  aria-label="发送"
+                  aria-label={t('hero.sendAria')}
                 >
                   &gt;
                 </button>
@@ -181,7 +326,7 @@ export default function HomePage() {
         </div>
         <Link
           to="/market"
-          aria-label="进入技能市场"
+          aria-label={t('hero.cardAria')}
           className="group block"
           data-testid="skill-hub-hero"
         >
@@ -193,10 +338,10 @@ export default function HomePage() {
             <div className="bg-white/95 px-8 py-6">
               <div className="max-w-sm space-y-2 text-sm text-slate-700">
                 <div className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  Expert Market
+                  {t('hero.cardLabel')}
                 </div>
-                <div className="text-lg font-semibold text-slate-700">开始探索</div>
-                <div>创建、搜集、分享你的专家团队。</div>
+                <div className="text-lg font-semibold text-slate-700">{t('hero.cardTitle')}</div>
+                <div>{t('hero.cardDescription')}</div>
               </div>
             </div>
           </div>
@@ -205,8 +350,10 @@ export default function HomePage() {
 
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h3 className="text-2xl font-semibold">为团队设计的对话式技能平台</h3>
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">核心能力</span>
+          <h3 className="text-2xl font-semibold">{t('sections.capabilitiesTitle')}</h3>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {t('sections.capabilitiesLabel')}
+          </span>
         </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {roleHighlights.map((item) => (
@@ -223,16 +370,16 @@ export default function HomePage() {
 
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h3 className="text-2xl font-semibold">专家精选</h3>
+          <h3 className="text-2xl font-semibold">{t('sections.picksTitle')}</h3>
           <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Today's top picks
+            {t('sections.picksLabel')}
           </span>
         </div>
         <div className="relative overflow-visible rounded-[32px] bg-neutral-100/80 px-4 py-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9),rgba(245,245,245,0.6))]" />
           <div className="relative flex flex-col items-center">
             <div className="mb-10 text-center text-lg font-medium text-neutral-700">
-              今日精选
+              {t('sections.picksIntro')}
             </div>
             <div className="flex w-full items-center justify-center gap-4 overflow-visible overflow-x-auto pb-8 pt-8">
               {expertPicks.map((expert, index) => (
@@ -267,8 +414,10 @@ export default function HomePage() {
 
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h3 className="text-2xl font-semibold">清晰、可控、可规模化</h3>
-          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">关键指标</span>
+          <h3 className="text-2xl font-semibold">{t('sections.metricsTitle')}</h3>
+          <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {t('sections.metricsLabel')}
+          </span>
         </div>
         <div className="grid gap-8 lg:grid-cols-3">
           {capabilityItems.map((item) => (
@@ -284,9 +433,9 @@ export default function HomePage() {
       </section>
       <section className="space-y-6">
         <div className="flex items-baseline justify-between">
-          <h3 className="text-2xl font-semibold">鸣谢</h3>
+          <h3 className="text-2xl font-semibold">{t('sections.acknowledgementsTitle')}</h3>
           <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Acknowledgements
+            {t('sections.acknowledgementsLabel')}
           </span>
         </div>
         <LogoCloud

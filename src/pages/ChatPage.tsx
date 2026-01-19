@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -50,6 +51,120 @@ import {
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import type { ChatMessage as ApiChatMessage, ChatSession, SkillSuggestion, SkillDraftSuggestion } from '@/store/api/types'
 import { enqueueToast } from '@/store/slices/toastSlice'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('chat', {
+  zh: {
+    session: {
+      defaultTitle: '对话',
+      new: '新建',
+      history: '历史对话',
+      searchPlaceholder: '搜索对话',
+      emptyHistory: '暂无历史对话',
+      untitled: '未命名对话',
+      delete: '删除',
+      panelTitle: '对话台',
+      expandSidebar: '展开侧边栏',
+      collapseSidebar: '收起侧边栏',
+    },
+    loginGate: {
+      title: '对话',
+      description: '请先登录以同步技能与对话。',
+      action: '去登录',
+    },
+    guest: {
+      hint: '以访客身份探索？登录以获取完整体验',
+      action: '登录',
+    },
+    root: {
+      watchaAria: '前往 watcha.cn',
+      watchaText: '深蓝的天空中挂着一轮金黄的圆月......',
+      title: '今天可以帮你做什么？',
+      description: '选择技能与模型，快速进入对话并保持连续行动。',
+    },
+    emptyMessages: '还没有消息，开始你的第一条对话。',
+    skillPicker: {
+      title: '选择技能',
+      description: '上下键选择，回车确认；支持关键词匹配。',
+      placeholder: '搜索技能名称 / 标签 / 描述',
+      empty: '没有找到匹配的技能',
+      group: '技能列表',
+    },
+    deleteDialog: {
+      title: '确认删除对话？',
+      descriptionWithTitle: '“{{title}}”将被永久删除，无法恢复。',
+      description: '该对话将被永久删除，无法恢复。',
+      cancel: '取消',
+      delete: '删除',
+    },
+    toasts: {
+      skillNotLoaded: '技能未加载，请稍后重试',
+      skillChosen: '已选择技能：{{name}}',
+      skillSuggestionUpdateFailed: '更新技能建议失败',
+      skillSuggestionClosed: '已关闭该技能推荐',
+      modelUnavailable: '模型不可用，请稍后重试',
+      draftAccepted: '已生成技能：{{name}}',
+      draftFailed: '生成技能失败',
+      draftClosed: '已关闭沉淀建议',
+      draftUpdateFailed: '更新沉淀建议失败',
+    },
+  },
+  en: {
+    session: {
+      defaultTitle: 'Chat',
+      new: 'New',
+      history: 'History',
+      searchPlaceholder: 'Search chats',
+      emptyHistory: 'No chats yet',
+      untitled: 'Untitled chat',
+      delete: 'Delete',
+      panelTitle: 'Chat desk',
+      expandSidebar: 'Expand sidebar',
+      collapseSidebar: 'Collapse sidebar',
+    },
+    loginGate: {
+      title: 'Chat',
+      description: 'Please log in to sync skills and chats.',
+      action: 'Log in',
+    },
+    guest: {
+      hint: 'Explore as a guest? Log in for the full experience.',
+      action: 'Log in',
+    },
+    root: {
+      watchaAria: 'Visit watcha.cn',
+      watchaText: 'A golden moon hangs in a deep blue sky...',
+      title: 'How can I help today?',
+      description: 'Pick a skill and model to jump into the conversation and keep momentum.',
+    },
+    emptyMessages: 'No messages yet. Start your first chat.',
+    skillPicker: {
+      title: 'Select skill',
+      description: 'Use arrow keys, Enter to confirm; keyword matching supported.',
+      placeholder: 'Search skill name / tags / description',
+      empty: 'No matching skills found',
+      group: 'Skill list',
+    },
+    deleteDialog: {
+      title: 'Delete this chat?',
+      descriptionWithTitle: '“{{title}}” will be permanently deleted and cannot be restored.',
+      description: 'This chat will be permanently deleted and cannot be restored.',
+      cancel: 'Cancel',
+      delete: 'Delete',
+    },
+    toasts: {
+      skillNotLoaded: 'Skill not loaded. Please try again.',
+      skillChosen: 'Skill selected: {{name}}',
+      skillSuggestionUpdateFailed: 'Failed to update skill suggestion.',
+      skillSuggestionClosed: 'Skill suggestion dismissed.',
+      modelUnavailable: 'Model unavailable. Please try again.',
+      draftAccepted: 'Skill generated: {{name}}',
+      draftFailed: 'Failed to generate skill.',
+      draftClosed: 'Draft suggestion dismissed.',
+      draftUpdateFailed: 'Failed to update draft suggestion.',
+    },
+  },
+})
 
 export type SkillItem = {
   id: string
@@ -135,6 +250,7 @@ const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>
 }
 
 export default function ChatPage() {
+  const { t, i18n } = useTranslation('chat')
   const token = useAppSelector((state) => state.auth.token)
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -163,6 +279,7 @@ export default function ChatPage() {
   const isRootChat = location.pathname === '/chat'
   const hasDraft = draft.trim().length > 0
   const isComposerCollapsed = !isRootChat && !isAtBottom && !isComposerFocused && !hasDraft
+  const defaultTitle = t('session.defaultTitle')
   const messagesRef = useRef<ChatMessage[]>([])
   const lastAppliedDraftRef = useRef<string | null>(null)
   const pendingAssistantIdRef = useRef<string | null>(null)
@@ -171,6 +288,14 @@ export default function ChatPage() {
   const completedStreamIdsRef = useRef<Set<string>>(new Set())
   const watchAbortRef = useRef<AbortController | null>(null)
   const watchAttemptedRef = useRef<Set<string>>(new Set())
+  const defaultTitleSet = new Set([
+    i18n.getFixedT('zh', 'chat')('session.defaultTitle'),
+    i18n.getFixedT('en', 'chat')('session.defaultTitle'),
+  ])
+  const isDefaultTitle = (value: string | null | undefined) => {
+    if (!value) return false
+    return defaultTitleSet.has(value.trim())
+  }
 
   useEffect(() => {
     const state = location.state as ChatLocationState | null
@@ -504,7 +629,7 @@ export default function ChatPage() {
     let shouldUpdateTitle = false
     if (!activeSessionId || isRootChat) {
       try {
-        const session = await createChatSession({ title: '对话' }).unwrap()
+        const session = await createChatSession({ title: defaultTitle }).unwrap()
         activeSessionId = session.id
         setSessionId(session.id)
         setSessions((prev) => [session, ...prev.filter((item) => item.id !== session.id)])
@@ -519,7 +644,7 @@ export default function ChatPage() {
     }
     const trimmedContent = content.trim()
     const activeSession = sessions.find((session) => session.id === activeSessionId)
-    if (activeSession && (!activeSession.title || activeSession.title === '对话')) {
+    if (activeSession && (!activeSession.title || isDefaultTitle(activeSession.title))) {
       shouldUpdateTitle = true
     }
     const userMessage: ChatMessage = {
@@ -627,7 +752,7 @@ export default function ChatPage() {
       if (!sessionId) return
       const skill = skillById[suggestion.skill_id]
       if (!skill) {
-        dispatch(enqueueToast('技能未加载，请稍后重试'))
+        dispatch(enqueueToast(t('toasts.skillNotLoaded')))
         return
       }
       setSelectedSkill(skill)
@@ -638,9 +763,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'accepted',
         }).unwrap()
-        dispatch(enqueueToast(`已选择技能：${skill.name}`))
+        dispatch(enqueueToast(t('toasts.skillChosen', { name: skill.name })))
       } catch {
-        dispatch(enqueueToast('更新技能建议失败'))
+        dispatch(enqueueToast(t('toasts.skillSuggestionUpdateFailed')))
       }
     },
     [dispatch, sessionId, skillById, updateSkillSuggestion],
@@ -656,9 +781,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast('已关闭该技能推荐'))
+        dispatch(enqueueToast(t('toasts.skillSuggestionClosed')))
       } catch {
-        dispatch(enqueueToast('更新技能建议失败'))
+        dispatch(enqueueToast(t('toasts.skillSuggestionUpdateFailed')))
       }
     },
     [dispatch, sessionId, updateSkillSuggestion],
@@ -676,7 +801,7 @@ export default function ChatPage() {
       if (!sessionId) return
       const modelId = selectedModelId ?? models[0]?.id ?? null
       if (!modelId) {
-        dispatch(enqueueToast('模型不可用，请稍后重试'))
+        dispatch(enqueueToast(t('toasts.modelUnavailable')))
         return
       }
       setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
@@ -686,9 +811,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           modelId,
         }).unwrap()
-        dispatch(enqueueToast(`已生成技能：${result.name}`))
+        dispatch(enqueueToast(t('toasts.draftAccepted', { name: result.name })))
       } catch {
-        dispatch(enqueueToast('生成技能失败'))
+        dispatch(enqueueToast(t('toasts.draftFailed')))
       }
     },
     [acceptSkillDraftSuggestion, dispatch, models, selectedModelId, sessionId],
@@ -704,9 +829,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast('已关闭沉淀建议'))
+        dispatch(enqueueToast(t('toasts.draftClosed')))
       } catch {
-        dispatch(enqueueToast('更新沉淀建议失败'))
+        dispatch(enqueueToast(t('toasts.draftUpdateFailed')))
       }
     },
     [dispatch, sessionId, updateSkillDraftSuggestion],
@@ -779,11 +904,11 @@ export default function ChatPage() {
       <section className="rounded-[28px] border border-border/70 bg-white px-8 py-10">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">WenDui</p>
-          <h2 className="text-2xl font-semibold">对话</h2>
+          <h2 className="text-2xl font-semibold">{t('loginGate.title')}</h2>
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">请先登录以同步技能与对话。</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('loginGate.description')}</p>
         <Button variant="outline" className="mt-5 rounded-full px-6" onClick={() => navigate('/login')}>
-          去登录
+          {t('loginGate.action')}
         </Button>
       </section>
     )
@@ -796,7 +921,7 @@ export default function ChatPage() {
         isSidebarCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)]' : 'lg:grid-cols-[280px_minmax(0,1fr)]',
       ].join(' ')}
     >
-      <h2 className="sr-only">对话</h2>
+      <h2 className="sr-only">{t('loginGate.title')}</h2>
       <aside
         className={[
           'hidden h-full min-h-0 flex-col border-r border-border/60 text-sm text-muted-foreground lg:flex',
@@ -807,7 +932,7 @@ export default function ChatPage() {
           <div className="flex items-start justify-between gap-2">
             <div className={isSidebarCollapsed ? 'sr-only' : 'space-y-1'}>
               <p className="text-xs uppercase tracking-[0.35em]">WenDui</p>
-              <p className="text-base font-semibold text-foreground">对话台</p>
+              <p className="text-base font-semibold text-foreground">{t('session.panelTitle')}</p>
             </div>
             <button
               type="button"
@@ -816,7 +941,9 @@ export default function ChatPage() {
               aria-expanded={!isSidebarCollapsed}
             >
               {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-              <span className="sr-only">{isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}</span>
+              <span className="sr-only">
+                {isSidebarCollapsed ? t('session.expandSidebar') : t('session.collapseSidebar')}
+              </span>
             </button>
           </div>
           {!isSidebarCollapsed && (
@@ -825,33 +952,33 @@ export default function ChatPage() {
                 className="flex w-full items-center justify-between rounded-full bg-muted/60 px-4 py-1.5 text-left text-foreground"
                 onClick={handleCreateSession}
               >
-                新建
+                {t('session.new')}
                 <span className="text-xs text-muted-foreground">+</span>
               </button>
               <div className="flex min-h-0 flex-1 flex-col gap-2">
-                <div className="text-xs uppercase tracking-[0.35em]">历史对话</div>
+                <div className="text-xs uppercase tracking-[0.35em]">{t('session.history')}</div>
                 <input
                   value={sessionQuery}
                   onChange={(event) => setSessionQuery(event.target.value)}
-                  placeholder="搜索对话"
+                  placeholder={t('session.searchPlaceholder')}
                   className="h-8 w-full rounded-full border border-border/70 bg-white px-3 text-xs text-foreground placeholder:text-muted-foreground"
                 />
                 <ScrollArea className="min-h-0 flex-1 pr-2" scrollbarClassName="w-[5px] p-0">
                   <div className="space-y-1 text-sm">
                     {filteredSessions.length === 0 && (
                       <div className="rounded-2xl border border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground">
-                        暂无历史对话
+                        {t('session.emptyHistory')}
                       </div>
                     )}
                     {filteredSessions.map((session) => {
                       const sessionTitle = session.title?.trim()
                       const fallbackTitle = sessionPeek[session.id]?.trim()
                       const resolvedTitle =
-                        sessionTitle && sessionTitle !== '对话'
+                        sessionTitle && !isDefaultTitle(sessionTitle)
                           ? sessionTitle
-                          : fallbackTitle && fallbackTitle !== '对话'
+                          : fallbackTitle && !isDefaultTitle(fallbackTitle)
                             ? fallbackTitle
-                            : '未命名对话'
+                            : t('session.untitled')
                       const displayTitle =
                         resolvedTitle.length > 24 ? `${resolvedTitle.slice(0, 24)}...` : resolvedTitle
                       const isActive = session.id === sessionId
@@ -889,7 +1016,7 @@ export default function ChatPage() {
                             className="rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:border-border/70 hover:text-foreground"
                             onClick={() => handleRequestDeleteSession(session)}
                           >
-                            删除
+                            {t('session.delete')}
                           </button>
                         </div>
                       )
@@ -907,10 +1034,10 @@ export default function ChatPage() {
         {!token && (
           <div className="flex items-center justify-between">
             <div className="hidden h-9 items-center rounded-full border border-border/70 bg-white px-4 text-xs text-muted-foreground lg:flex">
-              以访客身份探索？登录以获取完整体验
+              {t('guest.hint')}
             </div>
             <Button variant="outline" className="rounded-full px-5" onClick={() => navigate('/login')}>
-              登录
+              {t('guest.action')}
             </Button>
           </div>
         )}
@@ -931,18 +1058,18 @@ export default function ChatPage() {
                     href="https://watcha.cn/?utm_source=wendui"
                     target="_blank"
                     rel="noreferrer"
-                    aria-label="前往 watcha.cn"
+                    aria-label={t('root.watchaAria')}
                   >
                     <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] uppercase text-white">
                       2026
                     </span>
-                    深蓝的天空中挂着一轮金黄的圆月......
+                    {t('root.watchaText')}
                   </a>
                 </div>
                 <div className="mt-8 text-center">
-                  <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">今天可以帮你做什么？</h2>
+                  <h2 className="text-3xl font-semibold text-foreground sm:text-4xl">{t('root.title')}</h2>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    选择技能与模型，快速进入对话并保持连续行动。
+                    {t('root.description')}
                   </p>
                 </div>
 
@@ -966,7 +1093,7 @@ export default function ChatPage() {
                 <ConversationContent className="flex flex-col gap-4">
                   {messages.length === 0 && viewStatus === 'ready' && (
                     <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
-                      还没有消息，开始你的第一条对话。
+                      {t('emptyMessages')}
                     </div>
                   )}
                   {messages.map((message) => {
@@ -1036,14 +1163,14 @@ export default function ChatPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>选择技能</DialogTitle>
-            <DialogDescription>上下键选择，回车确认；支持关键词匹配。</DialogDescription>
+            <DialogTitle>{t('skillPicker.title')}</DialogTitle>
+            <DialogDescription>{t('skillPicker.description')}</DialogDescription>
           </DialogHeader>
           <Command>
-            <CommandInput placeholder="搜索技能名称 / 标签 / 描述" />
+            <CommandInput placeholder={t('skillPicker.placeholder')} />
             <CommandList>
-              <CommandEmpty>没有找到匹配的技能</CommandEmpty>
-              <CommandGroup heading="技能列表">
+              <CommandEmpty>{t('skillPicker.empty')}</CommandEmpty>
+              <CommandGroup heading={t('skillPicker.group')}>
                 {skills.map((skill) => (
                   <CommandItem
                     key={skill.id}
@@ -1080,19 +1207,19 @@ export default function ChatPage() {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>确认删除对话？</DialogTitle>
+            <DialogTitle>{t('deleteDialog.title')}</DialogTitle>
             <DialogDescription>
               {deleteCandidate?.title?.trim()
-                ? `“${deleteCandidate.title.trim()}”将被永久删除，无法恢复。`
-                : '该对话将被永久删除，无法恢复。'}
+                ? t('deleteDialog.descriptionWithTitle', { title: deleteCandidate.title.trim() })
+                : t('deleteDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              取消
+              {t('deleteDialog.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleConfirmDeleteSession}>
-              删除
+              {t('deleteDialog.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +11,108 @@ import { useCreateChatSessionMutation, useDeleteChatSessionMutation } from '@/st
 import { streamAiChat } from '@/store/api/aiStream'
 import { useCreateSkillMutation, useCreateVersionMutation, useLazyGetSkillDetailQuery, useUpdateSkillMutation } from '@/store/api/skillsApi'
 import type { SkillDetail } from '@/store/api/types'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('skillForm', {
+  zh: {
+    dialog: {
+      createTitle: '新建技能',
+      editTitle: '编辑技能',
+      createDescription: '填写基础信息与内容后创建技能。',
+      editDescription: '更新信息并生成新版本。',
+    },
+    status: {
+      loadingDetail: '正在加载详情...',
+    },
+    fields: {
+      name: '名称',
+      visibility: '可见性',
+      description: '描述（可为空）',
+      tags: '标签（逗号分隔，可为空）',
+      avatar: 'Avatar（可选）',
+      content: '内容',
+    },
+    visibility: {
+      public: '公开',
+      private: '私有',
+    },
+    placeholders: {
+      aiGenerated: '留空将由 AI 生成',
+      avatar: '图片链接或 data URL',
+      content: '粘贴或编写 Skill 内容',
+    },
+    actions: {
+      save: '保存',
+      saving: '保存中...',
+    },
+    toasts: {
+      loadFailed: '加载技能详情失败',
+      aiFailed: 'AI 生成失败，请补充描述与标签',
+      emptyFields: '名称与内容不能为空',
+      created: '技能已创建',
+      updated: '技能已更新',
+      saveFailed: '保存失败，请稍后重试',
+    },
+    prompt: {
+      sessionTitle: 'Skill Meta',
+      lines: [
+        '你是产品经理，请根据以下 Skill 内容生成 JSON：',
+        '- description: 80 字以内中文描述',
+        '- tags: 3~6 个中文标签（短词）',
+        '输出严格 JSON，不要添加多余文本。',
+      ],
+    },
+  },
+  en: {
+    dialog: {
+      createTitle: 'New skill',
+      editTitle: 'Edit skill',
+      createDescription: 'Fill in the basics and content to create a skill.',
+      editDescription: 'Update details and generate a new version.',
+    },
+    status: {
+      loadingDetail: 'Loading details...',
+    },
+    fields: {
+      name: 'Name',
+      visibility: 'Visibility',
+      description: 'Description (optional)',
+      tags: 'Tags (comma-separated, optional)',
+      avatar: 'Avatar (optional)',
+      content: 'Content',
+    },
+    visibility: {
+      public: 'Public',
+      private: 'Private',
+    },
+    placeholders: {
+      aiGenerated: 'Leave blank to generate with AI',
+      avatar: 'Image URL or data URL',
+      content: 'Paste or write the Skill content',
+    },
+    actions: {
+      save: 'Save',
+      saving: 'Saving...',
+    },
+    toasts: {
+      loadFailed: 'Failed to load skill details.',
+      aiFailed: 'AI generation failed. Please add description and tags.',
+      emptyFields: 'Name and content are required.',
+      created: 'Skill created.',
+      updated: 'Skill updated.',
+      saveFailed: 'Save failed. Please try again.',
+    },
+    prompt: {
+      sessionTitle: 'Skill Meta',
+      lines: [
+        'You are a product manager. Generate JSON from the following Skill content:',
+        '- description: English description within 80 words',
+        '- tags: 3–6 short English tags',
+        'Output strict JSON only, no extra text.',
+      ],
+    },
+  },
+})
 
 type SkillFormDialogProps = {
   mode: 'create' | 'edit'
@@ -38,6 +141,7 @@ export default function SkillFormDialog({
   triggerClassName,
   onCompleted,
 }: SkillFormDialogProps) {
+  const { t } = useTranslation('skillForm')
   const dispatch = useAppDispatch()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -90,7 +194,7 @@ export default function SkillFormDialog({
         setDetail(detail)
       } catch {
         if (active) {
-          dispatch(enqueueToast('加载技能详情失败'))
+          dispatch(enqueueToast(t('toasts.loadFailed')))
           setOpen(false)
         }
       } finally {
@@ -107,17 +211,11 @@ export default function SkillFormDialog({
     if (!modelId) {
       throw new Error('AI model not available')
     }
-    const session = await createSession({ title: 'Skill Meta' }).unwrap()
+    const session = await createSession({ title: t('prompt.sessionTitle') }).unwrap()
     let responseText = ''
     try {
-      const prompt = [
-        '你是产品经理，请根据以下 Skill 内容生成 JSON：',
-        '- description: 80 字以内中文描述',
-        '- tags: 3~6 个中文标签（短词）',
-        '输出严格 JSON，不要添加多余文本。',
-        '',
-        rawContent,
-      ].join('\n')
+      const promptLines = t('prompt.lines', { returnObjects: true }) as string[]
+      const prompt = [...promptLines, '', rawContent].join('\n')
       await streamAiChat(
         { sessionId: session.id, content: prompt, model: modelId },
         { onDelta: (delta, _messageId) => (responseText += delta) },
@@ -153,7 +251,7 @@ export default function SkillFormDialog({
       setTagsInput(nextTags.join(', '))
       return { description: nextDescription, tags: nextTags }
     } catch {
-      dispatch(enqueueToast('AI 生成失败，请补充描述与标签'))
+      dispatch(enqueueToast(t('toasts.aiFailed')))
       const error = new Error('meta generation failed')
       throw error
     }
@@ -161,7 +259,7 @@ export default function SkillFormDialog({
 
   const handleSubmit = async () => {
     if (!name.trim() || !content.trim()) {
-      dispatch(enqueueToast('名称与内容不能为空'))
+      dispatch(enqueueToast(t('toasts.emptyFields')))
       return
     }
     setSaving(true)
@@ -177,7 +275,7 @@ export default function SkillFormDialog({
 
       if (mode === 'create') {
         await createSkill({ ...payload, content: content.trim() }).unwrap()
-        dispatch(enqueueToast('技能已创建'))
+        dispatch(enqueueToast(t('toasts.created')))
       } else if (skillId) {
         const tasks: Promise<unknown>[] = []
         tasks.push(updateSkill({ skillId, ...payload }).unwrap())
@@ -185,7 +283,7 @@ export default function SkillFormDialog({
           tasks.push(createVersion({ skillId, content: content.trim() }).unwrap())
         }
         await Promise.all(tasks)
-        dispatch(enqueueToast('技能已更新'))
+        dispatch(enqueueToast(t('toasts.updated')))
       }
       setOpen(false)
       onCompleted?.()
@@ -193,14 +291,15 @@ export default function SkillFormDialog({
       if (error instanceof Error && error.message === 'meta generation failed') {
         return
       }
-      if (open) dispatch(enqueueToast('保存失败，请稍后重试'))
+      if (open) dispatch(enqueueToast(t('toasts.saveFailed')))
     } finally {
       setSaving(false)
     }
   }
 
-  const title = mode === 'create' ? '新建技能' : '编辑技能'
-  const descriptionText = mode === 'create' ? '填写基础信息与内容后创建技能。' : '更新信息并生成新版本。'
+  const title = mode === 'create' ? t('dialog.createTitle') : t('dialog.editTitle')
+  const descriptionText =
+    mode === 'create' ? t('dialog.createDescription') : t('dialog.editDescription')
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -220,17 +319,21 @@ export default function SkillFormDialog({
         </DialogHeader>
         {loadingDetail ? (
           <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-            正在加载详情...
+            {t('status.loadingDetail')}
           </div>
         ) : (
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">名称</label>
+                <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  {t('fields.name')}
+                </label>
                 <Input value={name} onChange={(event) => setName(event.target.value)} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">可见性</label>
+                <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  {t('fields.visibility')}
+                </label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -238,7 +341,7 @@ export default function SkillFormDialog({
                     className="rounded-full"
                     onClick={() => setVisibility('public')}
                   >
-                    公开
+                    {t('visibility.public')}
                   </Button>
                   <Button
                     type="button"
@@ -246,49 +349,51 @@ export default function SkillFormDialog({
                     className="rounded-full"
                     onClick={() => setVisibility('private')}
                   >
-                    私有
+                    {t('visibility.private')}
                   </Button>
                 </div>
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                描述（可为空）
+                {t('fields.description')}
               </label>
               <Textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 className="min-h-[90px]"
-                placeholder="留空将由 AI 生成"
+                placeholder={t('placeholders.aiGenerated')}
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                标签（逗号分隔，可为空）
+                {t('fields.tags')}
               </label>
               <Input
                 value={tagsInput}
                 onChange={(event) => setTagsInput(event.target.value)}
-                placeholder="留空将由 AI 生成"
+                placeholder={t('placeholders.aiGenerated')}
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Avatar（可选）
+                {t('fields.avatar')}
               </label>
               <Input
                 value={avatar}
                 onChange={(event) => setAvatar(event.target.value)}
-                placeholder="图片链接或 data URL"
+                placeholder={t('placeholders.avatar')}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">内容</label>
+              <label className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {t('fields.content')}
+              </label>
               <Textarea
                 value={content}
                 onChange={(event) => setContent(event.target.value)}
                 className="min-h-[180px]"
-                placeholder="粘贴或编写 Skill 内容"
+                placeholder={t('placeholders.content')}
               />
             </div>
           </div>
@@ -299,7 +404,7 @@ export default function SkillFormDialog({
             className="rounded-full"
             disabled={saving || loadingDetail}
           >
-            {saving ? '保存中...' : '保存'}
+            {saving ? t('actions.saving') : t('actions.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,9 +1,50 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateSkillReportMutation } from '@/store/api/marketApi'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('reportDialog', {
+  zh: {
+    trigger: '举报',
+    title: '举报技能',
+    description: '请描述 {{name}} 存在的问题。',
+    fields: {
+      summary: '问题摘要',
+      detail: '详细描述',
+    },
+    status: {
+      success: '已提交举报',
+      error: '提交失败，请稍后重试',
+    },
+    actions: {
+      cancel: '取消',
+      submit: '提交举报',
+      submitting: '提交中...',
+    },
+  },
+  en: {
+    trigger: 'Report',
+    title: 'Report skill',
+    description: 'Describe the issue with {{name}}.',
+    fields: {
+      summary: 'Issue summary',
+      detail: 'Details',
+    },
+    status: {
+      success: 'Report submitted',
+      error: 'Submission failed. Please try again.',
+    },
+    actions: {
+      cancel: 'Cancel',
+      submit: 'Submit report',
+      submitting: 'Submitting...',
+    },
+  },
+})
 
 type ReportDialogProps = {
   targetId: string
@@ -11,6 +52,7 @@ type ReportDialogProps = {
 }
 
 export default function ReportDialog({ targetId, targetName }: ReportDialogProps) {
+  const { t } = useTranslation('reportDialog')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -33,31 +75,35 @@ export default function ReportDialog({ targetId, targetName }: ReportDialogProps
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="rounded-full">
-          举报
+          {t('trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>举报技能</DialogTitle>
-          <DialogDescription>请描述 {targetName} 存在的问题。</DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description', { name: targetName })}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <Input placeholder="问题摘要" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <Input
+            placeholder={t('fields.summary')}
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
           <Textarea
-            placeholder="详细描述"
+            placeholder={t('fields.detail')}
             value={content}
             onChange={(event) => setContent(event.target.value)}
             className="min-h-[120px]"
           />
-          {status === 'success' && <p className="text-sm text-emerald-600">已提交举报</p>}
-          {status === 'error' && <p className="text-sm text-destructive">提交失败，请稍后重试</p>}
+          {status === 'success' && <p className="text-sm text-emerald-600">{t('status.success')}</p>}
+          {status === 'error' && <p className="text-sm text-destructive">{t('status.error')}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setStatus('idle')}>
-            取消
+            {t('actions.cancel')}
           </Button>
           <Button onClick={submit} disabled={!canSubmit}>
-            {status === 'loading' ? '提交中...' : '提交举报'}
+            {status === 'loading' ? t('actions.submitting') : t('actions.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
