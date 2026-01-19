@@ -115,9 +115,19 @@ const MINIMAX_ICON = (
   </svg>
 )
 
-const MODEL_ICONS: Record<string, React.ReactNode> = {
+const MODEL_HOST_ICONS: Record<string, React.ReactNode> = {
+  openai: OPENAI_ICON,
+  minimax: MINIMAX_ICON,
+}
+
+const MODEL_ID_ICONS: Record<string, React.ReactNode> = {
   'gpt-5.2-2025-12-11': OPENAI_ICON,
   'MiniMax-M2.1-lightning': MINIMAX_ICON,
+}
+
+const getModelIcon = (model: AiModelOption | null | undefined) => {
+  const normalizedHost = model?.host?.toLowerCase() ?? ''
+  return MODEL_HOST_ICONS[normalizedHost] ?? MODEL_ID_ICONS[model?.id ?? ''] ?? null
 }
 
 type AiPromptProps = {
@@ -208,7 +218,7 @@ export function AI_Prompt({
                             transition={{ duration: 0.15 }}
                             className="flex items-center gap-1"
                           >
-                            {MODEL_ICONS[selectedModel?.id ?? ''] ?? <Bot className="h-4 w-4 opacity-50" />}
+                            {getModelIcon(selectedModel) ?? <Bot className="h-4 w-4 opacity-50" />}
                             <span>{selectedModel?.name ?? '选择模型'}</span>
                             <ChevronDown className="h-3 w-3 opacity-50" />
                           </motion.div>
@@ -229,7 +239,7 @@ export function AI_Prompt({
                           className="flex items-center justify-between gap-2"
                         >
                           <div className="flex items-center gap-2">
-                            {MODEL_ICONS[model.id] ?? <Bot className="h-4 w-4 opacity-50" />}
+                            {getModelIcon(model) ?? <Bot className="h-4 w-4 opacity-50" />}
                             <span>{model.name}</span>
                           </div>
                           {selectedModel?.id === model.id && <Check className="h-4 w-4 text-blue-500" />}
