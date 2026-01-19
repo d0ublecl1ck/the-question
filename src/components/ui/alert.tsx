@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button-1'
+import { Button } from '@/components/ui/button-advanced'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { X } from 'lucide-react'
 
