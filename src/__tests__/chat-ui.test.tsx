@@ -53,47 +53,54 @@ beforeEach(() => {
   } as ReturnType<typeof useListSkillDraftSuggestionsQuery>)
   vi.mocked(useUpdateSkillSuggestionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useUpdateSkillSuggestionMutation>)
   vi.mocked(useUpdateSkillDraftSuggestionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useUpdateSkillDraftSuggestionMutation>)
   vi.mocked(useAcceptSkillDraftSuggestionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useAcceptSkillDraftSuggestionMutation>)
 })
 
 it('opens skill picker when clicking skill icon', async () => {
   vi.mocked(useCreateChatSessionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useCreateChatSessionMutation>)
   vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
     vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
   vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useDeleteChatSessionMutation>)
   vi.mocked(useListChatSessionsQuery).mockReturnValue({
     data: [{ id: 's1', title: '历史对话' }],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useListChatSessionsQuery>)
   const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
-  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([previewTrigger, { isFetching: false }])
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([
+    previewTrigger,
+    { isFetching: false, reset: vi.fn() },
+    { lastArg: { sessionId: 's1' } },
+  ])
   vi.mocked(useListChatMessagesQuery).mockReturnValue({
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useListChatMessagesQuery>)
   vi.mocked(useListSkillsQuery).mockReturnValue({
     data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useListSkillsQuery>)
   vi.mocked(useListSkillSuggestionsQuery).mockReturnValue({
     data: [],
@@ -101,12 +108,13 @@ it('opens skill picker when clicking skill icon', async () => {
   } as ReturnType<typeof useListSkillSuggestionsQuery>)
   vi.mocked(useUpdateSkillSuggestionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useUpdateSkillSuggestionMutation>)
   vi.mocked(useListAiModelsQuery).mockReturnValue({
     data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useListAiModelsQuery>)
 
   const user = userEvent.setup()

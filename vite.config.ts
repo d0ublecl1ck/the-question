@@ -1,8 +1,7 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
-import { configDefaults } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -28,8 +27,5 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/setupTests.ts',
     exclude: [...configDefaults.exclude, '**/.worktrees/**', '**/worktrees/**'],
-    deps: {
-      inline: ['@lobehub/icons', '@lobehub/ui', '@emoji-mart/data', '@emoji-mart/react'],
-    },
   },
 })

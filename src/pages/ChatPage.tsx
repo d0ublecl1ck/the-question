@@ -130,7 +130,6 @@ const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>
 
 export default function ChatPage() {
   const token = useAppSelector((state) => state.auth.token)
-  const user = useAppSelector((state) => state.auth.user)
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const location = useLocation()

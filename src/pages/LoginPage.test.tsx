@@ -25,11 +25,11 @@ const LocationDisplay = () => {
 it('renders login page', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useLoginWithProfileMutation>)
   vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
@@ -49,11 +49,11 @@ it('renders login page', () => {
 it('renders larger logo and brand styles', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useLoginWithProfileMutation>)
   vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
@@ -71,11 +71,11 @@ it('shows email validation error on submit', async () => {
   const user = userEvent.setup()
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useLoginWithProfileMutation>)
   vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
@@ -99,11 +99,11 @@ it('redirects back to chat with draft after login', async () => {
   const loginMutation = vi.fn().mockReturnValue({ unwrap })
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     loginMutation,
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useLoginWithProfileMutation>)
   vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useRegisterWithProfileMutation>)
 
   render(
@@ -136,11 +136,11 @@ it('redirects back to chat with draft after login', async () => {
 it('centers login content within the page', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useLoginWithProfileMutation>)
   vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>
@@ -160,11 +160,11 @@ it('centers login content within the page', () => {
 it('renders terms and privacy links', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useLoginWithProfileMutation>)
   vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
     vi.fn(),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useRegisterWithProfileMutation>)
   render(
     <Provider store={store}>

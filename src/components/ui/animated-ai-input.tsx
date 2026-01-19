@@ -96,7 +96,6 @@ const OPENAI_ICON = (
 
 const MINIMAX_ICON = (
   <svg
-    t="1768677722074"
     className="h-4 w-4"
     viewBox="0 0 1170 1024"
     version="1.1"
@@ -281,7 +280,6 @@ export function AI_Prompt({
                     onClick={() => onTriggerSkill?.()}
                   >
                     <svg
-                      t="1768649262498"
                       className="h-4 w-4 transition-colors"
                       viewBox="0 0 1024 1024"
                       version="1.1"

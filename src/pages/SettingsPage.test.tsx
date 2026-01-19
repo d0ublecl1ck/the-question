@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { expect, it, vi } from 'vitest'
 import SettingsPage from './SettingsPage'
-import { useDeleteMemoryMutation, useGetMeQuery, useGetMemoryQuery } from '@/store/api/settingsApi'
+import { useGetMeQuery, useGetMemoryQuery } from '@/store/api/settingsApi'
 import { store } from '@/store/appStore'
 
 vi.mock('@/store/api/settingsApi', () => ({
@@ -18,11 +18,13 @@ it('renders settings sections', async () => {
     data: { id: 'user-1', email: 'a@b.com', is_active: true, role: 'user' },
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMeQuery>)
   vi.mocked(useGetMemoryQuery).mockReturnValue({
     data: [{ id: 'mem-1', key: 'profile', value: '偏好简洁', scope: 'user' }],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMemoryQuery>)
 
   render(
@@ -39,11 +41,13 @@ it('renders error state when loading fails', async () => {
     data: undefined,
     isLoading: false,
     isError: true,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMeQuery>)
   vi.mocked(useGetMemoryQuery).mockReturnValue({
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMemoryQuery>)
 
   render(
