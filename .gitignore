@@ -37,3 +37,10 @@ __pycache__/
 task_plan.md
 notes.md
 deliverable.md
+
+# Local/private artifacts
+backend/reports/
+ms_deploy.json
+prd.json
+prompt-for-test.md
+skill-creator.md

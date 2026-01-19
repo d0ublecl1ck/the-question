@@ -3,10 +3,15 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { expect, it, vi } from 'vitest'
 import SkillDetailPage from './SkillDetailPage'
 import { useCreateSkillReportMutation, useGetMarketSkillDetailQuery } from '@/store/api/marketApi'
+import { useGetSkillDetailQuery } from '@/store/api/skillsApi'
 
 vi.mock('@/store/api/marketApi', () => ({
   useCreateSkillReportMutation: vi.fn(),
   useGetMarketSkillDetailQuery: vi.fn(),
+}))
+
+vi.mock('@/store/api/skillsApi', () => ({
+  useGetSkillDetailQuery: vi.fn(),
 }))
 
 it('renders report entry', async () => {
@@ -23,6 +28,27 @@ it('renders report entry', async () => {
     isLoading: false,
     isError: false,
   } as ReturnType<typeof useGetMarketSkillDetailQuery>)
+  vi.mocked(useGetSkillDetailQuery).mockReturnValue({
+    data: {
+      id: 'skill-1',
+      name: 'Alpha',
+      description: 'First skill',
+      tags: ['flow'],
+      visibility: 'public',
+      latest_version: 1,
+      content: `---
+name: Alpha
+description: First skill
+---
+# Alpha Skill
+## Instructions
+Do something useful.
+## Examples
+- Example one`,
+    },
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useGetSkillDetailQuery>)
   vi.mocked(useCreateSkillReportMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
     { isLoading: false },
@@ -37,8 +63,11 @@ it('renders report entry', async () => {
   )
 
   expect(useGetMarketSkillDetailQuery).toHaveBeenCalled()
+  expect(useGetSkillDetailQuery).toHaveBeenCalled()
   expect(await screen.findByText('举报')).toBeInTheDocument()
   expect(screen.getByText('Skill Detail')).toBeInTheDocument()
   expect(screen.getAllByText('技能概览').length).toBeGreaterThan(0)
   expect(screen.getByText('收藏技能')).toBeInTheDocument()
+  expect(screen.getByText(/## Instructions/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '查看完整' })).toBeInTheDocument()
 })
