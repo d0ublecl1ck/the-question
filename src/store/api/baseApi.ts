@@ -1,12 +1,13 @@
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { getApiBaseUrl } from '@/lib/apiBaseUrl'
 import type { RootState } from '../appStore'
 import { clearAuth } from '../slices/authSlice'
 import { enqueueAlert } from '../slices/alertSlice'
 
 let redirectedOnAuth = false
 
-const baseUrl = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
+const baseUrl = getApiBaseUrl()
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl,

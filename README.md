@@ -28,6 +28,24 @@ pnpm exec vite --host localhost --port 5174 --strictPort
 
 Open `http://localhost:5174/`
 
+### Environment Variables
+
+This project reads environment variables from the shell (not from `.env` files).
+
+`VITE_BACKEND_URL` sets the API base URL:
+- Development default: `http://127.0.0.1:8000` when unset.
+- Production default: empty string when unset (use same-origin `/api`).
+
+Examples:
+
+```bash
+VITE_BACKEND_URL=http://127.0.0.1:8000 pnpm dev
+```
+
+```bash
+VITE_BACKEND_URL= pnpm build
+```
+
 ### Docker
 
 ```bash
