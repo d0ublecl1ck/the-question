@@ -1,4 +1,22 @@
 services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-wendui}"
+      MYSQL_USER: "${MYSQL_USER:-wendui}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-wendui}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-wendui_root}"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-wendui_root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   wendui:
     build:
       context: .
@@ -9,18 +27,20 @@ services:
       ENV: production
       DEBUG: "false"
       LOG_LEVEL: INFO
-      CORS_ORIGINS: '["*"]'
-      DB_URL: "sqlite:///./data/app.db"
+      CORS_ORIGINS: "*"
+      DB_URL: "mysql+pymysql://${MYSQL_USER:-wendui}:${MYSQL_PASSWORD:-wendui}@mysql:3306/${MYSQL_DATABASE:-wendui}"
       AI_DEBUG_LOG_PATH: "reports/ai-debug.jsonl"
       SECRET_KEY: "${SECRET_KEY:-change-me}"
       PROVIDERS: "${PROVIDERS:-[{\"host\":\"openai\",\"base_url\":\"https://api.openai.com/v1\",\"api_key_env\":\"OPENAI_API_KEY\",\"models\":[{\"id\":\"gpt-5.2-2025-12-11\",\"name\":\"GPT-5.2\"}]}]}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       MINIMAX_API_KEY: "${MINIMAX_API_KEY:-}"
     volumes:
-      - wendui-data:/app/backend/data
       - wendui-reports:/app/backend/reports
+    depends_on:
+      mysql:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  wendui-data:
+  mysql-data:
   wendui-reports:

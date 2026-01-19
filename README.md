@@ -57,16 +57,26 @@ docker compose up --build
 
 注意事项：
 
-- 默认使用 SQLite，并把数据库写入容器内的 `/app/backend/data/app.db`，数据会保存在 `wendui-data` 卷中。
+- 默认使用 MySQL（Docker Compose 会启动 `mysql` 服务），数据保存在 `mysql-data` 卷中。
 - 如需调用模型能力，请通过环境变量提供 `PROVIDERS` 与对应的 API Key（例如 `OPENAI_API_KEY`、`MINIMAX_API_KEY`）。
 - 生产环境请务必覆盖 `SECRET_KEY`。
 
 单次构建/运行：
 
 ```bash
+docker run --name wendui-mysql -d \\
+  -e MYSQL_DATABASE=wendui \\
+  -e MYSQL_USER=wendui \\
+  -e MYSQL_PASSWORD=wendui \\
+  -e MYSQL_ROOT_PASSWORD=wendui_root \\
+  -p 3306:3306 \\
+  mysql:8.4
+
 docker build -t wendui:local .
 docker run --rm -p 7860:7860 \\
   -e SECRET_KEY=change-me \\
+  -e CORS_ORIGINS='*' \\
+  -e DB_URL='mysql+pymysql://wendui:wendui@host.docker.internal:3306/wendui' \\
   -e CORS_ORIGINS='[\"*\"]' \\
   -e DB_URL='sqlite:///./data/app.db' \\
   -e OPENAI_API_KEY= \\
