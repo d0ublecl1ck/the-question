@@ -193,7 +193,7 @@ it('locks page scroll on chat route', async () => {
   document.body.style.overflow = 'scroll'
   document.documentElement.style.overflow = 'auto'
 
-  render(
+  const { unmount } = render(
     <Provider store={store}>
       <MemoryRouter initialEntries={['/chat']}>
         <Routes>
@@ -205,13 +205,16 @@ it('locks page scroll on chat route', async () => {
     </Provider>,
   )
 
-  await waitFor(() => {
-    expect(document.body.style.overflow).toBe('hidden')
-    expect(document.documentElement.style.overflow).toBe('hidden')
-  })
-
-  document.body.style.overflow = previousBodyOverflow
-  document.documentElement.style.overflow = previousRootOverflow
+  try {
+    await waitFor(() => {
+      expect(document.body.style.overflow).toBe('hidden')
+      expect(document.documentElement.style.overflow).toBe('hidden')
+    })
+  } finally {
+    unmount()
+    document.body.style.overflow = previousBodyOverflow
+    document.documentElement.style.overflow = previousRootOverflow
+  }
 })
 
 it('clears locked scroll on non-chat routes', async () => {
@@ -220,7 +223,7 @@ it('clears locked scroll on non-chat routes', async () => {
   document.body.style.overflow = 'hidden'
   document.documentElement.style.overflow = 'hidden'
 
-  render(
+  const { unmount } = render(
     <Provider store={store}>
       <MemoryRouter initialEntries={['/market']}>
         <Routes>
@@ -232,11 +235,14 @@ it('clears locked scroll on non-chat routes', async () => {
     </Provider>,
   )
 
-  await waitFor(() => {
-    expect(document.body.style.overflow).not.toBe('hidden')
-    expect(document.documentElement.style.overflow).not.toBe('hidden')
-  })
-
-  document.body.style.overflow = previousBodyOverflow
-  document.documentElement.style.overflow = previousRootOverflow
+  try {
+    await waitFor(() => {
+      expect(document.body.style.overflow).not.toBe('hidden')
+      expect(document.documentElement.style.overflow).not.toBe('hidden')
+    })
+  } finally {
+    unmount()
+    document.body.style.overflow = previousBodyOverflow
+    document.documentElement.style.overflow = previousRootOverflow
+  }
 })
