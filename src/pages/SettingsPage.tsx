@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import {
   useDeleteMemoryMutation,
   useGetMeQuery,
@@ -149,10 +150,10 @@ export default function SettingsPage() {
     try {
       await updateMe({ email }).unwrap()
       setProfileSaving('saved')
-      dispatch(enqueueToast(t('toasts.profileSaved')))
+      dispatch(enqueueAlert({ description: t('toasts.profileSaved') }))
     } catch {
       setProfileSaving('error')
-      dispatch(enqueueToast(t('toasts.profileSaveFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.profileSaveFailed'), variant: 'destructive' }))
     }
   }
 
@@ -164,9 +165,9 @@ export default function SettingsPage() {
     try {
       await updateMemoryMutation({ key, value, scope: 'user' }).unwrap()
       setNewMemoryValue('')
-      dispatch(enqueueToast(t('toasts.memoryAdded')))
+      dispatch(enqueueAlert({ description: t('toasts.memoryAdded') }))
     } catch {
-      dispatch(enqueueToast(t('toasts.memoryAddFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.memoryAddFailed'), variant: 'destructive' }))
     } finally {
       setCreatingMemory(false)
     }
@@ -175,16 +176,16 @@ export default function SettingsPage() {
   const handleUpdateMemory = async (itemId: string, key: string, scope?: string | null) => {
     const nextValue = (memoryDrafts[itemId] ?? '').trim()
     if (!nextValue) {
-      dispatch(enqueueToast(t('toasts.memoryEmpty')))
+      dispatch(enqueueAlert({ description: t('toasts.memoryEmpty'), variant: 'destructive' }))
       return
     }
     setUpdatingMemoryIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]))
     try {
       await updateMemoryMutation({ key, value: nextValue, scope: scope ?? 'user' }).unwrap()
-      dispatch(enqueueToast(t('toasts.memorySaved')))
+      dispatch(enqueueAlert({ description: t('toasts.memorySaved') }))
       setEditingId(null)
     } catch {
-      dispatch(enqueueToast(t('toasts.memorySaveFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.memorySaveFailed'), variant: 'destructive' }))
     } finally {
       setUpdatingMemoryIds((prev) => prev.filter((id) => id !== itemId))
     }
@@ -194,9 +195,9 @@ export default function SettingsPage() {
     setDeletingMemoryIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]))
     try {
       await deleteMemoryMutation({ memoryId: itemId }).unwrap()
-      dispatch(enqueueToast(t('toasts.memoryDeleted')))
+      dispatch(enqueueAlert({ description: t('toasts.memoryDeleted') }))
     } catch {
-      dispatch(enqueueToast(t('toasts.memoryDeleteFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.memoryDeleteFailed'), variant: 'destructive' }))
     } finally {
       setDeletingMemoryIds((prev) => prev.filter((id) => id !== itemId))
     }
@@ -234,9 +235,9 @@ export default function SettingsPage() {
       </header>
 
       {status === 'error' ? (
-        <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-          {tCommon('status.loadFailed')}
-        </div>
+        <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
+          <AlertDescription>{tCommon('status.loadFailed')}</AlertDescription>
+        </Alert>
       ) : (
         <>
           <section className="space-y-4">
@@ -338,9 +339,9 @@ export default function SettingsPage() {
 
             <div className="space-y-3">
               {filteredMemoryItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-                  {t('memory.empty')}
-                </div>
+                <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+                  <AlertDescription className="text-muted-foreground">{t('memory.empty')}</AlertDescription>
+                </Alert>
               ) : (
                 filteredMemoryItems.map((item) => {
                   const draftValue = memoryDrafts[item.id] ?? item.value

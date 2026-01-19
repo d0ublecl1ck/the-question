@@ -34,6 +34,7 @@ import {
   ConversationScrollButton,
   ConversationScrollState,
 } from '@/components/ui/conversation'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { streamAiChat, watchAiChatStream } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
@@ -51,7 +52,7 @@ import {
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import type { ChatMessage as ApiChatMessage, ChatSession, SkillSuggestion, SkillDraftSuggestion } from '@/store/api/types'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { registerTranslations } from '@/lib/i18n'
 
 registerTranslations('chat', {
@@ -116,6 +117,8 @@ registerTranslations('chat', {
       draftFailed: '生成技能失败',
       draftClosed: '已关闭沉淀建议',
       draftUpdateFailed: '更新沉淀建议失败',
+      renameEmpty: '请输入新的对话名称',
+      renameFailed: '重命名失败',
     },
   },
   en: {
@@ -179,6 +182,8 @@ registerTranslations('chat', {
       draftFailed: 'Failed to generate skill.',
       draftClosed: 'Draft suggestion dismissed.',
       draftUpdateFailed: 'Failed to update draft suggestion.',
+      renameEmpty: 'Please enter a new chat name.',
+      renameFailed: 'Rename failed.',
     },
   },
 })
@@ -772,7 +777,7 @@ export default function ChatPage() {
       if (!sessionId) return
       const skill = skillById[suggestion.skill_id]
       if (!skill) {
-        dispatch(enqueueToast(t('toasts.skillNotLoaded')))
+        dispatch(enqueueAlert({ description: t('toasts.skillNotLoaded'), variant: 'destructive' }))
         return
       }
       setSelectedSkill(skill)
@@ -783,9 +788,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'accepted',
         }).unwrap()
-        dispatch(enqueueToast(t('toasts.skillChosen', { name: skill.name })))
+        dispatch(enqueueAlert({ description: t('toasts.skillChosen', { name: skill.name }) }))
       } catch {
-        dispatch(enqueueToast(t('toasts.skillSuggestionUpdateFailed')))
+        dispatch(enqueueAlert({ description: t('toasts.skillSuggestionUpdateFailed'), variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, skillById, updateSkillSuggestion],
@@ -801,9 +806,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast(t('toasts.skillSuggestionClosed')))
+        dispatch(enqueueAlert({ description: t('toasts.skillSuggestionClosed') }))
       } catch {
-        dispatch(enqueueToast(t('toasts.skillSuggestionUpdateFailed')))
+        dispatch(enqueueAlert({ description: t('toasts.skillSuggestionUpdateFailed'), variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, updateSkillSuggestion],
@@ -821,7 +826,7 @@ export default function ChatPage() {
       if (!sessionId) return
       const modelId = selectedModelId ?? models[0]?.id ?? null
       if (!modelId) {
-        dispatch(enqueueToast(t('toasts.modelUnavailable')))
+        dispatch(enqueueAlert({ description: t('toasts.modelUnavailable'), variant: 'destructive' }))
         return
       }
       setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
@@ -831,9 +836,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           modelId,
         }).unwrap()
-        dispatch(enqueueToast(t('toasts.draftAccepted', { name: result.name })))
+        dispatch(enqueueAlert({ description: t('toasts.draftAccepted', { name: result.name }) }))
       } catch {
-        dispatch(enqueueToast(t('toasts.draftFailed')))
+        dispatch(enqueueAlert({ description: t('toasts.draftFailed'), variant: 'destructive' }))
       }
     },
     [acceptSkillDraftSuggestion, dispatch, models, selectedModelId, sessionId],
@@ -849,9 +854,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast(t('toasts.draftClosed')))
+        dispatch(enqueueAlert({ description: t('toasts.draftClosed') }))
       } catch {
-        dispatch(enqueueToast(t('toasts.draftUpdateFailed')))
+        dispatch(enqueueAlert({ description: t('toasts.draftUpdateFailed'), variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, updateSkillDraftSuggestion],
@@ -887,7 +892,7 @@ export default function ChatPage() {
   const handleRequestRenameSession = (session: ChatSession) => {
     setRenameCandidate(session)
     const currentTitle = session.title?.trim() ?? ''
-    setRenameValue(currentTitle && currentTitle !== '对话' ? currentTitle : '')
+    setRenameValue(currentTitle && !isDefaultTitle(currentTitle) ? currentTitle : '')
     setRenameDialogOpen(true)
   }
 
@@ -896,7 +901,7 @@ export default function ChatPage() {
     const target = renameCandidate
     const nextTitle = renameValue.trim()
     if (!nextTitle) {
-      dispatch(enqueueToast('请输入新的对话名称'))
+      dispatch(enqueueAlert({ description: t('toasts.renameEmpty'), variant: 'destructive' }))
       return
     }
     const currentTitle = target.title?.trim() ?? ''
@@ -915,7 +920,7 @@ export default function ChatPage() {
       const updated = await updateChatSessionTitle({ sessionId: targetId, title }).unwrap()
       setSessions((prev) => [updated, ...prev.filter((item) => item.id !== updated.id)])
     } catch {
-      dispatch(enqueueToast('重命名失败'))
+      dispatch(enqueueAlert({ description: t('toasts.renameFailed'), variant: 'destructive' }))
     }
   }
 
@@ -1021,9 +1026,11 @@ export default function ChatPage() {
                 <ScrollArea className="min-h-0 flex-1 pr-2" scrollbarClassName="w-[5px] p-0">
                   <div className="space-y-1 text-sm">
                     {filteredSessions.length === 0 && (
-                      <div className="rounded-2xl border border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground">
-                        {t('session.emptyHistory')}
-                      </div>
+                      <Alert className="rounded-2xl border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground shadow-none">
+                        <AlertDescription className="text-xs text-muted-foreground">
+                          {t('session.emptyHistory')}
+                        </AlertDescription>
+                      </Alert>
                     )}
                     {filteredSessions.map((session) => {
                       const sessionTitle = session.title?.trim()
@@ -1083,8 +1090,8 @@ export default function ChatPage() {
                             </button>
                           </div>
                         </div>
-                    )
-                  })}
+                      )
+                    })}
                 </div>
               </ScrollArea>
             </div>
@@ -1156,9 +1163,11 @@ export default function ChatPage() {
               <Conversation className="mt-6 min-h-0 flex-1">
                 <ConversationContent className="flex flex-col gap-4">
                   {messages.length === 0 && viewStatus === 'ready' && (
-                    <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
-                      {t('emptyMessages')}
-                    </div>
+                    <Alert className="rounded-2xl border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground shadow-none">
+                      <AlertDescription className="text-muted-foreground">
+                        {t('emptyMessages')}
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {messages.map((message) => {
                     const badgeSkill = message.skill_id ? skillById[message.skill_id] : null

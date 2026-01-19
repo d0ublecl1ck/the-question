@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCreateSkillReportMutation } from '@/store/api/marketApi'
 import { registerTranslations } from '@/lib/i18n'
 
@@ -95,8 +96,16 @@ export default function ReportDialog({ targetId, targetName }: ReportDialogProps
             onChange={(event) => setContent(event.target.value)}
             className="min-h-[120px]"
           />
-          {status === 'success' && <p className="text-sm text-emerald-600">{t('status.success')}</p>}
-          {status === 'error' && <p className="text-sm text-destructive">{t('status.error')}</p>}
+          {status === 'success' && (
+            <Alert className="border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">
+              <AlertDescription>{t('status.success')}</AlertDescription>
+            </Alert>
+          )}
+          {status === 'error' && (
+            <Alert variant="destructive" className="shadow-none">
+              <AlertDescription>{t('status.error')}</AlertDescription>
+            </Alert>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setStatus('idle')}>

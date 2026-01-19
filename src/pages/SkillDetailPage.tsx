@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import type { MarketSkill } from '@/store/api/types'
 import { useGetMarketSkillDetailQuery } from '@/store/api/marketApi'
 import { useGetSkillDetailQuery } from '@/store/api/skillsApi'
@@ -123,7 +124,9 @@ export default function SkillDetailPage() {
   if (status === 'loading') {
     return (
       <section className="py-6">
-        <p className="text-sm text-muted-foreground">{t('status.loading')}</p>
+        <Alert className="max-w-md">
+          <AlertDescription>{t('status.loading')}</AlertDescription>
+        </Alert>
       </section>
     )
   }
@@ -131,7 +134,9 @@ export default function SkillDetailPage() {
   if (status === 'error' || !data) {
     return (
       <section className="py-6">
-        <p className="text-sm text-muted-foreground">{t('status.notFound')}</p>
+        <Alert variant="destructive" className="max-w-md">
+          <AlertDescription>{t('status.notFound')}</AlertDescription>
+        </Alert>
       </section>
     )
   }
@@ -266,9 +271,9 @@ export default function SkillDetailPage() {
               <p className="mt-4 text-sm leading-relaxed text-foreground/80">{section.body}</p>
             </article>
           ))}
-          <div className="rounded-3xl border border-dashed border-border/70 bg-muted/10 p-6 text-sm text-muted-foreground">
-            {t('comments')}
-          </div>
+          <Alert className="rounded-3xl border-dashed border-border/70 bg-muted/10 shadow-none">
+            <AlertDescription className="text-muted-foreground">{t('comments')}</AlertDescription>
+          </Alert>
         </div>
       </div>
     </section>

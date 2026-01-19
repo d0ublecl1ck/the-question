@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import { useCreateChatSessionMutation, useDeleteChatSessionMutation } from '@/store/api/chatApi'
 import { streamAiChat } from '@/store/api/aiStream'
@@ -194,7 +195,7 @@ export default function SkillFormDialog({
         setDetail(detail)
       } catch {
         if (active) {
-          dispatch(enqueueToast(t('toasts.loadFailed')))
+          dispatch(enqueueAlert({ description: t('toasts.loadFailed'), variant: 'destructive' }))
           setOpen(false)
         }
       } finally {
@@ -251,7 +252,7 @@ export default function SkillFormDialog({
       setTagsInput(nextTags.join(', '))
       return { description: nextDescription, tags: nextTags }
     } catch {
-      dispatch(enqueueToast(t('toasts.aiFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.aiFailed'), variant: 'destructive' }))
       const error = new Error('meta generation failed')
       throw error
     }
@@ -259,7 +260,7 @@ export default function SkillFormDialog({
 
   const handleSubmit = async () => {
     if (!name.trim() || !content.trim()) {
-      dispatch(enqueueToast(t('toasts.emptyFields')))
+      dispatch(enqueueAlert({ description: t('toasts.emptyFields'), variant: 'destructive' }))
       return
     }
     setSaving(true)
@@ -275,7 +276,7 @@ export default function SkillFormDialog({
 
       if (mode === 'create') {
         await createSkill({ ...payload, content: content.trim() }).unwrap()
-        dispatch(enqueueToast(t('toasts.created')))
+        dispatch(enqueueAlert({ description: t('toasts.created') }))
       } else if (skillId) {
         const tasks: Promise<unknown>[] = []
         tasks.push(updateSkill({ skillId, ...payload }).unwrap())
@@ -283,7 +284,7 @@ export default function SkillFormDialog({
           tasks.push(createVersion({ skillId, content: content.trim() }).unwrap())
         }
         await Promise.all(tasks)
-        dispatch(enqueueToast(t('toasts.updated')))
+        dispatch(enqueueAlert({ description: t('toasts.updated') }))
       }
       setOpen(false)
       onCompleted?.()
@@ -291,7 +292,7 @@ export default function SkillFormDialog({
       if (error instanceof Error && error.message === 'meta generation failed') {
         return
       }
-      if (open) dispatch(enqueueToast(t('toasts.saveFailed')))
+      if (open) dispatch(enqueueAlert({ description: t('toasts.saveFailed'), variant: 'destructive' }))
     } finally {
       setSaving(false)
     }
@@ -318,9 +319,11 @@ export default function SkillFormDialog({
           <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
         {loadingDetail ? (
-          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-            {t('status.loadingDetail')}
-          </div>
+          <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+            <AlertDescription className="text-muted-foreground">
+              {t('status.loadingDetail')}
+            </AlertDescription>
+          </Alert>
         ) : (
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2">

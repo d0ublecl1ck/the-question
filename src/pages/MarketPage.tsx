@@ -12,8 +12,9 @@ import MarketToolbar from '@/components/market/MarketToolbar'
 import MarketList from '@/components/market/MarketList'
 import MarketTable from '@/components/market/MarketTable'
 import ExpertPlazaLayout from '@/components/market/ExpertPlazaLayout'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { registerTranslations } from '@/lib/i18n'
 
 registerTranslations('market', {
@@ -119,7 +120,7 @@ export default function MarketPage() {
 
   const handleToggleFavorite = async (skill: MarketSkill) => {
     if (!isAuthed) {
-      dispatch(enqueueToast(t('toasts.loginToFavorite')))
+      dispatch(enqueueAlert({ description: t('toasts.loginToFavorite') }))
       navigate('/login')
       return
     }
@@ -128,20 +129,20 @@ export default function MarketPage() {
     try {
       if (favoriteSet.has(skill.id)) {
         await deleteFavorite({ skill_id: skill.id }).unwrap()
-        dispatch(enqueueToast(t('toasts.unfavorited')))
+        dispatch(enqueueAlert({ description: t('toasts.unfavorited') }))
       } else {
         await createFavorite({ skill_id: skill.id }).unwrap()
-        dispatch(enqueueToast(t('toasts.favorited')))
+        dispatch(enqueueAlert({ description: t('toasts.favorited') }))
       }
     } catch {
-      dispatch(enqueueToast(t('toasts.favoriteFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.favoriteFailed'), variant: 'destructive' }))
     } finally {
       setPendingFavoriteIds((prev) => prev.filter((id) => id !== skill.id))
     }
   }
 
   const handleUnauthorizedLibraryClick = () => {
-    dispatch(enqueueToast(tCommon('auth.loginRequired')))
+    dispatch(enqueueAlert({ description: tCommon('auth.loginRequired') }))
     navigate('/login')
   }
 
@@ -192,13 +193,15 @@ export default function MarketPage() {
             </span>
           </div>
           {status === 'loading' ? (
-            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-              {tCommon('status.loading')}
-            </div>
+            <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+              <AlertDescription className="text-muted-foreground">
+                {tCommon('status.loading')}
+              </AlertDescription>
+            </Alert>
           ) : status === 'error' ? (
-            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-              {tCommon('status.loadFailed')}
-            </div>
+            <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
+              <AlertDescription>{tCommon('status.loadFailed')}</AlertDescription>
+            </Alert>
           ) : view === 'grid' ? (
             <MarketTable
               items={filtered}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppDispatch } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { useImportSkillMutation } from '@/store/api/skillsApi'
 import { registerTranslations } from '@/lib/i18n'
 
@@ -105,7 +105,7 @@ export default function SkillImportDialog({ triggerLabel, onCompleted }: SkillIm
 
   const handleSubmit = async () => {
     if (!name.trim() || !content.trim()) {
-      dispatch(enqueueToast(t('toasts.emptyFields')))
+      dispatch(enqueueAlert({ description: t('toasts.emptyFields'), variant: 'destructive' }))
       return
     }
     setSaving(true)
@@ -118,12 +118,12 @@ export default function SkillImportDialog({ triggerLabel, onCompleted }: SkillIm
         content: content.trim(),
         versions: [],
       }).unwrap()
-      dispatch(enqueueToast(t('toasts.success')))
+      dispatch(enqueueAlert({ description: t('toasts.success') }))
       setOpen(false)
       resetForm()
       onCompleted?.()
     } catch {
-      dispatch(enqueueToast(t('toasts.failed')))
+      dispatch(enqueueAlert({ description: t('toasts.failed'), variant: 'destructive' }))
     } finally {
       setSaving(false)
     }

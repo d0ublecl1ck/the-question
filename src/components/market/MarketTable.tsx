@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Rating } from '@/components/ui/rating'
 import { HeartButton } from '@/components/ui/heart-button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useNavigate } from 'react-router-dom'
 import type { KeyboardEvent, ReactNode, SyntheticEvent } from 'react'
 import type { MarketSkill } from '@/store/api/types'
@@ -54,9 +55,9 @@ export default function MarketTable({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-        {t('empty')}
-      </div>
+      <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+        <AlertDescription className="text-muted-foreground">{t('empty')}</AlertDescription>
+      </Alert>
     )
   }
 

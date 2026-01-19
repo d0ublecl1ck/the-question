@@ -10,11 +10,12 @@ import ExpertPlazaLayout from '@/components/market/ExpertPlazaLayout'
 import SkillFormDialog from '@/components/library/SkillFormDialog'
 import SkillImportDialog from '@/components/library/SkillImportDialog'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
 import { useTranslation } from 'react-i18next'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { registerTranslations } from '@/lib/i18n'
 
 registerTranslations('library', {
@@ -204,18 +205,18 @@ export default function LibraryPage() {
   const handleRemoveFavorite = async (skillId: string) => {
     try {
       await deleteFavorite({ skill_id: skillId }).unwrap()
-      dispatch(enqueueToast(t('toasts.unfavorited')))
+      dispatch(enqueueAlert({ description: t('toasts.unfavorited') }))
     } catch {
-      dispatch(enqueueToast(t('toasts.unfavoriteFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.unfavoriteFailed'), variant: 'destructive' }))
     }
   }
 
   const handleDeleteSkill = async (skillId: string) => {
     try {
       await deleteSkill(skillId).unwrap()
-      dispatch(enqueueToast(t('toasts.deleted')))
+      dispatch(enqueueAlert({ description: t('toasts.deleted') }))
     } catch {
-      dispatch(enqueueToast(t('toasts.deleteFailed')))
+      dispatch(enqueueAlert({ description: t('toasts.deleteFailed'), variant: 'destructive' }))
     }
   }
 
@@ -286,7 +287,7 @@ export default function LibraryPage() {
 
   const isAuthed = authStatus === 'authenticated'
   const handleUnauthorizedLibraryClick = () => {
-    dispatch(enqueueToast(tCommon('auth.loginRequired')))
+    dispatch(enqueueAlert({ description: tCommon('auth.loginRequired') }))
     navigate('/login')
   }
 
@@ -393,13 +394,15 @@ export default function LibraryPage() {
             <span className="text-xs text-muted-foreground">{t('list.count', { count: filtered.length })}</span>
           </div>
           {(tab === 'favorites' ? status : myStatus) === 'loading' ? (
-            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-              {tCommon('status.loading')}
-            </div>
+            <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+              <AlertDescription className="text-muted-foreground">
+                {tCommon('status.loading')}
+              </AlertDescription>
+            </Alert>
           ) : (tab === 'favorites' ? status : myStatus) === 'error' ? (
-            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-              {tCommon('status.loadFailed')}
-            </div>
+            <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
+              <AlertDescription>{tCommon('status.loadFailed')}</AlertDescription>
+            </Alert>
           ) : view === 'grid' ? (
             <MarketTable
               items={filtered}
