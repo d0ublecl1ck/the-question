@@ -55,6 +55,19 @@ docker compose up --build
 
 Open `http://localhost:7860`
 
+后端单独镜像：
+
+```bash
+docker build -t wendui-backend:local ./backend
+docker run --rm -p 7860:7860 \
+  -e SECRET_KEY=change-me \
+  -e CORS_ORIGINS='["*"]' \
+  -e DB_URL='mysql+pymysql://wendui:wendui@host.docker.internal:3306/wendui' \
+  -e OPENAI_API_KEY= \
+  -e MINIMAX_API_KEY= \
+  wendui-backend:local
+```
+
 ## Deployment Notes
 
 - 默认使用 MySQL（Docker Compose 会启动 `mysql` 服务），数据保存在 `mysql-data` 卷中。
