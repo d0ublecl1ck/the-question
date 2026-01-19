@@ -39,7 +39,7 @@ it('disables send button when prompt is empty', () => {
     </MemoryRouter>,
   )
 
-  expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: '发送' })).toBeDisabled()
 })
 
 it('navigates to chat with draft when clicking send', async () => {
@@ -52,7 +52,7 @@ it('navigates to chat with draft when clicking send', async () => {
   )
 
   await user.type(screen.getByRole('textbox', { name: 'AI 对话输入' }), '想聊的内容')
-  await user.click(screen.getByRole('button', { name: 'Send message' }))
+  await user.click(screen.getByRole('button', { name: '发送' }))
 
   const location = await screen.findByTestId('location-display')
   expect(location).toHaveTextContent('/chat')

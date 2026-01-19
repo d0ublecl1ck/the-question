@@ -14,9 +14,88 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { useTranslation } from 'react-i18next'
 import { enqueueAlert } from '@/store/slices/alertSlice'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('library', {
+  zh: {
+    header: {
+      label: '专家广场',
+      title: '智囊团',
+      description: '管理收藏与自建技能专家，支持检索、筛选与多视图浏览。',
+    },
+    tabs: {
+      label: '子栏',
+      favorites: '收藏',
+      mine: '我创建的',
+    },
+    tagFilter: {
+      label: '标签',
+      all: '全部',
+      empty: '暂无标签',
+    },
+    actions: {
+      newSkill: '新建技能',
+      importSkill: '导入 SKILL.md / JSON',
+      bulkDelete: '批量删除',
+      removeFavorite: '取消收藏',
+      view: '查看',
+      edit: '编辑',
+      delete: '删除',
+    },
+    list: {
+      title: '技能列表',
+      count: '共 {{count}} 项',
+    },
+    toasts: {
+      unfavorited: '已取消收藏',
+      unfavoriteFailed: '取消收藏失败',
+      deleted: '已删除技能',
+      deleteFailed: '删除失败',
+    },
+  },
+  en: {
+    header: {
+      label: 'Expert Plaza',
+      title: 'Expert library',
+      description: 'Manage favorites and your own skills with search, filters, and multiple views.',
+    },
+    tabs: {
+      label: 'Tabs',
+      favorites: 'Favorites',
+      mine: 'Created by me',
+    },
+    tagFilter: {
+      label: 'Tags',
+      all: 'All',
+      empty: 'No tags',
+    },
+    actions: {
+      newSkill: 'New skill',
+      importSkill: 'Import SKILL.md / JSON',
+      bulkDelete: 'Bulk delete',
+      removeFavorite: 'Remove favorite',
+      view: 'View',
+      edit: 'Edit',
+      delete: 'Delete',
+    },
+    list: {
+      title: 'Skill list',
+      count: 'Total {{count}} items',
+    },
+    toasts: {
+      unfavorited: 'Removed from favorites.',
+      unfavoriteFailed: 'Failed to remove favorite.',
+      deleted: 'Skill deleted.',
+      deleteFailed: 'Delete failed.',
+    },
+  },
+})
 
 export default function LibraryPage() {
+  const { t } = useTranslation('library')
+  const { t: tCommon } = useTranslation('common')
   const dispatch = useAppDispatch()
   const authStatus = useAppSelector((state) => state.auth.status)
   const navigate = useNavigate()
@@ -119,30 +198,32 @@ export default function LibraryPage() {
   }, [activeItems, query, selectedTags, sort, tab])
 
   const selectedSummary =
-    selectedTags.length === 0 ? '全部标签' : `已选 ${selectedTags.length} 个标签`
+    selectedTags.length === 0
+      ? tCommon('filters.allTags')
+      : tCommon('filters.selectedTags', { count: selectedTags.length })
 
   const handleRemoveFavorite = async (skillId: string) => {
     try {
       await deleteFavorite({ skill_id: skillId }).unwrap()
-      dispatch(enqueueAlert({ description: '已取消收藏' }))
+      dispatch(enqueueAlert({ description: t('toasts.unfavorited') }))
     } catch {
-      dispatch(enqueueAlert({ description: '取消收藏失败', variant: 'destructive' }))
+      dispatch(enqueueAlert({ description: t('toasts.unfavoriteFailed'), variant: 'destructive' }))
     }
   }
 
   const handleDeleteSkill = async (skillId: string) => {
     try {
       await deleteSkill(skillId).unwrap()
-      dispatch(enqueueAlert({ description: '已删除技能' }))
+      dispatch(enqueueAlert({ description: t('toasts.deleted') }))
     } catch {
-      dispatch(enqueueAlert({ description: '删除失败', variant: 'destructive' }))
+      dispatch(enqueueAlert({ description: t('toasts.deleteFailed'), variant: 'destructive' }))
     }
   }
 
   const renderFavoriteActions = (item: MarketSkill) => (
     <div className="flex items-center gap-2">
       <Button asChild variant="outline" size="sm" className="rounded-full">
-        <Link to={`/skills/${item.id}`}>查看</Link>
+        <Link to={`/skills/${item.id}`}>{t('actions.view')}</Link>
       </Button>
       <Button
         variant="outline"
@@ -150,7 +231,7 @@ export default function LibraryPage() {
         className="rounded-full"
         onClick={() => handleRemoveFavorite(item.id)}
       >
-        取消收藏
+        {t('actions.removeFavorite')}
       </Button>
     </div>
   )
@@ -158,12 +239,12 @@ export default function LibraryPage() {
   const renderMineActions = (item: MarketSkill) => (
     <div className="flex items-center gap-2">
       <Button asChild variant="outline" size="sm" className="rounded-full">
-        <Link to={`/skills/${item.id}`}>查看</Link>
+        <Link to={`/skills/${item.id}`}>{t('actions.view')}</Link>
       </Button>
       <SkillFormDialog
         mode="edit"
         skillId={item.id}
-        triggerLabel="编辑"
+        triggerLabel={t('actions.edit')}
         triggerVariant="outline"
         triggerSize="sm"
         triggerClassName="rounded-full"
@@ -175,14 +256,14 @@ export default function LibraryPage() {
         className="rounded-full"
         onClick={() => handleDeleteSkill(item.id)}
       >
-        删除
+        {t('actions.delete')}
       </Button>
     </div>
   )
 
   const tabSidebar = (
     <div className="space-y-2">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">子栏</p>
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('tabs.label')}</p>
       <div className="flex gap-2 lg:flex-col">
         <Button
           variant={tab === 'favorites' ? 'default' : 'ghost'}
@@ -190,7 +271,7 @@ export default function LibraryPage() {
           className="rounded-full"
           onClick={() => setTab('favorites')}
         >
-          收藏
+          {t('tabs.favorites')}
         </Button>
         <Button
           variant={tab === 'mine' ? 'default' : 'ghost'}
@@ -198,7 +279,7 @@ export default function LibraryPage() {
           className="rounded-full"
           onClick={() => setTab('mine')}
         >
-          我创建的
+          {t('tabs.mine')}
         </Button>
       </div>
     </div>
@@ -206,7 +287,7 @@ export default function LibraryPage() {
 
   const isAuthed = authStatus === 'authenticated'
   const handleUnauthorizedLibraryClick = () => {
-    dispatch(enqueueAlert({ description: '本功能登录才可以使用' }))
+    dispatch(enqueueAlert({ description: tCommon('auth.loginRequired') }))
     navigate('/login')
   }
 
@@ -218,12 +299,12 @@ export default function LibraryPage() {
     >
       <section className="w-full space-y-8">
         <header className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">专家广场</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{t('header.label')}</p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-semibold">智囊团</h2>
+              <h2 className="text-3xl font-semibold">{t('header.title')}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                管理收藏与自建技能专家，支持检索、筛选与多视图浏览。
+                {t('header.description')}
               </p>
             </div>
             <span className="rounded-full border border-border/60 bg-white/80 px-4 py-2 text-xs text-muted-foreground shadow-sm">
@@ -235,17 +316,17 @@ export default function LibraryPage() {
         <section className="space-y-4">
           <div className="space-y-4 rounded-3xl border border-border/60 bg-white/70 p-4 backdrop-blur">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">标签</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t('tagFilter.label')}</span>
               <Button
                 variant={selectedTags.length === 0 ? 'default' : 'ghost'}
                 size="sm"
                 className="rounded-full"
                 onClick={() => setSelectedTags([])}
               >
-                全部
+                {t('tagFilter.all')}
               </Button>
               {categories.length === 0 ? (
-                <span className="text-xs text-muted-foreground">暂无标签</span>
+                <span className="text-xs text-muted-foreground">{t('tagFilter.empty')}</span>
               ) : (
                 categories.map((item) => {
                   const active = selectedTags.includes(item.tag)
@@ -291,10 +372,17 @@ export default function LibraryPage() {
 
           {tab === 'mine' ? (
             <div className="flex flex-wrap items-center gap-2">
-              <SkillFormDialog mode="create" triggerLabel="新建技能" onCompleted={refetchMySkills} />
-              <SkillImportDialog triggerLabel="导入 SKILL.md / JSON" onCompleted={refetchMySkills} />
+              <SkillFormDialog
+                mode="create"
+                triggerLabel={t('actions.newSkill')}
+                onCompleted={refetchMySkills}
+              />
+              <SkillImportDialog
+                triggerLabel={t('actions.importSkill')}
+                onCompleted={refetchMySkills}
+              />
               <Button variant="outline" className="rounded-full" disabled>
-                批量删除
+                {t('actions.bulkDelete')}
               </Button>
             </div>
           ) : null}
@@ -302,16 +390,18 @@ export default function LibraryPage() {
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold">技能列表</h3>
-            <span className="text-xs text-muted-foreground">共 {filtered.length} 项</span>
+            <h3 className="text-base font-semibold">{t('list.title')}</h3>
+            <span className="text-xs text-muted-foreground">{t('list.count', { count: filtered.length })}</span>
           </div>
           {(tab === 'favorites' ? status : myStatus) === 'loading' ? (
             <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
-              <AlertDescription className="text-muted-foreground">正在加载中...</AlertDescription>
+              <AlertDescription className="text-muted-foreground">
+                {tCommon('status.loading')}
+              </AlertDescription>
             </Alert>
           ) : (tab === 'favorites' ? status : myStatus) === 'error' ? (
             <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
-              <AlertDescription>加载失败，请稍后重试</AlertDescription>
+              <AlertDescription>{tCommon('status.loadFailed')}</AlertDescription>
             </Alert>
           ) : view === 'grid' ? (
             <MarketTable

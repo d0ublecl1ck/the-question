@@ -4,10 +4,49 @@ import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import type { Components, UrlTransform } from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('chatBubble', {
+  zh: {
+    clarify: {
+      resultTitle: '澄清结果',
+      singleChoice: '单选',
+      ranking: '排序',
+      freeText: '补充说明',
+      notSelected: '未选择',
+      notRanked: '未排序',
+      notFilled: '未填写',
+      empty: '暂无澄清结果',
+      moveUp: '上移',
+      moveDown: '下移',
+      inputPlaceholder: '在这里补充你的答案…',
+      done: '完成',
+      completed: '已完成',
+    },
+  },
+  en: {
+    clarify: {
+      resultTitle: 'Clarification results',
+      singleChoice: 'Single choice',
+      ranking: 'Ranking',
+      freeText: 'Additional notes',
+      notSelected: 'Not selected',
+      notRanked: 'Not ranked',
+      notFilled: 'Not provided',
+      empty: 'No clarification results yet',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      inputPlaceholder: 'Add your answer here…',
+      done: 'Done',
+      completed: 'Completed',
+    },
+  },
+})
 
 type ChatBubbleProps = {
   role: 'user' | 'assistant'
@@ -52,6 +91,22 @@ type ClarifyChainResponse = {
 
 type ClarifyChainResponsePayload = {
   clarify_chain_response: ClarifyChainResponse
+}
+
+type ClarifyCopy = {
+  resultTitle: string
+  singleChoice: string
+  ranking: string
+  freeText: string
+  notSelected: string
+  notRanked: string
+  notFilled: string
+  empty: string
+  moveUp: string
+  moveDown: string
+  inputPlaceholder: string
+  done: string
+  completed: string
 }
 
 const RELATIVE_URL_REGEX = /^(\/|\.\/|\.\.\/)/i
@@ -317,6 +372,7 @@ const parseClarifyChainResponse = (value: string): ClarifyChainResponse | null =
 const renderClarifyResponse = (
   response: ClarifyChainResponse,
   role: ChatBubbleProps['role'],
+  copy: ClarifyCopy,
 ): ReactNode => {
   const isAssistant = role === 'assistant'
   const containerClassName = isAssistant
@@ -337,16 +393,16 @@ const renderClarifyResponse = (
   return (
     <div className={cn('rounded-xl border p-3', containerClassName)}>
       <p className={cn('text-xs font-semibold uppercase tracking-[0.32em]', sectionTitleClassName)}>
-        澄清结果
+        {copy.resultTitle}
       </p>
       {hasAnyResponse ? (
         <div className="mt-3 flex flex-col gap-3">
           {hasSingleChoice ? (
             <div className="space-y-2">
-              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>单选</p>
+              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>{copy.singleChoice}</p>
               {response.single_choice.map((item, index) => {
                 const answer = item.answer ?? ''
-                const displayAnswer = answer || '未选择'
+                const displayAnswer = answer || copy.notSelected
                 return (
                   <div
                     key={`${item.question}-${index}`}
@@ -368,7 +424,7 @@ const renderClarifyResponse = (
           ) : null}
           {hasRanking ? (
             <div className="space-y-2">
-              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>排序</p>
+              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>{copy.ranking}</p>
               {response.ranking.map((item, index) => {
                 const hasOrder = item.order.length > 0
                 return (
@@ -389,7 +445,7 @@ const renderClarifyResponse = (
                         ))}
                       </ol>
                     ) : (
-                      <p className={cn('mt-1 text-sm', mutedAnswerClassName)}>未排序</p>
+                      <p className={cn('mt-1 text-sm', mutedAnswerClassName)}>{copy.notRanked}</p>
                     )}
                   </div>
                 )
@@ -398,10 +454,10 @@ const renderClarifyResponse = (
           ) : null}
           {hasFreeText ? (
             <div className="space-y-2">
-              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>补充说明</p>
+              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>{copy.freeText}</p>
               {response.free_text.map((item, index) => {
                 const answer = item.answer ?? ''
-                const displayAnswer = answer || '未填写'
+                const displayAnswer = answer || copy.notFilled
                 return (
                   <div
                     key={`${item.question}-${index}`}
@@ -423,7 +479,7 @@ const renderClarifyResponse = (
           ) : null}
         </div>
       ) : (
-        <p className={cn('mt-3 text-sm', mutedAnswerClassName)}>暂无澄清结果</p>
+        <p className={cn('mt-3 text-sm', mutedAnswerClassName)}>{copy.empty}</p>
       )}
     </div>
   )
@@ -468,7 +524,8 @@ const renderRanking = (
   onReorder: (next: string[]) => void,
   dragState: { key: string; index: number } | null,
   onDragStart: (key: string, index: number) => void,
-  onDragEnd: () => void
+  onDragEnd: () => void,
+  copy: ClarifyCopy,
 ) => {
   const props = element.props as { question?: string; choices?: string[] } | undefined
   const items = order.length ? order : props?.choices ?? []
@@ -512,7 +569,7 @@ const renderRanking = (
                 type="button"
                 className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-foreground/40"
                 onClick={() => handleMove(index, -1)}
-                aria-label="上移"
+                aria-label={copy.moveUp}
               >
                 ↑
               </button>
@@ -520,7 +577,7 @@ const renderRanking = (
                 type="button"
                 className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-foreground/40"
                 onClick={() => handleMove(index, 1)}
-                aria-label="下移"
+                aria-label={copy.moveDown}
               >
                 ↓
               </button>
@@ -536,7 +593,8 @@ const renderRanking = (
 const renderFreeText = (
   element: UIElement,
   value: string,
-  onChange: (next: string) => void
+  onChange: (next: string) => void,
+  copy: ClarifyCopy,
 ) => {
   const props = element.props as { question?: string } | undefined
   return (
@@ -545,7 +603,7 @@ const renderFreeText = (
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="在这里补充你的答案…"
+        placeholder={copy.inputPlaceholder}
         rows={2}
         className="mt-2 w-full resize-none rounded-lg border border-dashed border-border/60 bg-white/60 px-3 py-2 text-sm text-foreground outline-none focus:border-foreground/40"
       />
@@ -563,7 +621,8 @@ const renderTree = (
   onDragStart: (key: string, index: number) => void,
   onDragEnd: () => void,
   freeTexts: Record<string, string>,
-  onFreeTextChange: (key: string, next: string) => void
+  onFreeTextChange: (key: string, next: string) => void,
+  copy: ClarifyCopy,
 ): ReactNode => {
   const visited = new Set<string>()
 
@@ -589,9 +648,15 @@ const renderTree = (
         dragState,
         onDragStart,
         onDragEnd,
+        copy,
       )
     if (element.type === 'free_text')
-      return renderFreeText(element, freeTexts[key] ?? '', (next) => onFreeTextChange(key, next))
+      return renderFreeText(
+        element,
+        freeTexts[key] ?? '',
+        (next) => onFreeTextChange(key, next),
+        copy,
+      )
     return null
   }
 
@@ -605,6 +670,22 @@ export default function ChatBubble({
   messageId,
   onClarifyComplete,
 }: ChatBubbleProps) {
+  const { t } = useTranslation('chatBubble')
+  const copy: ClarifyCopy = {
+    resultTitle: t('clarify.resultTitle'),
+    singleChoice: t('clarify.singleChoice'),
+    ranking: t('clarify.ranking'),
+    freeText: t('clarify.freeText'),
+    notSelected: t('clarify.notSelected'),
+    notRanked: t('clarify.notRanked'),
+    notFilled: t('clarify.notFilled'),
+    empty: t('clarify.empty'),
+    moveUp: t('clarify.moveUp'),
+    moveDown: t('clarify.moveDown'),
+    inputPlaceholder: t('clarify.inputPlaceholder'),
+    done: t('clarify.done'),
+    completed: t('clarify.completed'),
+  }
   const bubbleClassName =
     role === 'assistant'
       ? 'inline-flex w-fit max-w-[78%] self-start flex-col rounded-2xl border border-border/60 bg-white/80 p-4 text-foreground'
@@ -680,7 +761,8 @@ export default function ChatBubble({
             (key, next) => {
               setFreeTexts((prev) => ({ ...prev, [key]: next }))
               setIsDone(false)
-            }
+            },
+            copy,
           )}
           <div className="flex justify-end">
             <Button
@@ -705,12 +787,12 @@ export default function ChatBubble({
               }}
             >
               <Check className="h-4 w-4" />
-              {isDone ? '已完成' : '完成'}
+              {isDone ? copy.completed : copy.done}
             </Button>
           </div>
         </div>
       ) : clarifyResponse ? (
-        renderClarifyResponse(clarifyResponse, role)
+        renderClarifyResponse(clarifyResponse, role, copy)
       ) : (
         <div className="text-sm leading-relaxed">
           <ReactMarkdown

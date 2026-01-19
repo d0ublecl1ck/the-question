@@ -33,7 +33,7 @@ it('renders avatar cover when provided', () => {
       <MarketTable items={items} />
     </MemoryRouter>,
   )
-  const img = screen.getByRole('img', { name: 'Skill One cover' })
+  const img = screen.getByRole('img', { name: 'Skill One 封面' })
   expect(img).toBeInTheDocument()
   expect(img).toHaveAttribute('src', 'data:image/png;base64,AAA')
 })

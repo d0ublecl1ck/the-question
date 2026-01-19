@@ -4,7 +4,7 @@ import BubbleDemoPage from './BubbleDemoPage'
 
 it('renders bubble demo page', () => {
   render(<BubbleDemoPage />)
-  expect(screen.getByRole('heading', { name: 'Bubble Demo' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: '气泡演示' })).toBeInTheDocument()
   expect(
     screen.getByText('纯静态展示，覆盖当前所有气泡组合与 Markdown 渲染。'),
   ).toBeInTheDocument()

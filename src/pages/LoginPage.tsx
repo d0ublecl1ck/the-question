@@ -8,8 +8,101 @@ import { enqueueAlert } from '@/store/slices/alertSlice'
 import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import logoUrl from '@/assets/logo.svg'
+import { useTranslation } from 'react-i18next'
+import { registerTranslations } from '@/lib/i18n'
+
+registerTranslations('login', {
+  zh: {
+    tagline: '问对问题，遇见专家',
+    brand: {
+      description: '让每一次提问都有更好的答案，用更清晰的表达连接真实的专业价值。',
+      highlights: [
+        '多维度专家画像，精准匹配你的需求',
+        '问题拆解建议，帮你快速聚焦关键点',
+        '私密沟通环境，保护你的隐私和权益',
+      ],
+      footer: '安全登录 · 隐私保护 · 秒速连接',
+    },
+    panel: {
+      loginLabel: '欢迎回来',
+      registerLabel: '创建账号',
+    },
+    fields: {
+      email: '邮箱',
+      password: '密码',
+    },
+    errors: {
+      invalidEmail: '请输入有效的邮箱地址',
+    },
+    actions: {
+      login: '邮箱登录',
+      register: '邮箱注册',
+    },
+    toggle: {
+      noAccount: '还没有账号？',
+      hasAccount: '已有账号？',
+      goRegister: '去注册',
+      goLogin: '去登录',
+    },
+    legal: {
+      prefix: '继续即表示你同意我们的',
+      terms: '服务条款',
+      and: '和',
+      privacy: '隐私政策',
+    },
+    toasts: {
+      loginFailed: '登录失败，请检查账号信息',
+      registerFailed: '注册失败，请稍后重试',
+    },
+  },
+  en: {
+    tagline: 'Ask the right questions, meet the experts',
+    brand: {
+      description:
+        'Make every question yield better answers and connect real expertise with clearer expression.',
+      highlights: [
+        'Multi-dimensional expert profiles tailored to your needs',
+        'Decomposition tips that help you focus quickly',
+        'Private conversations that protect your privacy and rights',
+      ],
+      footer: 'Secure login · Privacy first · Fast connection',
+    },
+    panel: {
+      loginLabel: 'Welcome back',
+      registerLabel: 'Create an account',
+    },
+    fields: {
+      email: 'Email',
+      password: 'Password',
+    },
+    errors: {
+      invalidEmail: 'Please enter a valid email address.',
+    },
+    actions: {
+      login: 'Sign in with email',
+      register: 'Sign up with email',
+    },
+    toggle: {
+      noAccount: 'No account yet?',
+      hasAccount: 'Already have an account?',
+      goRegister: 'Create one',
+      goLogin: 'Sign in',
+    },
+    legal: {
+      prefix: 'By continuing, you agree to our',
+      terms: 'Terms of Service',
+      and: 'and',
+      privacy: 'Privacy Policy',
+    },
+    toasts: {
+      loginFailed: 'Login failed. Please check your credentials.',
+      registerFailed: 'Registration failed. Please try again.',
+    },
+  },
+})
 
 export default function LoginPage() {
+  const { t } = useTranslation('login')
   const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useAppDispatch()
@@ -49,7 +142,7 @@ export default function LoginPage() {
     if (!email.trim() || !password.trim()) return
     if (!isValidEmail(email)) {
       setStatus('error')
-      setError('请输入有效的邮箱地址')
+      setError(t('errors.invalidEmail'))
       return
     }
     setStatus('loading')
@@ -79,7 +172,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       setStatus('error')
-      const fallback = mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试'
+      const fallback =
+        mode === 'login' ? t('toasts.loginFailed') : t('toasts.registerFailed')
       const message = extractErrorMessage(err, fallback)
       setError('')
       dispatch(enqueueAlert({ description: message, variant: 'destructive' }))
@@ -115,7 +209,7 @@ export default function LoginPage() {
                 <h1 className="text-3xl font-semibold tracking-tight" data-testid="login-brand">
                   WenDui
                 </h1>
-                <p className="text-sm text-muted-foreground">{'问对问题，遇见专家'}</p>
+                <p className="text-sm text-muted-foreground">{t('tagline')}</p>
               </div>
               <img
                 src={logoUrl}
@@ -128,25 +222,19 @@ export default function LoginPage() {
               className="max-w-sm self-end text-sm leading-relaxed text-slate-600"
               data-testid="login-brand-copy"
             >
-              让每一次提问都有更好的答案，用更清晰的表达连接真实的专业价值。
+              {t('brand.description')}
             </p>
             <div className="grid gap-3 text-xs text-slate-500">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden="true" />
-                <span>多维度专家画像，精准匹配你的需求</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden="true" />
-                <span>问题拆解建议，帮你快速聚焦关键点</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden="true" />
-                <span>私密沟通环境，保护你的隐私和权益</span>
-              </div>
+              {(t('brand.highlights', { returnObjects: true }) as string[]).map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden="true" />
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
           </div>
           <p className="relative z-10 text-xs text-slate-500">
-            安全登录 · 隐私保护 · 秒速连接
+            {t('brand.footer')}
           </p>
         </aside>
 
@@ -154,23 +242,23 @@ export default function LoginPage() {
           <div className="w-full max-w-sm text-left" data-testid="login-card">
             <div className="space-y-2">
               <p className="text-xs font-medium tracking-[0.2em] text-muted-foreground">
-                {mode === 'login' ? '欢迎回来' : '创建账号'}
+                {mode === 'login' ? t('panel.loginLabel') : t('panel.registerLabel')}
               </p>
               <h2 className="text-2xl font-semibold">
-                {mode === 'login' ? '邮箱登录' : '邮箱注册'}
+                {mode === 'login' ? t('actions.login') : t('actions.register')}
               </h2>
             </div>
 
             <div className="mt-8 space-y-3">
               <Input
-                placeholder="邮箱"
+                placeholder={t('fields.email')}
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 className="h-11 rounded-[16px] text-sm"
               />
               <Input
-                placeholder="密码"
+                placeholder={t('fields.password')}
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -186,28 +274,28 @@ export default function LoginPage() {
                 onClick={submit}
                 disabled={status === 'loading' || isLoginLoading || isRegisterLoading}
               >
-                {mode === 'login' ? '邮箱登录' : '邮箱注册'}
+                {mode === 'login' ? t('actions.login') : t('actions.register')}
               </Button>
             </div>
 
             <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{mode === 'login' ? '还没有账号？' : '已有账号？'}</span>
+              <span>{mode === 'login' ? t('toggle.noAccount') : t('toggle.hasAccount')}</span>
               <button
                 type="button"
                 className="text-foreground hover:underline"
                 onClick={() => setMode((prev) => (prev === 'login' ? 'register' : 'login'))}
               >
-                {mode === 'login' ? '去注册' : '去登录'}
+                {mode === 'login' ? t('toggle.goRegister') : t('toggle.goLogin')}
               </button>
             </div>
             <p className="mt-5 text-[11px] text-muted-foreground">
-              继续即表示你同意我们的
+              {t('legal.prefix')}
               <Link className="font-medium text-foreground hover:underline" to="/terms">
-                服务条款
+                {t('legal.terms')}
               </Link>
-              和
+              {t('legal.and')}
               <Link className="font-medium text-foreground hover:underline" to="/privacy">
-                隐私政策
+                {t('legal.privacy')}
               </Link>
             </p>
           </div>
