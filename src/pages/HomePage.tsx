@@ -8,7 +8,7 @@ import expertArchitect from '@/assets/experts/expert-architect.png'
 import expertWriter from '@/assets/experts/expert-writer.png'
 import watchaLogo from '@/assets/Watcha.svg'
 import { LogoCloud } from '@/components/ui/logo-cloud-3'
-import { Minimax, OpenAI, ModelScope } from '@lobehub/icons'
+import { ModelScope } from '@lobehub/icons'
 
 const acknowledgementLogos = [
   {

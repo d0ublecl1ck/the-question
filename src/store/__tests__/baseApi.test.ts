@@ -14,10 +14,11 @@ const testApi = baseApi.injectEndpoints({
   }),
 })
 
-const readAuthHeader = (input: RequestInfo | undefined, headers: HeadersInit | undefined) => {
+const readAuthHeader = (input: RequestInfo | URL | undefined, headers: HeadersInit | undefined) => {
   if (input instanceof Request) {
     return input.headers.get('Authorization') ?? undefined
   }
+  if (input instanceof URL) return undefined
   if (!headers) return undefined
   if (headers instanceof Headers) return headers.get('Authorization') ?? undefined
   if (Array.isArray(headers)) {
@@ -34,7 +35,7 @@ beforeEach(() => {
 })
 
 it('injects auth header when token is present', async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }))
+  const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }))
   vi.stubGlobal('fetch', fetchMock)
 
   store.dispatch(setAuth({ token: 'token-1', user: { id: 'u1', email: 'a@b.com' } }))
@@ -47,7 +48,9 @@ it('injects auth header when token is present', async () => {
 })
 
 it('clears auth and enqueues toast on 401', async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ detail: 'unauthorized' }), { status: 401 }))
+  const fetchMock = vi.fn<typeof fetch>(async () =>
+    new Response(JSON.stringify({ detail: 'unauthorized' }), { status: 401 }),
+  )
   vi.stubGlobal('fetch', fetchMock)
 
   store.dispatch(setAuth({ token: 'token-1', user: { id: 'u1', email: 'a@b.com' } }))
@@ -61,7 +64,9 @@ it('clears auth and enqueues toast on 401', async () => {
 })
 
 it('does not clear auth or enqueue toast on 401 from login', async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify({ detail: '账号不存在' }), { status: 401 }))
+  const fetchMock = vi.fn<typeof fetch>(async () =>
+    new Response(JSON.stringify({ detail: '账号不存在' }), { status: 401 }),
+  )
   vi.stubGlobal('fetch', fetchMock)
 
   store.dispatch(setAuth({ token: 'token-1', user: { id: 'u1', email: 'a@b.com' } }))

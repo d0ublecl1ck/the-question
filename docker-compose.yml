@@ -9,11 +9,11 @@ services:
       ENV: production
       DEBUG: "false"
       LOG_LEVEL: INFO
-      CORS_ORIGINS: "*"
+      CORS_ORIGINS: '["*"]'
       DB_URL: "sqlite:///./data/app.db"
       AI_DEBUG_LOG_PATH: "reports/ai-debug.jsonl"
       SECRET_KEY: "${SECRET_KEY:-change-me}"
-      PROVIDERS: "${PROVIDERS:-}"
+      PROVIDERS: "${PROVIDERS:-[{\"host\":\"openai\",\"base_url\":\"https://api.openai.com/v1\",\"api_key_env\":\"OPENAI_API_KEY\",\"models\":[{\"id\":\"gpt-5.2-2025-12-11\",\"name\":\"GPT-5.2\"}]}]}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       MINIMAX_API_KEY: "${MINIMAX_API_KEY:-}"
     volumes:

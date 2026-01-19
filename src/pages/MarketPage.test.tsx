@@ -23,9 +23,18 @@ beforeEach(() => {
   store.dispatch(clearAuth())
   vi.mocked(useGetFavoriteSkillsQuery).mockReturnValue({
     data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillsQuery>)
-  vi.mocked(useCreateFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useCreateFavoriteMutation>)
-  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useDeleteFavoriteMutation>)
+  vi.mocked(useCreateFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateFavoriteMutation>)
+  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteFavoriteMutation>)
 })
 
 it('renders market page sections', async () => {
@@ -33,6 +42,7 @@ it('renders market page sections', async () => {
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMarketSkillsQuery>)
   render(
     <Provider store={store}>
@@ -55,12 +65,22 @@ it('loads market skills', async () => {
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMarketSkillsQuery>)
   vi.mocked(useGetFavoriteSkillsQuery).mockReturnValue({
     data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillsQuery>)
-  vi.mocked(useCreateFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useCreateFavoriteMutation>)
-  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useDeleteFavoriteMutation>)
+  vi.mocked(useCreateFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateFavoriteMutation>)
+  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteFavoriteMutation>)
   render(
     <Provider store={store}>
       <MemoryRouter>
@@ -76,12 +96,22 @@ it('does not wrap sections in cards', async () => {
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMarketSkillsQuery>)
   vi.mocked(useGetFavoriteSkillsQuery).mockReturnValue({
     data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillsQuery>)
-  vi.mocked(useCreateFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useCreateFavoriteMutation>)
-  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useDeleteFavoriteMutation>)
+  vi.mocked(useCreateFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateFavoriteMutation>)
+  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteFavoriteMutation>)
   const { container } = render(
     <Provider store={store}>
       <MemoryRouter>
@@ -98,12 +128,22 @@ it('redirects to login with toast when clicking 我的 while anonymous', async (
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMarketSkillsQuery>)
   vi.mocked(useGetFavoriteSkillsQuery).mockReturnValue({
     data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillsQuery>)
-  vi.mocked(useCreateFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useCreateFavoriteMutation>)
-  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useDeleteFavoriteMutation>)
+  vi.mocked(useCreateFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateFavoriteMutation>)
+  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteFavoriteMutation>)
   const initialToastCount = store.getState().toast.toasts.length
   render(
     <Provider store={store}>
@@ -124,7 +164,7 @@ it('redirects to login with toast when clicking 我的 while anonymous', async (
 })
 
 it('creates favorite when clicking 收藏 while authenticated', async () => {
-  const triggerCreate = vi.fn(() => ({ unwrap: () => Promise.resolve() }))
+  const triggerCreate = vi.fn().mockResolvedValue({})
   vi.mocked(useGetMarketSkillsQuery).mockReturnValue({
     data: [
       {
@@ -141,12 +181,22 @@ it('creates favorite when clicking 收藏 while authenticated', async () => {
     ],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMarketSkillsQuery>)
   vi.mocked(useGetFavoriteSkillsQuery).mockReturnValue({
     data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillsQuery>)
-  vi.mocked(useCreateFavoriteMutation).mockReturnValue([triggerCreate, {}] as ReturnType<typeof useCreateFavoriteMutation>)
-  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([vi.fn(), {}] as ReturnType<typeof useDeleteFavoriteMutation>)
+  vi.mocked(useCreateFavoriteMutation).mockReturnValue([
+    triggerCreate,
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateFavoriteMutation>)
+  vi.mocked(useDeleteFavoriteMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteFavoriteMutation>)
   store.dispatch(
     setAuth({
       token: 'token',

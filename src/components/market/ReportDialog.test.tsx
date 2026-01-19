@@ -12,7 +12,7 @@ it('submits report via mutation', async () => {
   const createReport = vi.fn().mockResolvedValue({})
   vi.mocked(useCreateSkillReportMutation).mockReturnValue([
     createReport,
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useCreateSkillReportMutation>)
 
   const user = userEvent.setup()

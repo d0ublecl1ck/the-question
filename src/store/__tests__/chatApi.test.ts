@@ -10,7 +10,7 @@ beforeEach(() => {
 })
 
 it('builds listChatMessages query params', async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }))
+  const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify([]), { status: 200 }))
   vi.stubGlobal('fetch', fetchMock)
 
   const result = store.dispatch(
@@ -19,20 +19,20 @@ it('builds listChatMessages query params', async () => {
   await result.unwrap()
 
   const [input] = fetchMock.mock.calls[0]
-  const url = typeof input === 'string' ? input : input.url
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
   expect(url).toContain('/api/v1/chats/s1/messages')
   expect(url).toContain('limit=1')
   expect(url).toContain('offset=2')
 })
 
 it('requests chat sessions list', async () => {
-  const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }))
+  const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify([]), { status: 200 }))
   vi.stubGlobal('fetch', fetchMock)
 
   const result = store.dispatch(chatApi.endpoints.listChatSessions.initiate())
   await result.unwrap()
 
   const [input] = fetchMock.mock.calls[0]
-  const url = typeof input === 'string' ? input : input.url
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
   expect(url).toContain('/api/v1/chats')
 })

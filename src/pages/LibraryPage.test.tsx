@@ -41,9 +41,13 @@ it('renders library headline', async () => {
     ],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillDetailsQuery>)
   vi.mocked(useGetMeQuery).mockReturnValue({
     data: { id: 'user-1', email: 'a@b.com', is_active: true, role: 'user' },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMeQuery>)
   vi.mocked(useListSkillsQuery).mockReturnValue({
     data: [],
@@ -68,9 +72,13 @@ it('renders library with empty state', async () => {
     data: [],
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetFavoriteSkillDetailsQuery>)
   vi.mocked(useGetMeQuery).mockReturnValue({
     data: { id: 'user-1', email: 'a@b.com', is_active: true, role: 'user' },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMeQuery>)
   vi.mocked(useListSkillsQuery).mockReturnValue({
     data: [],
