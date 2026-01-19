@@ -130,6 +130,9 @@ type AiPromptProps = {
   onModelChange: (modelId: string) => void
   disabled?: boolean
   surface?: 'default' | 'flat'
+  collapsed?: boolean
+  onFocus?: () => void
+  onBlur?: () => void
 }
 
 export function AI_Prompt({
@@ -142,18 +145,33 @@ export function AI_Prompt({
   onModelChange,
   disabled,
   surface = 'default',
+  collapsed,
+  onFocus,
+  onBlur,
 }: AiPromptProps) {
   const safeModels = Array.isArray(models) ? models : []
+  const isCollapsed = Boolean(collapsed && value.trim().length === 0)
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 72,
-    maxHeight: 300,
+    minHeight: isCollapsed ? 40 : 72,
+    maxHeight: isCollapsed ? 40 : 300,
   })
   const surfaceClassName = surface === 'flat' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5'
+  const textareaMinHeightClass = isCollapsed ? 'min-h-[40px]' : 'min-h-[72px]'
+  const containerPaddingClass = isCollapsed ? 'py-2' : 'py-4'
+  const toolbarHeightClass = isCollapsed ? 'h-12' : 'h-14'
 
   const selectedModel = useMemo(() => {
     if (!selectedModelId) return null
     return safeModels.find((model) => model.id === selectedModelId) ?? null
   }, [safeModels, selectedModelId])
+
+  useEffect(() => {
+    if (isCollapsed) {
+      adjustHeight(true)
+      return
+    }
+    adjustHeight()
+  }, [adjustHeight, isCollapsed, value])
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey && value.trim()) {
@@ -166,8 +184,8 @@ export function AI_Prompt({
   const canSend = value.trim().length > 0 && !disabled
 
   return (
-    <div className="w-full py-4">
-      <div className={cn('rounded-lg p-1.5', surfaceClassName)}>
+    <div className={cn('w-full transition-all duration-200 ease-out', containerPaddingClass)}>
+      <div className={cn('rounded-lg p-1.5 transition-shadow duration-200 ease-out', surfaceClassName)}>
         <div className="relative">
           <div className="relative flex flex-col">
             <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
@@ -177,8 +195,9 @@ export function AI_Prompt({
                 placeholder="输入内容，回车发送"
                 className={cn(
                   'w-full resize-none rounded-lg rounded-b-none border-none px-4 py-3 placeholder:text-black/70 focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-white dark:placeholder:text-white/70',
+                  'transition-[height] duration-200 ease-out will-change-[height]',
                   surface === 'flat' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5',
-                  'min-h-[72px]',
+                  textareaMinHeightClass,
                 )}
                 ref={textareaRef}
                 onKeyDown={handleKeyDown}
@@ -186,10 +205,19 @@ export function AI_Prompt({
                   onChange(event.target.value)
                   adjustHeight()
                 }}
+                onFocus={() => onFocus?.()}
+                onBlur={() => onBlur?.()}
+                rows={isCollapsed ? 1 : undefined}
               />
             </div>
 
-            <div className={cn('flex h-14 items-center rounded-b-lg', surfaceClassName)}>
+            <div
+              className={cn(
+                'flex items-center rounded-b-lg transition-[height] duration-200 ease-out',
+                surfaceClassName,
+                toolbarHeightClass,
+              )}
+            >
               <div className="absolute bottom-3 left-3 right-3 flex w-[calc(100%-24px)] items-center justify-between">
                 <div className="flex items-center gap-2">
                   <DropdownMenu>
