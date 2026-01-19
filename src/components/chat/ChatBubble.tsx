@@ -50,6 +50,10 @@ type ClarifyChainResponse = {
   free_text: { question: string; answer: string }[]
 }
 
+type ClarifyChainResponsePayload = {
+  clarify_chain_response: ClarifyChainResponse
+}
+
 const RELATIVE_URL_REGEX = /^(\/|\.\/|\.\.\/)/i
 const SAFE_URL_REGEX = /^(https?:|mailto:|tel:)/i
 
@@ -220,6 +224,22 @@ const isClarifyChainPayload = (value: unknown): value is ClarifyChainPayload => 
   return Array.isArray(payload.clarify_chain)
 }
 
+const isClarifyChainResponse = (value: unknown): value is ClarifyChainResponse => {
+  if (!value || typeof value !== 'object') return false
+  const response = value as ClarifyChainResponse
+  return (
+    Array.isArray(response.single_choice) &&
+    Array.isArray(response.ranking) &&
+    Array.isArray(response.free_text)
+  )
+}
+
+const isClarifyChainResponsePayload = (value: unknown): value is ClarifyChainResponsePayload => {
+  if (!value || typeof value !== 'object') return false
+  const payload = value as ClarifyChainResponsePayload
+  return isClarifyChainResponse(payload.clarify_chain_response)
+}
+
 const buildTreeFromClarifyChain = (payload: ClarifyChainPayload): UITree => {
   const rootKey = 'clarify-chain'
   const elements: Record<string, UIElement> = {
@@ -244,6 +264,16 @@ const buildTreeFromClarifyChain = (payload: ClarifyChainPayload): UITree => {
   return { root: rootKey, elements }
 }
 
+const collectJsonCandidates = (value: string): string[] => {
+  const trimmed = value.trim()
+  if (!trimmed) return []
+  const stripped = stripCodeFence(trimmed)
+  const payloadText = extractJsonBlock(stripped) ?? stripped
+  const fallbackText = extractJsonBlock(trimmed)
+  const candidates = [payloadText, fallbackText].filter(Boolean) as string[]
+  return Array.from(new Set(candidates))
+}
+
 const parseClarificationChain = (value: string): UITree | null => {
   const normalized = decodeHtmlEntities(value.replace(/^\uFEFF/, ''))
   const unescaped = normalized
@@ -253,13 +283,11 @@ const parseClarificationChain = (value: string): UITree | null => {
     : unescaped
   if (!contentAfterMarker) return null
 
-  const jsonText = stripCodeFence(contentAfterMarker)
-  const payloadText = extractJsonBlock(jsonText) ?? jsonText
-  const fallbackText = extractJsonBlock(unescaped)
-  const markerlessText = extractJsonBlock(stripCodeFence(unescaped)) ?? stripCodeFence(unescaped)
-  const candidates = [payloadText, fallbackText].filter(Boolean) as string[]
-  const expandedCandidates = [...candidates, markerlessText].filter(Boolean) as string[]
-  for (const candidate of expandedCandidates) {
+  const candidates = [
+    ...collectJsonCandidates(contentAfterMarker),
+    ...collectJsonCandidates(unescaped),
+  ]
+  for (const candidate of candidates) {
     try {
       const parsed = JSON.parse(candidate)
       if (isValidTree(parsed)) return parsed
@@ -269,6 +297,136 @@ const parseClarificationChain = (value: string): UITree | null => {
     }
   }
   return null
+}
+
+const parseClarifyChainResponse = (value: string): ClarifyChainResponse | null => {
+  const normalized = decodeHtmlEntities(value.replace(/^\uFEFF/, ''))
+  const candidates = collectJsonCandidates(normalized)
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (isClarifyChainResponse(parsed)) return parsed
+      if (isClarifyChainResponsePayload(parsed)) return parsed.clarify_chain_response
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
+const renderClarifyResponse = (
+  response: ClarifyChainResponse,
+  role: ChatBubbleProps['role'],
+): ReactNode => {
+  const isAssistant = role === 'assistant'
+  const containerClassName = isAssistant
+    ? 'border-border/60 bg-white/70 text-foreground'
+    : 'border-white/20 bg-white/10 text-background'
+  const sectionTitleClassName = isAssistant ? 'text-foreground/60' : 'text-background/70'
+  const itemClassName = isAssistant
+    ? 'border-border/60 bg-white/60 text-foreground'
+    : 'border-white/20 bg-white/10 text-background'
+  const questionClassName = isAssistant ? 'text-foreground/80' : 'text-background/85'
+  const answerClassName = isAssistant ? 'text-foreground' : 'text-background'
+  const mutedAnswerClassName = isAssistant ? 'text-muted-foreground' : 'text-background/60'
+  const hasSingleChoice = response.single_choice.length > 0
+  const hasRanking = response.ranking.length > 0
+  const hasFreeText = response.free_text.length > 0
+  const hasAnyResponse = hasSingleChoice || hasRanking || hasFreeText
+
+  return (
+    <div className={cn('rounded-xl border p-3', containerClassName)}>
+      <p className={cn('text-xs font-semibold uppercase tracking-[0.32em]', sectionTitleClassName)}>
+        澄清结果
+      </p>
+      {hasAnyResponse ? (
+        <div className="mt-3 flex flex-col gap-3">
+          {hasSingleChoice ? (
+            <div className="space-y-2">
+              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>单选</p>
+              {response.single_choice.map((item, index) => {
+                const answer = item.answer ?? ''
+                const displayAnswer = answer || '未选择'
+                return (
+                  <div
+                    key={`${item.question}-${index}`}
+                    className={cn('rounded-lg border border-dashed px-3 py-2 text-sm', itemClassName)}
+                  >
+                    <p className={cn('text-sm', questionClassName)}>{item.question}</p>
+                    <p
+                      className={cn(
+                        'mt-1 text-sm',
+                        answer ? answerClassName : mutedAnswerClassName,
+                      )}
+                    >
+                      {displayAnswer}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
+          {hasRanking ? (
+            <div className="space-y-2">
+              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>排序</p>
+              {response.ranking.map((item, index) => {
+                const hasOrder = item.order.length > 0
+                return (
+                  <div
+                    key={`${item.question}-${index}`}
+                    className={cn('rounded-lg border border-dashed px-3 py-2 text-sm', itemClassName)}
+                  >
+                    <p className={cn('text-sm', questionClassName)}>{item.question}</p>
+                    {hasOrder ? (
+                      <ol className="mt-2 space-y-1 text-sm">
+                        {item.order.map((option, orderIndex) => (
+                          <li key={`${option}-${orderIndex}`} className="flex items-center gap-2">
+                            <span className={cn('text-xs', sectionTitleClassName)}>
+                              {orderIndex + 1}
+                            </span>
+                            <span className={cn('text-sm', answerClassName)}>{option}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className={cn('mt-1 text-sm', mutedAnswerClassName)}>未排序</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
+          {hasFreeText ? (
+            <div className="space-y-2">
+              <p className={cn('text-xs font-semibold', sectionTitleClassName)}>补充说明</p>
+              {response.free_text.map((item, index) => {
+                const answer = item.answer ?? ''
+                const displayAnswer = answer || '未填写'
+                return (
+                  <div
+                    key={`${item.question}-${index}`}
+                    className={cn('rounded-lg border border-dashed px-3 py-2 text-sm', itemClassName)}
+                  >
+                    <p className={cn('text-sm', questionClassName)}>{item.question}</p>
+                    <p
+                      className={cn(
+                        'mt-1 whitespace-pre-wrap text-sm',
+                        answer ? answerClassName : mutedAnswerClassName,
+                      )}
+                    >
+                      {displayAnswer}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <p className={cn('mt-3 text-sm', mutedAnswerClassName)}>暂无澄清结果</p>
+      )}
+    </div>
+  )
 }
 
 const renderSingleChoice = (
@@ -457,6 +615,10 @@ export default function ChatBubble({
     () => (role === 'assistant' ? parseClarificationChain(content) : null),
     [content, role],
   )
+  const clarifyResponse = useMemo(
+    () => (role === 'user' ? parseClarifyChainResponse(content) : null),
+    [content, role],
+  )
   const [selectedChoices, setSelectedChoices] = useState<Record<string, string | null>>({})
   const [rankingOrders, setRankingOrders] = useState<Record<string, string[]>>({})
   const [freeTexts, setFreeTexts] = useState<Record<string, string>>({})
@@ -547,6 +709,8 @@ export default function ChatBubble({
             </Button>
           </div>
         </div>
+      ) : clarifyResponse ? (
+        renderClarifyResponse(clarifyResponse, role)
       ) : (
         <div className="text-sm leading-relaxed">
           <ReactMarkdown
