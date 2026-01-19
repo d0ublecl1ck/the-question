@@ -332,6 +332,74 @@ it('asks for confirmation before deleting a session', async () => {
   expect(deleteMutation).toHaveBeenCalledWith('s1')
 })
 
+it('renames a session from history list', async () => {
+  const updateMutation = vi.fn().mockReturnValue({
+    unwrap: vi.fn().mockResolvedValue({ id: 's1', title: '新的标题' }),
+  })
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    updateMutation,
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [{ id: 's1', title: '历史对话' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([
+    previewTrigger,
+    { isFetching: false, reset: vi.fn() },
+    { lastArg: { sessionId: 's1' } },
+  ])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: '重命名' }))
+  const dialog = await screen.findByRole('dialog')
+  const renameInput = within(dialog).getByPlaceholderText('请输入新的对话名称')
+  await user.clear(renameInput)
+  await user.type(renameInput, '新的标题')
+  await user.click(within(dialog).getByRole('button', { name: '保存' }))
+
+  await waitFor(() => {
+    expect(updateMutation).toHaveBeenCalledWith({ sessionId: 's1', title: '新的标题' })
+  })
+})
+
 it('hides the promo banner on a session route', async () => {
   vi.mocked(useCreateChatSessionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),

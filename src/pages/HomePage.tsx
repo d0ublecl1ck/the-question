@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import skillHubCard from '@/assets/skill-hub-card.png'
 import expertDebater from '@/assets/experts/expert-debater.png'
@@ -274,6 +275,7 @@ export default function HomePage() {
     }
     navigate('/chat', { state: { draft: nextDraft } })
   }
+  const canSend = prompt.trim().length > 0
 
   return (
     <section className="w-full space-y-14">
@@ -314,11 +316,20 @@ export default function HomePage() {
               />
               <div className="flex items-center justify-end">
                 <button
-                  type="submit"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-black/5 text-slate-600 hover:bg-black/10"
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-black/5 hover:bg-black/10 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                   aria-label={t('hero.sendAria')}
+                  disabled={!canSend}
+                  onClick={() => {
+                    if (!canSend) return
+                    handleSubmit()
+                  }}
                 >
-                  &gt;
+                  <ArrowRight
+                    className={`h-4 w-4 transition-opacity duration-200 ${
+                      canSend ? 'opacity-100' : 'opacity-30'
+                    }`}
+                  />
                 </button>
               </div>
             </form>
