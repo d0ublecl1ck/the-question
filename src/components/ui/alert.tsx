@@ -20,8 +20,8 @@ const alertVariants = cva(
 )
 
 const Alert = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>>(
-  ({ className, variant, ...props }, ref) => (
-    <div ref={ref} role="alert" className={cn(alertVariants({ variant }), className)} {...props} />
+  ({ className, variant, role, ...props }, ref) => (
+    <div ref={ref} role={role} className={cn(alertVariants({ variant }), className)} {...props} />
   ),
 )
 Alert.displayName = 'Alert'
@@ -37,7 +37,7 @@ const AlertTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTM
 )
 AlertTitle.displayName = 'AlertTitle'
 
-const AlertDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+const AlertDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('text-sm leading-relaxed text-current opacity-90', className)} {...props} />
   ),

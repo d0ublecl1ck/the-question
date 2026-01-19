@@ -20,6 +20,7 @@ export function AlertViewport() {
         return (
           <Alert
             key={alert.id}
+            role="alert"
             variant={alert.variant}
             className="pointer-events-auto shadow-sm motion-safe:animate-in motion-safe:slide-in-from-top-1 motion-safe:fade-in hover:shadow-md"
           >
