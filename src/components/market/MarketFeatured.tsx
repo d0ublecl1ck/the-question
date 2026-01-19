@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Link } from 'react-router-dom'
 import type { MarketSkill } from '@/store/api/types'
 
@@ -10,9 +11,9 @@ type MarketFeaturedProps = {
 export default function MarketFeatured({ items }: MarketFeaturedProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-        暂无精选技能
-      </div>
+      <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+        <AlertDescription className="text-muted-foreground">暂无精选技能</AlertDescription>
+      </Alert>
     )
   }
 

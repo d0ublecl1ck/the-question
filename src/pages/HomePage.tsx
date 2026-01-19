@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import skillHubCard from '@/assets/skill-hub-card.png'
 import expertDebater from '@/assets/experts/expert-debater.png'
 import expertDesigner from '@/assets/experts/expert-designer.png'
@@ -7,7 +8,7 @@ import expertPainter from '@/assets/experts/expert-painter.png'
 import expertArchitect from '@/assets/experts/expert-architect.png'
 import expertWriter from '@/assets/experts/expert-writer.png'
 import watchaLogo from '@/assets/Watcha.svg'
-import { LogoCloud } from '@/components/ui/logo-cloud-3'
+import { LogoCloud } from '@/components/ui/logo-cloud'
 import { ModelScope } from '@lobehub/icons'
 
 const acknowledgementLogos = [
@@ -129,6 +130,7 @@ export default function HomePage() {
     }
     navigate('/chat', { state: { draft: nextDraft } })
   }
+  const canSend = prompt.trim().length > 0
 
   return (
     <section className="w-full space-y-14">
@@ -169,11 +171,20 @@ export default function HomePage() {
               />
               <div className="flex items-center justify-end">
                 <button
-                  type="submit"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-black/5 text-slate-600 hover:bg-black/10"
-                  aria-label="发送"
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-black/5 hover:bg-black/10 focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
+                  aria-label="Send message"
+                  disabled={!canSend}
+                  onClick={() => {
+                    if (!canSend) return
+                    handleSubmit()
+                  }}
                 >
-                  &gt;
+                  <ArrowRight
+                    className={`h-4 w-4 transition-opacity duration-200 ${
+                      canSend ? 'opacity-100' : 'opacity-30'
+                    }`}
+                  />
                 </button>
               </div>
             </form>

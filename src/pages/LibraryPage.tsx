@@ -10,10 +10,11 @@ import ExpertPlazaLayout from '@/components/market/ExpertPlazaLayout'
 import SkillFormDialog from '@/components/library/SkillFormDialog'
 import SkillImportDialog from '@/components/library/SkillImportDialog'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 
 export default function LibraryPage() {
   const dispatch = useAppDispatch()
@@ -123,18 +124,18 @@ export default function LibraryPage() {
   const handleRemoveFavorite = async (skillId: string) => {
     try {
       await deleteFavorite({ skill_id: skillId }).unwrap()
-      dispatch(enqueueToast('已取消收藏'))
+      dispatch(enqueueAlert({ description: '已取消收藏' }))
     } catch {
-      dispatch(enqueueToast('取消收藏失败'))
+      dispatch(enqueueAlert({ description: '取消收藏失败', variant: 'destructive' }))
     }
   }
 
   const handleDeleteSkill = async (skillId: string) => {
     try {
       await deleteSkill(skillId).unwrap()
-      dispatch(enqueueToast('已删除技能'))
+      dispatch(enqueueAlert({ description: '已删除技能' }))
     } catch {
-      dispatch(enqueueToast('删除失败'))
+      dispatch(enqueueAlert({ description: '删除失败', variant: 'destructive' }))
     }
   }
 
@@ -205,7 +206,7 @@ export default function LibraryPage() {
 
   const isAuthed = authStatus === 'authenticated'
   const handleUnauthorizedLibraryClick = () => {
-    dispatch(enqueueToast('本功能登录才可以使用'))
+    dispatch(enqueueAlert({ description: '本功能登录才可以使用' }))
     navigate('/login')
   }
 
@@ -305,13 +306,13 @@ export default function LibraryPage() {
             <span className="text-xs text-muted-foreground">共 {filtered.length} 项</span>
           </div>
           {(tab === 'favorites' ? status : myStatus) === 'loading' ? (
-            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-              正在加载中...
-            </div>
+            <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+              <AlertDescription className="text-muted-foreground">正在加载中...</AlertDescription>
+            </Alert>
           ) : (tab === 'favorites' ? status : myStatus) === 'error' ? (
-            <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-              加载失败，请稍后重试
-            </div>
+            <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
+              <AlertDescription>加载失败，请稍后重试</AlertDescription>
+            </Alert>
           ) : view === 'grid' ? (
             <MarketTable
               items={filtered}

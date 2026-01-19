@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCreateSkillReportMutation } from '@/store/api/marketApi'
 
 type ReportDialogProps = {
@@ -49,8 +50,16 @@ export default function ReportDialog({ targetId, targetName }: ReportDialogProps
             onChange={(event) => setContent(event.target.value)}
             className="min-h-[120px]"
           />
-          {status === 'success' && <p className="text-sm text-emerald-600">已提交举报</p>}
-          {status === 'error' && <p className="text-sm text-destructive">提交失败，请稍后重试</p>}
+          {status === 'success' && (
+            <Alert className="border-emerald-200 bg-emerald-50 text-emerald-700 shadow-none">
+              <AlertDescription>已提交举报</AlertDescription>
+            </Alert>
+          )}
+          {status === 'error' && (
+            <Alert variant="destructive" className="shadow-none">
+              <AlertDescription>提交失败，请稍后重试</AlertDescription>
+            </Alert>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setStatus('idle')}>

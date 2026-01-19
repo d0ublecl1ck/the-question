@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button-1'
+import { Button } from '@/components/ui/button-advanced'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { X } from 'lucide-react'
 
@@ -190,14 +190,20 @@ interface AlertProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<
 
 interface AlertIconProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {}
 
-function Alert({ className, variant, size, icon, appearance, close = false, onClose, children, ...props }: AlertProps) {
+function Alert({
+  className,
+  variant,
+  size,
+  icon,
+  appearance,
+  close = false,
+  onClose,
+  role,
+  children,
+  ...props
+}: AlertProps) {
   return (
-    <div
-      data-slot="alert"
-      role="alert"
-      className={cn(alertVariants({ variant, size, icon, appearance }), className)}
-      {...props}
-    >
+    <div data-slot="alert" role={role} className={cn(alertVariants({ variant, size, icon, appearance }), className)} {...props}>
       {children}
       {close && (
         <Button
