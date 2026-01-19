@@ -1,8 +1,13 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import type { Components, UrlTransform } from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
 
 type ChatBubbleProps = {
   role: 'user' | 'assistant'
@@ -14,12 +19,6 @@ type ChatBubbleProps = {
     responses: ClarifyChainResponse
   }) => void
 }
-
-type ContentPart =
-  | { type: 'text'; value: string }
-  | { type: 'image'; src: string; alt: string }
-
-const IMAGE_MARKDOWN = /!\[([^\]]*)\]\((data:image\/[a-zA-Z0-9.+-]+;base64,[^)]+)\)/g
 const CLARIFICATION_MARKER_REGEX = /<\!-{1,2}\s*Clarification chain\s*-{1,2}>/i
 
 type UIElement = {
@@ -51,6 +50,106 @@ type ClarifyChainResponse = {
   free_text: { question: string; answer: string }[]
 }
 
+const RELATIVE_URL_REGEX = /^(\/|\.\/|\.\.\/)/i
+const SAFE_URL_REGEX = /^(https?:|mailto:|tel:)/i
+
+const transformMarkdownUrl: UrlTransform = (url, key) => {
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+  if (trimmed.startsWith('#')) return trimmed
+  if (RELATIVE_URL_REGEX.test(trimmed)) return trimmed
+  if (SAFE_URL_REGEX.test(trimmed)) return trimmed
+  if (key === 'src' && trimmed.startsWith('data:image/')) return trimmed
+  return ''
+}
+
+const createMarkdownComponents = (role: ChatBubbleProps['role']): Components => {
+  const isAssistant = role === 'assistant'
+  const linkClassName = isAssistant
+    ? 'text-sky-600 hover:text-sky-700'
+    : 'text-background/90 hover:text-background'
+  const inlineCodeClassName = isAssistant ? 'bg-foreground/10 text-foreground' : 'bg-white/15 text-white'
+  const blockCodeClassName = isAssistant ? 'bg-foreground/5 text-foreground' : 'bg-white/10 text-white'
+  const blockquoteClassName = isAssistant
+    ? 'border-foreground/20 text-foreground/80'
+    : 'border-white/30 text-white/80'
+  const borderClassName = isAssistant ? 'border-border/70' : 'border-white/20'
+
+  return {
+    p: ({ children }) => (
+      <p className="mt-2 whitespace-pre-wrap leading-relaxed first:mt-0">{children}</p>
+    ),
+    a: ({ href, children }) =>
+      href ? (
+        <a
+          href={href}
+          className={cn('underline underline-offset-2', linkClassName)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {children}
+        </a>
+      ) : (
+        <span className={cn('underline underline-offset-2', linkClassName)}>{children}</span>
+      ),
+    img: ({ src, alt }) =>
+      src ? (
+        <img
+          src={src}
+          alt={alt ?? ''}
+          loading="lazy"
+          className="my-2 block w-full max-w-full rounded-xl object-contain"
+        />
+      ) : null,
+    code: ({ inline, className, children, ...props }) =>
+      inline ? (
+        <code
+          className={cn('rounded px-1.5 py-0.5 font-mono text-[0.85em]', inlineCodeClassName)}
+          {...props}
+        >
+          {children}
+        </code>
+      ) : (
+        <code className={cn('font-mono text-[0.85rem]', className)} {...props}>
+          {children}
+        </code>
+      ),
+    pre: ({ children }) => (
+      <pre
+        className={cn(
+          'mt-3 overflow-x-auto rounded-lg px-3 py-2 text-[0.85rem] leading-relaxed',
+          blockCodeClassName,
+        )}
+      >
+        {children}
+      </pre>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className={cn('mt-3 border-l-2 pl-3 italic', blockquoteClassName)}>
+        {children}
+      </blockquote>
+    ),
+    ul: ({ children }) => <ul className="mt-2 list-disc space-y-1 pl-5">{children}</ul>,
+    ol: ({ children }) => <ol className="mt-2 list-decimal space-y-1 pl-5">{children}</ol>,
+    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+    h1: ({ children }) => <h1 className="mt-3 text-base font-semibold leading-tight">{children}</h1>,
+    h2: ({ children }) => <h2 className="mt-3 text-sm font-semibold leading-tight">{children}</h2>,
+    h3: ({ children }) => <h3 className="mt-2 text-sm font-semibold leading-tight">{children}</h3>,
+    hr: () => <hr className={cn('my-3 border-0 border-t', borderClassName)} />,
+    table: ({ children }) => (
+      <div className="mt-3 overflow-x-auto">
+        <table className={cn('w-full border-collapse text-sm', borderClassName)}>{children}</table>
+      </div>
+    ),
+    th: ({ children }) => (
+      <th className={cn('border px-2 py-1 text-left font-semibold', borderClassName)}>
+        {children}
+      </th>
+    ),
+    td: ({ children }) => <td className={cn('border px-2 py-1 align-top', borderClassName)}>{children}</td>,
+  }
+}
+
 export const buildClarifyResponsePayload = (
   clarificationTree: UITree | null,
   selectedChoices: Record<string, string | null>,
@@ -78,30 +177,6 @@ export const buildClarifyResponsePayload = (
     }
   })
   return response
-}
-
-
-const parseContent = (content: string): ContentPart[] => {
-  const parts: ContentPart[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-  IMAGE_MARKDOWN.lastIndex = 0
-  while ((match = IMAGE_MARKDOWN.exec(content)) !== null) {
-    const [full, altText, src] = match
-    const start = match.index
-    if (start > lastIndex) {
-      parts.push({ type: 'text', value: content.slice(lastIndex, start) })
-    }
-    parts.push({ type: 'image', src, alt: altText || 'image' })
-    lastIndex = start + full.length
-  }
-  if (lastIndex < content.length) {
-    parts.push({ type: 'text', value: content.slice(lastIndex) })
-  }
-  if (parts.length === 0) {
-    parts.push({ type: 'text', value: content })
-  }
-  return parts
 }
 
 const stripCodeFence = (value: string): string => {
@@ -378,8 +453,6 @@ export default function ChatBubble({
       : 'inline-flex w-fit max-w-[78%] self-end flex-col rounded-2xl border border-foreground/10 bg-foreground p-4 text-background'
   const badgeVariant = role === 'assistant' ? 'secondary' : 'outline'
   const badgeClassName = role === 'assistant' ? '' : 'border-white/40 text-white'
-  const parts = parseContent(content)
-  const hasImage = parts.some((part) => part.type === 'image')
   const clarificationTree = useMemo(
     () => (role === 'assistant' ? parseClarificationChain(content) : null),
     [content, role],
@@ -389,6 +462,7 @@ export default function ChatBubble({
   const [freeTexts, setFreeTexts] = useState<Record<string, string>>({})
   const [dragState, setDragState] = useState<{ key: string; index: number } | null>(null)
   const [isDone, setIsDone] = useState(false)
+  const markdownComponents = useMemo(() => createMarkdownComponents(role), [role])
 
   useEffect(() => {
     if (!clarificationTree) {
@@ -473,29 +547,16 @@ export default function ChatBubble({
             </Button>
           </div>
         </div>
-      ) : hasImage ? (
-        <div className="flex flex-col gap-3">
-          {parts.map((part, index) => {
-            if (part.type === 'image') {
-              return (
-                <img
-                  key={`img-${index}-${part.src.length}`}
-                  src={part.src}
-                  alt={part.alt}
-                  className="w-full max-w-full rounded-xl object-contain"
-                />
-              )
-            }
-            if (!part.value) return null
-            return (
-              <span key={`text-${index}`} className="whitespace-pre-wrap text-sm leading-relaxed">
-                {part.value}
-              </span>
-            )
-          })}
-        </div>
       ) : (
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
+        <div className="text-sm leading-relaxed">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkBreaks]}
+            components={markdownComponents}
+            urlTransform={transformMarkdownUrl}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
       )}
       {skillName && (
         <div className="mt-3 flex flex-wrap gap-2">
