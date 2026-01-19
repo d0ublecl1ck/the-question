@@ -31,10 +31,10 @@ export default function AppShell() {
   const email = user?.email ?? ''
   const isChatRoute = location.pathname.startsWith('/chat')
   const mainClassName = [
-    'mx-auto flex w-full flex-1 justify-center px-[5%]',
+    'mx-auto flex w-full flex-1 justify-center',
     isChatRoute
-      ? 'h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden py-6'
-      : 'min-h-[calc(100vh-3.5rem)] pb-20 pt-8',
+      ? 'h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden px-0 py-6'
+      : 'min-h-[calc(100vh-3.5rem)] px-[5%] pb-20 pt-8',
   ].join(' ')
 
   useEffect(() => {
