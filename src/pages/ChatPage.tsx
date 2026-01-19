@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -142,6 +143,9 @@ export default function ChatPage() {
   const [open, setOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(null)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [renameCandidate, setRenameCandidate] = useState<ChatSession | null>(null)
+  const [renameValue, setRenameValue] = useState('')
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -737,6 +741,41 @@ export default function ChatPage() {
     }
   }
 
+  const handleRequestRenameSession = (session: ChatSession) => {
+    setRenameCandidate(session)
+    const currentTitle = session.title?.trim() ?? ''
+    setRenameValue(currentTitle && currentTitle !== '对话' ? currentTitle : '')
+    setRenameDialogOpen(true)
+  }
+
+  const handleConfirmRenameSession = async () => {
+    if (!renameCandidate) return
+    const target = renameCandidate
+    const nextTitle = renameValue.trim()
+    if (!nextTitle) {
+      dispatch(enqueueToast('请输入新的对话名称'))
+      return
+    }
+    const currentTitle = target.title?.trim() ?? ''
+    if (nextTitle === currentTitle) {
+      setRenameDialogOpen(false)
+      setRenameCandidate(null)
+      return
+    }
+    setRenameDialogOpen(false)
+    setRenameCandidate(null)
+    await handleRenameSession(target.id, nextTitle)
+  }
+
+  const handleRenameSession = async (targetId: string, title: string) => {
+    try {
+      const updated = await updateChatSessionTitle({ sessionId: targetId, title }).unwrap()
+      setSessions((prev) => [updated, ...prev.filter((item) => item.id !== updated.id)])
+    } catch {
+      dispatch(enqueueToast('重命名失败'))
+    }
+  }
+
   const handleRequestDeleteSession = (session: ChatSession) => {
     setDeleteCandidate(session)
     setDeleteDialogOpen(true)
@@ -860,13 +899,22 @@ export default function ChatPage() {
                         >
                           <div className="line-clamp-1 text-sm font-medium">{displayTitle}</div>
                         </button>
-                        <button
-                          type="button"
-                          className="mt-1 rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:border-border/70 hover:text-foreground"
-                          onClick={() => handleRequestDeleteSession(session)}
-                        >
-                          删除
-                        </button>
+                        <div className="mt-1 flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                          <button
+                            type="button"
+                            className="rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground hover:border-border/70 hover:text-foreground"
+                            onClick={() => handleRequestRenameSession(session)}
+                          >
+                            重命名
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground hover:border-border/70 hover:text-foreground"
+                            onClick={() => handleRequestDeleteSession(session)}
+                          >
+                            删除
+                          </button>
+                        </div>
                       </div>
                     )
                   })}
@@ -1041,6 +1089,44 @@ export default function ChatPage() {
               </CommandGroup>
             </CommandList>
           </Command>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={renameDialogOpen}
+        onOpenChange={(nextOpen) => {
+          setRenameDialogOpen(nextOpen)
+          if (!nextOpen) {
+            setRenameCandidate(null)
+            setRenameValue('')
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>重命名对话</DialogTitle>
+            <DialogDescription>为该对话设置一个新的名称。</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              handleConfirmRenameSession()
+            }}
+          >
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(event) => setRenameValue(event.target.value)}
+              placeholder="请输入新的对话名称"
+            />
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setRenameDialogOpen(false)}>
+                取消
+              </Button>
+              <Button type="submit">保存</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
