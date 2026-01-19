@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch } from '@/store/hooks'
 import { setAuth } from '@/store/slices/authSlice'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { useLoginWithProfileMutation, useRegisterWithProfileMutation } from '@/store/api/authApi'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import logoUrl from '@/assets/logo.svg'
@@ -81,7 +82,7 @@ export default function LoginPage() {
       const fallback = mode === 'login' ? '登录失败，请检查账号信息' : '注册失败，请稍后重试'
       const message = extractErrorMessage(err, fallback)
       setError('')
-      dispatch(enqueueToast(message))
+      dispatch(enqueueAlert({ description: message, variant: 'destructive' }))
     } finally {
       setStatus('idle')
     }
@@ -175,7 +176,11 @@ export default function LoginPage() {
                 onChange={(event) => setPassword(event.target.value)}
                 className="h-11 rounded-[16px] text-sm"
               />
-              {status === 'error' && <p className="text-sm text-destructive">{error}</p>}
+              {status === 'error' && error ? (
+                <Alert variant="destructive" className="py-3">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              ) : null}
               <Button
                 className="h-11 w-full rounded-[16px] text-sm"
                 onClick={submit}

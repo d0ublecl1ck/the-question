@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import { useCreateChatSessionMutation, useDeleteChatSessionMutation } from '@/store/api/chatApi'
 import { streamAiChat } from '@/store/api/aiStream'
@@ -90,7 +91,7 @@ export default function SkillFormDialog({
         setDetail(detail)
       } catch {
         if (active) {
-          dispatch(enqueueToast('加载技能详情失败'))
+          dispatch(enqueueAlert({ description: '加载技能详情失败', variant: 'destructive' }))
           setOpen(false)
         }
       } finally {
@@ -153,7 +154,7 @@ export default function SkillFormDialog({
       setTagsInput(nextTags.join(', '))
       return { description: nextDescription, tags: nextTags }
     } catch {
-      dispatch(enqueueToast('AI 生成失败，请补充描述与标签'))
+      dispatch(enqueueAlert({ description: 'AI 生成失败，请补充描述与标签', variant: 'destructive' }))
       const error = new Error('meta generation failed')
       throw error
     }
@@ -161,7 +162,7 @@ export default function SkillFormDialog({
 
   const handleSubmit = async () => {
     if (!name.trim() || !content.trim()) {
-      dispatch(enqueueToast('名称与内容不能为空'))
+      dispatch(enqueueAlert({ description: '名称与内容不能为空', variant: 'destructive' }))
       return
     }
     setSaving(true)
@@ -177,7 +178,7 @@ export default function SkillFormDialog({
 
       if (mode === 'create') {
         await createSkill({ ...payload, content: content.trim() }).unwrap()
-        dispatch(enqueueToast('技能已创建'))
+        dispatch(enqueueAlert({ description: '技能已创建' }))
       } else if (skillId) {
         const tasks: Promise<unknown>[] = []
         tasks.push(updateSkill({ skillId, ...payload }).unwrap())
@@ -185,7 +186,7 @@ export default function SkillFormDialog({
           tasks.push(createVersion({ skillId, content: content.trim() }).unwrap())
         }
         await Promise.all(tasks)
-        dispatch(enqueueToast('技能已更新'))
+        dispatch(enqueueAlert({ description: '技能已更新' }))
       }
       setOpen(false)
       onCompleted?.()
@@ -193,7 +194,7 @@ export default function SkillFormDialog({
       if (error instanceof Error && error.message === 'meta generation failed') {
         return
       }
-      if (open) dispatch(enqueueToast('保存失败，请稍后重试'))
+      if (open) dispatch(enqueueAlert({ description: '保存失败，请稍后重试', variant: 'destructive' }))
     } finally {
       setSaving(false)
     }
@@ -219,9 +220,9 @@ export default function SkillFormDialog({
           <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
         {loadingDetail ? (
-          <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-            正在加载详情...
-          </div>
+          <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+            <AlertDescription className="text-muted-foreground">正在加载详情...</AlertDescription>
+          </Alert>
         ) : (
           <div className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2">

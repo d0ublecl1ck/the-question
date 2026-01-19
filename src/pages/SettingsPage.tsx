@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAppDispatch } from '@/store/hooks'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 import {
   useDeleteMemoryMutation,
   useGetMeQuery,
@@ -47,10 +48,10 @@ export default function SettingsPage() {
     try {
       await updateMe({ email }).unwrap()
       setProfileSaving('saved')
-      dispatch(enqueueToast('账号信息已保存'))
+      dispatch(enqueueAlert({ description: '账号信息已保存' }))
     } catch {
       setProfileSaving('error')
-      dispatch(enqueueToast('账号信息保存失败'))
+      dispatch(enqueueAlert({ description: '账号信息保存失败', variant: 'destructive' }))
     }
   }
 
@@ -62,9 +63,9 @@ export default function SettingsPage() {
     try {
       await updateMemoryMutation({ key, value, scope: 'user' }).unwrap()
       setNewMemoryValue('')
-      dispatch(enqueueToast('偏好记忆已添加'))
+      dispatch(enqueueAlert({ description: '偏好记忆已添加' }))
     } catch {
-      dispatch(enqueueToast('偏好记忆添加失败'))
+      dispatch(enqueueAlert({ description: '偏好记忆添加失败', variant: 'destructive' }))
     } finally {
       setCreatingMemory(false)
     }
@@ -73,16 +74,16 @@ export default function SettingsPage() {
   const handleUpdateMemory = async (itemId: string, key: string, scope?: string | null) => {
     const nextValue = (memoryDrafts[itemId] ?? '').trim()
     if (!nextValue) {
-      dispatch(enqueueToast('内容不能为空'))
+      dispatch(enqueueAlert({ description: '内容不能为空', variant: 'destructive' }))
       return
     }
     setUpdatingMemoryIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]))
     try {
       await updateMemoryMutation({ key, value: nextValue, scope: scope ?? 'user' }).unwrap()
-      dispatch(enqueueToast('偏好记忆已保存'))
+      dispatch(enqueueAlert({ description: '偏好记忆已保存' }))
       setEditingId(null)
     } catch {
-      dispatch(enqueueToast('偏好记忆保存失败'))
+      dispatch(enqueueAlert({ description: '偏好记忆保存失败', variant: 'destructive' }))
     } finally {
       setUpdatingMemoryIds((prev) => prev.filter((id) => id !== itemId))
     }
@@ -92,9 +93,9 @@ export default function SettingsPage() {
     setDeletingMemoryIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]))
     try {
       await deleteMemoryMutation({ memoryId: itemId }).unwrap()
-      dispatch(enqueueToast('偏好记忆已删除'))
+      dispatch(enqueueAlert({ description: '偏好记忆已删除' }))
     } catch {
-      dispatch(enqueueToast('偏好记忆删除失败'))
+      dispatch(enqueueAlert({ description: '偏好记忆删除失败', variant: 'destructive' }))
     } finally {
       setDeletingMemoryIds((prev) => prev.filter((id) => id !== itemId))
     }
@@ -132,9 +133,9 @@ export default function SettingsPage() {
       </header>
 
       {status === 'error' ? (
-        <div className="rounded-2xl border border-dashed border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-          加载失败，请稍后重试
-        </div>
+        <Alert variant="destructive" className="rounded-2xl border-dashed shadow-none">
+          <AlertDescription>加载失败，请稍后重试</AlertDescription>
+        </Alert>
       ) : (
         <>
           <section className="space-y-4">
@@ -198,9 +199,9 @@ export default function SettingsPage() {
 
             <div className="space-y-3">
               {filteredMemoryItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-sm text-muted-foreground">
-                  暂无匹配的记忆内容。
-                </div>
+                <Alert className="rounded-2xl border-dashed border-border/60 bg-muted/10 shadow-none">
+                  <AlertDescription className="text-muted-foreground">暂无匹配的记忆内容。</AlertDescription>
+                </Alert>
               ) : (
                 filteredMemoryItems.map((item) => {
                   const draftValue = memoryDrafts[item.id] ?? item.value

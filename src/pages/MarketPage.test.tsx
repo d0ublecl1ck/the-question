@@ -123,7 +123,7 @@ it('does not wrap sections in cards', async () => {
   expect(container.querySelector('.page-card')).toBeNull()
 })
 
-it('redirects to login with toast when clicking 我的 while anonymous', async () => {
+it('redirects to login with alert when clicking 我的 while anonymous', async () => {
   vi.mocked(useGetMarketSkillsQuery).mockReturnValue({
     data: [],
     isLoading: false,
@@ -144,7 +144,7 @@ it('redirects to login with toast when clicking 我的 while anonymous', async (
     vi.fn(),
     { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useDeleteFavoriteMutation>)
-  const initialToastCount = store.getState().toast.toasts.length
+  const initialAlertCount = store.getState().alert.alerts.length
   render(
     <Provider store={store}>
       <MemoryRouter initialEntries={['/market']}>
@@ -158,9 +158,9 @@ it('redirects to login with toast when clicking 我的 while anonymous', async (
 
   fireEvent.click(screen.getByRole('link', { name: '我的' }))
   expect(await screen.findByText('登录页')).toBeInTheDocument()
-  const toasts = store.getState().toast.toasts
-  expect(toasts.length).toBeGreaterThan(initialToastCount)
-  expect(toasts.some((toast) => toast.message === '本功能登录才可以使用')).toBe(true)
+  const alerts = store.getState().alert.alerts
+  expect(alerts.length).toBeGreaterThan(initialAlertCount)
+  expect(alerts.some((alert) => alert.description === '本功能登录才可以使用')).toBe(true)
 })
 
 it('creates favorite when clicking 收藏 while authenticated', async () => {
