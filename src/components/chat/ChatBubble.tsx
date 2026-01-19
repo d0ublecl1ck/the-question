@@ -101,8 +101,8 @@ const createMarkdownComponents = (role: ChatBubbleProps['role']): Components => 
           className="my-2 block w-full max-w-full rounded-xl object-contain"
         />
       ) : null,
-    code: ({ inline, className, children, ...props }) =>
-      inline ? (
+    code: ({ className, children, ...props }) =>
+      !className ? (
         <code
           className={cn('rounded px-1.5 py-0.5 font-mono text-[0.85em]', inlineCodeClassName)}
           {...props}

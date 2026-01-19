@@ -8,7 +8,10 @@ export function createApiClient(
   baseUrl: string,
   getToken: () => string | undefined,
 ): ApiClient {
-  const request: ApiClient['request'] = async (path, init = {}) => {
+  const request: ApiClient['request'] = async <T = unknown>(
+    path: string,
+    init: RequestInit & { json?: unknown } = {},
+  ) => {
     const headerBag = new Headers(init.headers)
     const headers: Record<string, string> = {}
 
@@ -37,7 +40,7 @@ export function createApiClient(
       throw new Error(`Request failed with ${response.status}`)
     }
 
-    return (await response.json()) as Promise<unknown>
+    return (await response.json()) as T
   }
 
   const get: ApiClient['get'] = (path, init) => request(path, init)

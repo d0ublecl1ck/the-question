@@ -27,6 +27,7 @@ it('renders report entry', async () => {
     },
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetMarketSkillDetailQuery>)
   vi.mocked(useGetSkillDetailQuery).mockReturnValue({
     data: {
@@ -48,10 +49,11 @@ Do something useful.
     },
     isLoading: false,
     isError: false,
+    refetch: vi.fn(),
   } as ReturnType<typeof useGetSkillDetailQuery>)
   vi.mocked(useCreateSkillReportMutation).mockReturnValue([
     vi.fn().mockResolvedValue({}),
-    { isLoading: false },
+    { isLoading: false, reset: vi.fn() },
   ] as ReturnType<typeof useCreateSkillReportMutation>)
 
   render(

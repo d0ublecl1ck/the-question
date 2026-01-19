@@ -22,5 +22,5 @@ from app.models import (  # noqa: F401
 def init_db(drop_all: bool = False) -> None:
     if drop_all:
         SQLModel.metadata.drop_all(engine)
-    if settings.ENV != 'production':
+    if settings.DB_URL.startswith('sqlite') or settings.ENV != 'production':
         SQLModel.metadata.create_all(engine)

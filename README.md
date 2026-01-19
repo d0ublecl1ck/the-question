@@ -36,6 +36,15 @@ uv run uvicorn app.main:app --reload
 
 后端访问：`http://127.0.0.1:8000`
 
+Docker 启动：
+
+```bash
+cd /Users/d0ublecl1ck/the-question
+docker compose up --build
+```
+
+Docker 访问：`http://localhost:7860`
+
 ## Docker 部署
 
 使用 Docker Compose（推荐）：
@@ -58,7 +67,7 @@ docker compose up --build
 docker build -t wendui:local .
 docker run --rm -p 7860:7860 \\
   -e SECRET_KEY=change-me \\
-  -e CORS_ORIGINS='*' \\
+  -e CORS_ORIGINS='[\"*\"]' \\
   -e DB_URL='sqlite:///./data/app.db' \\
   -e OPENAI_API_KEY= \\
   -e MINIMAX_API_KEY= \\
