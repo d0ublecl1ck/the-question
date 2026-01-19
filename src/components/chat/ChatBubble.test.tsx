@@ -78,3 +78,29 @@ it('renders clarification chain when marker is present', () => {
   expect(screen.getByText('补充说明')).toBeInTheDocument()
   expect(screen.getByText('越野性能')).toBeInTheDocument()
 })
+
+it('renders clarify chain response payload for user bubble', () => {
+  const content = `\`\`\`json
+{
+  "clarify_chain_response": {
+    "single_choice": [
+      { "question": "是否加急？", "answer": "是" }
+    ],
+    "ranking": [
+      { "question": "优先级排序", "order": ["速度", "成本"] }
+    ],
+    "free_text": [
+      { "question": "补充说明", "answer": "需要在三天内完成。" }
+    ]
+  }
+}
+\`\`\``
+  render(<ChatBubble role="user" content={content} />)
+  expect(screen.getByText('澄清结果')).toBeInTheDocument()
+  expect(screen.getByText('是否加急？')).toBeInTheDocument()
+  expect(screen.getByText('是')).toBeInTheDocument()
+  expect(screen.getByText('优先级排序')).toBeInTheDocument()
+  expect(screen.getByText('速度')).toBeInTheDocument()
+  expect(screen.getAllByText('补充说明').length).toBeGreaterThan(0)
+  expect(screen.getByText('需要在三天内完成。')).toBeInTheDocument()
+})

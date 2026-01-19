@@ -50,3 +50,4 @@
 - Add Python dependencies with `uv add --default-index https://mirrors.aliyun.com/pypi/simple/`.
 - Run Python scripts with `uv run xx.py`.
 - Run `uv add --default-index https://mirrors.aliyun.com/pypi/simple/` and `uv run` only from the backend directory.
+- Use Alert instead of toast for user-facing notices.

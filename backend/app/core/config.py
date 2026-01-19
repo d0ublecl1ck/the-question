@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ENV: str = 'development'
     DEBUG: bool = False
 
-    DB_URL: str = 'sqlite:///./app.db'
+    DB_URL: str = 'mysql+pymysql://wendui:wendui@127.0.0.1:3306/wendui'
     LOG_LEVEL: str = 'INFO'
     CORS_ORIGINS: list[str] = ['*']
     AI_DEBUG_LOG_PATH: str = 'reports/ai-debug.jsonl'

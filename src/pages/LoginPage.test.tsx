@@ -46,6 +46,78 @@ it('renders login page', () => {
   expect(screen.queryByText('通过 Lark 登录')).not.toBeInTheDocument()
 })
 
+it('renders split layout with brand panel', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+  expect(screen.getByTestId('login-shell')).toHaveClass('md:flex-row')
+  expect(screen.getByTestId('login-brand-panel')).toBeInTheDocument()
+})
+
+it('aligns brand paragraph to the logo edge', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+  expect(screen.getByTestId('login-brand-copy')).toHaveClass('self-end')
+})
+
+it('disables page scroll while mounted', () => {
+  vi.mocked(useLoginWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useLoginWithProfileMutation>)
+  vi.mocked(useRegisterWithProfileMutation).mockReturnValue([
+    vi.fn(),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useRegisterWithProfileMutation>)
+  const previousBodyOverflow = document.body.style.overflow
+  const previousRootOverflow = document.documentElement.style.overflow
+  document.body.style.overflow = 'scroll'
+  document.documentElement.style.overflow = 'auto'
+
+  const { unmount } = render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  expect(document.body.style.overflow).toBe('hidden')
+  expect(document.documentElement.style.overflow).toBe('hidden')
+
+  unmount()
+  expect(document.body.style.overflow).toBe('scroll')
+  expect(document.documentElement.style.overflow).toBe('auto')
+
+  document.body.style.overflow = previousBodyOverflow
+  document.documentElement.style.overflow = previousRootOverflow
+})
+
 it('renders larger logo and brand styles', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),

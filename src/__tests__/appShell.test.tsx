@@ -183,4 +183,6 @@ it('uses full-height layout on chat route', () => {
   const main = screen.getByRole('main')
   expect(main).toHaveClass('h-[calc(100dvh-3.5rem)]')
   expect(main).toHaveClass('overflow-hidden')
+  expect(main).toHaveClass('px-0')
+  expect(main).not.toHaveClass('px-[5%]')
 })

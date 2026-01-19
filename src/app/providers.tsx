@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { ToastViewport } from '@/components/ui/toast'
+import { AlertViewport } from '@/components/ui/alert-viewport'
 
 const queryClient = new QueryClient()
 
@@ -12,7 +12,7 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ToastViewport />
+      <AlertViewport />
     </QueryClientProvider>
   )
 }

@@ -47,34 +47,34 @@ it('injects auth header when token is present', async () => {
   expect(readAuthHeader(input, init?.headers)).toBe('Bearer token-1')
 })
 
-it('clears auth and enqueues toast on 401', async () => {
+it('clears auth and enqueues alert on 401', async () => {
   const fetchMock = vi.fn<typeof fetch>(async () =>
     new Response(JSON.stringify({ detail: 'unauthorized' }), { status: 401 }),
   )
   vi.stubGlobal('fetch', fetchMock)
 
   store.dispatch(setAuth({ token: 'token-1', user: { id: 'u1', email: 'a@b.com' } }))
-  const initialToastCount = store.getState().toast.toasts.length
+  const initialAlertCount = store.getState().alert.alerts.length
 
   const result = store.dispatch(testApi.endpoints.getPing.initiate())
   await result.unwrap().catch(() => undefined)
 
   expect(store.getState().auth.status).toBe('anonymous')
-  expect(store.getState().toast.toasts.length).toBeGreaterThan(initialToastCount)
+  expect(store.getState().alert.alerts.length).toBeGreaterThan(initialAlertCount)
 })
 
-it('does not clear auth or enqueue toast on 401 from login', async () => {
+it('does not clear auth or enqueue alert on 401 from login', async () => {
   const fetchMock = vi.fn<typeof fetch>(async () =>
     new Response(JSON.stringify({ detail: '账号不存在' }), { status: 401 }),
   )
   vi.stubGlobal('fetch', fetchMock)
 
   store.dispatch(setAuth({ token: 'token-1', user: { id: 'u1', email: 'a@b.com' } }))
-  const initialToastCount = store.getState().toast.toasts.length
+  const initialAlertCount = store.getState().alert.alerts.length
 
   const result = store.dispatch(testApi.endpoints.login.initiate({ email: 'a@b.com', password: 'x' }))
   await result.unwrap().catch(() => undefined)
 
   expect(store.getState().auth.status).toBe('authenticated')
-  expect(store.getState().toast.toasts.length).toBe(initialToastCount)
+  expect(store.getState().alert.alerts.length).toBe(initialAlertCount)
 })

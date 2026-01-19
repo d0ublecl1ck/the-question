@@ -14,6 +14,8 @@ cp .env.example .env
 CORS_ORIGINS=["http://localhost:5174","http://127.0.0.1:5174"]
 ```
 
+请确保本地或 Docker 内的 MySQL 已启动，并将 `.env` 中的 `DB_URL` 指向 MySQL。
+
 启动：
 
 ```bash

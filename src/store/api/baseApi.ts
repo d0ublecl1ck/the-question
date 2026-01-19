@@ -2,7 +2,7 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolk
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '../appStore'
 import { clearAuth } from '../slices/authSlice'
-import { enqueueToast } from '../slices/toastSlice'
+import { enqueueAlert } from '../slices/alertSlice'
 
 let redirectedOnAuth = false
 
@@ -38,7 +38,7 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
     if (result.error.status === 401) {
       if (!isAuthExempt) {
         api.dispatch(clearAuth())
-        api.dispatch(enqueueToast('登录已过期，请重新登录'))
+        api.dispatch(enqueueAlert({ description: '登录已过期，请重新登录', variant: 'destructive' }))
         if (typeof window !== 'undefined' && !redirectedOnAuth) {
           redirectedOnAuth = true
           if (window.location.pathname !== '/login') {
@@ -50,7 +50,7 @@ const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =
         }
       }
     } else {
-      api.dispatch(enqueueToast('请求失败，请稍后重试'))
+      api.dispatch(enqueueAlert({ description: '请求失败，请稍后重试', variant: 'destructive' }))
     }
   }
   return result

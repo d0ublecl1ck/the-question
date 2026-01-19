@@ -71,6 +71,7 @@ beforeEach(() => {
 })
 
 it('renders chat page with composer', async () => {
+  const user = userEvent.setup()
   vi.mocked(useCreateChatSessionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
     { isLoading: false, reset: vi.fn() },
@@ -136,6 +137,16 @@ it('renders chat page with composer', async () => {
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('mx-auto')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('max-w-4xl')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('pt-[20vh]')
+  expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
+  const sidebar = screen.getByRole('complementary')
+  expect(sidebar).toHaveClass('border-r')
+  expect(sidebar).toHaveClass('pl-4')
+  expect(sidebar).not.toHaveClass('rounded-[28px]')
+  const collapseButton = screen.getByRole('button', { name: '收起侧边栏' })
+  await user.click(collapseButton)
+  expect(screen.queryByText('历史对话')).not.toBeInTheDocument()
+  const expandButton = screen.getByRole('button', { name: '展开侧边栏' })
+  await user.click(expandButton)
   expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
   expect(screen.queryByText('以访客身份探索？登录以获取完整体验')).not.toBeInTheDocument()
   expect(await screen.findByPlaceholderText('输入内容，回车发送')).toBeInTheDocument()
@@ -319,6 +330,74 @@ it('asks for confirmation before deleting a session', async () => {
   const dialog = await screen.findByRole('dialog')
   await user.click(within(dialog).getByRole('button', { name: '删除' }))
   expect(deleteMutation).toHaveBeenCalledWith('s1')
+})
+
+it('renames a session from history list', async () => {
+  const updateMutation = vi.fn().mockReturnValue({
+    unwrap: vi.fn().mockResolvedValue({ id: 's1', title: '新的标题' }),
+  })
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    updateMutation,
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [{ id: 's1', title: '历史对话' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([
+    previewTrigger,
+    { isFetching: false, reset: vi.fn() },
+    { lastArg: { sessionId: 's1' } },
+  ])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [{ id: 'skill-1', name: '需求澄清', description: 'desc', tags: ['tag'] }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: '重命名' }))
+  const dialog = await screen.findByRole('dialog')
+  const renameInput = within(dialog).getByPlaceholderText('请输入新的对话名称')
+  await user.clear(renameInput)
+  await user.type(renameInput, '新的标题')
+  await user.click(within(dialog).getByRole('button', { name: '保存' }))
+
+  await waitFor(() => {
+    expect(updateMutation).toHaveBeenCalledWith({ sessionId: 's1', title: '新的标题' })
+  })
 })
 
 it('hides the promo banner on a session route', async () => {

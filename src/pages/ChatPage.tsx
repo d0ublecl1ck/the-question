@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -25,7 +27,13 @@ import ChatBubble from '@/components/chat/ChatBubble'
 import SkillSuggestionCard from '@/components/chat/SkillSuggestionCard'
 import SkillDraftSuggestionCard from '@/components/chat/SkillDraftSuggestionCard'
 import { Message } from '@/components/ui/message'
-import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/conversation'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+  ConversationScrollState,
+} from '@/components/ui/conversation'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { streamAiChat, watchAiChatStream } from '@/store/api/aiStream'
 import {
   useCreateChatSessionMutation,
@@ -43,7 +51,7 @@ import {
 } from '@/store/api/chatApi'
 import { useListAiModelsQuery } from '@/store/api/aiApi'
 import type { ChatMessage as ApiChatMessage, ChatSession, SkillSuggestion, SkillDraftSuggestion } from '@/store/api/types'
-import { enqueueToast } from '@/store/slices/toastSlice'
+import { enqueueAlert } from '@/store/slices/alertSlice'
 
 export type SkillItem = {
   id: string
@@ -137,6 +145,9 @@ export default function ChatPage() {
   const [open, setOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(null)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [renameCandidate, setRenameCandidate] = useState<ChatSession | null>(null)
+  const [renameValue, setRenameValue] = useState('')
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -149,9 +160,14 @@ export default function ChatPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [streaming, setStreaming] = useState(false)
   const [watching, setWatching] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<string[]>([])
   const [dismissedDraftSuggestionIds, setDismissedDraftSuggestionIds] = useState<string[]>([])
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [isComposerFocused, setIsComposerFocused] = useState(false)
   const isRootChat = location.pathname === '/chat'
+  const hasDraft = draft.trim().length > 0
+  const isComposerCollapsed = !isRootChat && !isAtBottom && !isComposerFocused && !hasDraft
   const messagesRef = useRef<ChatMessage[]>([])
   const lastAppliedDraftRef = useRef<string | null>(null)
   const pendingAssistantIdRef = useRef<string | null>(null)
@@ -616,7 +632,7 @@ export default function ChatPage() {
       if (!sessionId) return
       const skill = skillById[suggestion.skill_id]
       if (!skill) {
-        dispatch(enqueueToast('技能未加载，请稍后重试'))
+        dispatch(enqueueAlert({ description: '技能未加载，请稍后重试', variant: 'destructive' }))
         return
       }
       setSelectedSkill(skill)
@@ -627,9 +643,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'accepted',
         }).unwrap()
-        dispatch(enqueueToast(`已选择技能：${skill.name}`))
+        dispatch(enqueueAlert({ description: `已选择技能：${skill.name}` }))
       } catch {
-        dispatch(enqueueToast('更新技能建议失败'))
+        dispatch(enqueueAlert({ description: '更新技能建议失败', variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, skillById, updateSkillSuggestion],
@@ -645,9 +661,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast('已关闭该技能推荐'))
+        dispatch(enqueueAlert({ description: '已关闭该技能推荐' }))
       } catch {
-        dispatch(enqueueToast('更新技能建议失败'))
+        dispatch(enqueueAlert({ description: '更新技能建议失败', variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, updateSkillSuggestion],
@@ -663,11 +679,11 @@ export default function ChatPage() {
   const handleAcceptDraftSuggestion = useCallback(
     async (suggestion: SkillDraftSuggestion) => {
       if (!sessionId) return
-      const modelId = selectedModelId ?? models[0]?.id ?? null
-      if (!modelId) {
-        dispatch(enqueueToast('模型不可用，请稍后重试'))
-        return
-      }
+    const modelId = selectedModelId ?? models[0]?.id ?? null
+    if (!modelId) {
+      dispatch(enqueueAlert({ description: '模型不可用，请稍后重试', variant: 'destructive' }))
+      return
+    }
       setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
       try {
         const result = await acceptSkillDraftSuggestion({
@@ -675,9 +691,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           modelId,
         }).unwrap()
-        dispatch(enqueueToast(`已生成技能：${result.name}`))
+        dispatch(enqueueAlert({ description: `已生成技能：${result.name}` }))
       } catch {
-        dispatch(enqueueToast('生成技能失败'))
+        dispatch(enqueueAlert({ description: '生成技能失败', variant: 'destructive' }))
       }
     },
     [acceptSkillDraftSuggestion, dispatch, models, selectedModelId, sessionId],
@@ -693,9 +709,9 @@ export default function ChatPage() {
           suggestionId: suggestion.id,
           status: 'rejected',
         }).unwrap()
-        dispatch(enqueueToast('已关闭沉淀建议'))
+        dispatch(enqueueAlert({ description: '已关闭沉淀建议' }))
       } catch {
-        dispatch(enqueueToast('更新沉淀建议失败'))
+        dispatch(enqueueAlert({ description: '更新沉淀建议失败', variant: 'destructive' }))
       }
     },
     [dispatch, sessionId, updateSkillDraftSuggestion],
@@ -725,6 +741,41 @@ export default function ChatPage() {
     }
     if (!isSameSession || isRootChat) {
       navigate(`/chat/${session.id}`)
+    }
+  }
+
+  const handleRequestRenameSession = (session: ChatSession) => {
+    setRenameCandidate(session)
+    const currentTitle = session.title?.trim() ?? ''
+    setRenameValue(currentTitle && currentTitle !== '对话' ? currentTitle : '')
+    setRenameDialogOpen(true)
+  }
+
+  const handleConfirmRenameSession = async () => {
+    if (!renameCandidate) return
+    const target = renameCandidate
+    const nextTitle = renameValue.trim()
+    if (!nextTitle) {
+      dispatch(enqueueToast('请输入新的对话名称'))
+      return
+    }
+    const currentTitle = target.title?.trim() ?? ''
+    if (nextTitle === currentTitle) {
+      setRenameDialogOpen(false)
+      setRenameCandidate(null)
+      return
+    }
+    setRenameDialogOpen(false)
+    setRenameCandidate(null)
+    await handleRenameSession(target.id, nextTitle)
+  }
+
+  const handleRenameSession = async (targetId: string, title: string) => {
+    try {
+      const updated = await updateChatSessionTitle({ sessionId: targetId, title }).unwrap()
+      setSessions((prev) => [updated, ...prev.filter((item) => item.id !== updated.id)])
+    } catch {
+      dispatch(enqueueToast('重命名失败'))
     }
   }
 
@@ -779,97 +830,131 @@ export default function ChatPage() {
   }
 
   return (
-    <section className="grid h-full min-h-0 w-full gap-8 lg:grid-cols-[2fr_8fr]">
+    <section
+      className={[
+        'grid h-full min-h-0 w-full gap-8 lg:gap-0',
+        isSidebarCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)]' : 'lg:grid-cols-[280px_minmax(0,1fr)]',
+      ].join(' ')}
+    >
       <h2 className="sr-only">对话</h2>
-      <aside className="hidden h-full min-h-0 flex-col rounded-[28px] border border-border/70 bg-white/80 px-5 py-6 text-sm text-muted-foreground lg:flex">
-        <div className="flex min-h-0 flex-1 flex-col gap-6">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.35em]">WenDui</p>
-            <p className="text-base font-semibold text-foreground">对话台</p>
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <aside
+        className={[
+          'hidden h-full min-h-0 flex-col border-r border-border/60 text-sm text-muted-foreground lg:flex',
+          isSidebarCollapsed ? 'px-2' : 'pl-4 pr-5',
+        ].join(' ')}
+      >
+        <div className={['flex min-h-0 flex-1 flex-col', isSidebarCollapsed ? 'gap-3 py-3' : 'gap-4 py-4'].join(' ')}>
+          <div className="flex items-start justify-between gap-2">
+            <div className={isSidebarCollapsed ? 'sr-only' : 'space-y-1'}>
+              <p className="text-xs uppercase tracking-[0.35em]">WenDui</p>
+              <p className="text-base font-semibold text-foreground">对话台</p>
+            </div>
             <button
-              className="flex w-full items-center justify-between rounded-full bg-muted/60 px-4 py-2 text-left text-foreground"
-              onClick={handleCreateSession}
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition hover:border-border hover:text-foreground"
+              onClick={() => setIsSidebarCollapsed((prev) => !prev)}
+              aria-expanded={!isSidebarCollapsed}
             >
-              新建
-              <span className="text-xs text-muted-foreground">+</span>
+              {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              <span className="sr-only">{isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}</span>
             </button>
+          </div>
+          {!isSidebarCollapsed && (
             <div className="flex min-h-0 flex-1 flex-col gap-2">
-              <div className="text-xs uppercase tracking-[0.35em]">历史对话</div>
-              <input
-                value={sessionQuery}
-                onChange={(event) => setSessionQuery(event.target.value)}
-                placeholder="搜索对话"
-                className="h-9 w-full rounded-full border border-border/70 bg-white px-3 text-xs text-foreground placeholder:text-muted-foreground"
-              />
-              <ScrollArea className="min-h-0 flex-1 pr-2">
-                <div className="space-y-2 text-sm">
-                  {filteredSessions.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground">
-                      暂无历史对话
-                    </div>
-                  )}
-                  {filteredSessions.map((session) => {
-                    const sessionTitle = session.title?.trim()
-                    const fallbackTitle = sessionPeek[session.id]?.trim()
-                    const resolvedTitle =
-                      sessionTitle && sessionTitle !== '对话'
-                        ? sessionTitle
+              <button
+                className="flex w-full items-center justify-between rounded-full bg-muted/60 px-4 py-1.5 text-left text-foreground"
+                onClick={handleCreateSession}
+              >
+                新建
+                <span className="text-xs text-muted-foreground">+</span>
+              </button>
+              <div className="flex min-h-0 flex-1 flex-col gap-2">
+                <div className="text-xs uppercase tracking-[0.35em]">历史对话</div>
+                <input
+                  value={sessionQuery}
+                  onChange={(event) => setSessionQuery(event.target.value)}
+                  placeholder="搜索对话"
+                  className="h-8 w-full rounded-full border border-border/70 bg-white px-3 text-xs text-foreground placeholder:text-muted-foreground"
+                />
+                <ScrollArea className="min-h-0 flex-1 pr-2" scrollbarClassName="w-[5px] p-0">
+                  <div className="space-y-1 text-sm">
+                    {filteredSessions.length === 0 && (
+                      <Alert className="rounded-2xl border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground shadow-none">
+                        <AlertDescription className="text-xs text-muted-foreground">
+                          暂无历史对话
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {filteredSessions.map((session) => {
+                      const sessionTitle = session.title?.trim()
+                      const fallbackTitle = sessionPeek[session.id]?.trim()
+                      const resolvedTitle =
+                        sessionTitle && sessionTitle !== '对话'
+                          ? sessionTitle
                         : fallbackTitle && fallbackTitle !== '对话'
                           ? fallbackTitle
                           : '未命名对话'
-                    const displayTitle =
-                      resolvedTitle.length > 24 ? `${resolvedTitle.slice(0, 24)}...` : resolvedTitle
-                    const isActive = session.id === sessionId
-                    return (
-                      <div
-                        key={session.id}
-                        className={[
-                          'group flex items-start gap-2 rounded-2xl px-3 py-2 transition',
-                          isActive
-                            ? 'bg-muted/60 text-foreground'
-                            : 'text-muted-foreground hover:bg-muted/50',
-                        ].join(' ')}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleSelectSession(session)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault()
-                            handleSelectSession(session)
-                          }
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className="flex-1 text-left"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            handleSelectSession(session)
+                      const displayTitle =
+                        resolvedTitle.length > 24 ? `${resolvedTitle.slice(0, 24)}...` : resolvedTitle
+                      const isActive = session.id === sessionId
+                      return (
+                        <div
+                          key={session.id}
+                          className={[
+                            'group flex items-center gap-2 rounded-2xl px-3 py-1 transition',
+                            isActive
+                              ? 'bg-muted/60 text-foreground'
+                              : 'text-muted-foreground hover:bg-muted/50',
+                          ].join(' ')}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleSelectSession(session)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault()
+                              handleSelectSession(session)
+                            }
                           }}
                         >
-                          <div className="line-clamp-1 text-sm font-medium">{displayTitle}</div>
-                        </button>
-                        <button
-                          type="button"
-                          className="mt-1 rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:border-border/70 hover:text-foreground"
-                          onClick={() => handleRequestDeleteSession(session)}
-                        >
-                          删除
-                        </button>
-                      </div>
-                    )
-                  })}
+                          <button
+                            type="button"
+                            className="flex-1 text-left"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              handleSelectSession(session)
+                            }}
+                          >
+                            <div className="line-clamp-1 text-sm font-medium">{displayTitle}</div>
+                          </button>
+                          <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                            <button
+                              type="button"
+                              className="rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground hover:border-border/70 hover:text-foreground"
+                              onClick={() => handleRequestRenameSession(session)}
+                            >
+                              重命名
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-full border border-transparent px-2 py-1 text-[10px] text-muted-foreground hover:border-border/70 hover:text-foreground"
+                              onClick={() => handleRequestDeleteSession(session)}
+                            >
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
                 </div>
               </ScrollArea>
             </div>
           </div>
+          )}
         </div>
-        <div className="pt-4 text-xs text-muted-foreground">Powered by WenDui</div>
+        {!isSidebarCollapsed && <div className="pb-4 pt-3 text-xs text-muted-foreground">Powered by WenDui</div>}
       </aside>
 
-      <div className="flex h-full min-h-0 flex-col gap-8">
+      <div className={['flex h-full min-h-0 flex-col gap-8', isSidebarCollapsed ? 'lg:pl-6' : 'lg:pl-8'].join(' ')}>
         {!token && (
           <div className="flex items-center justify-between">
             <div className="hidden h-9 items-center rounded-full border border-border/70 bg-white px-4 text-xs text-muted-foreground lg:flex">
@@ -922,6 +1007,8 @@ export default function ChatPage() {
                   onModelChange={setSelectedModelId}
                   disabled={streaming || watching}
                   selectedSkillName={selectedSkill?.name ?? null}
+                  collapsed={isComposerCollapsed}
+                  onFocusChange={setIsComposerFocused}
                 />
               </>
             ) : (
@@ -929,9 +1016,11 @@ export default function ChatPage() {
               <Conversation className="mt-6 min-h-0 flex-1">
                 <ConversationContent className="flex flex-col gap-4">
                   {messages.length === 0 && viewStatus === 'ready' && (
-                    <div className="rounded-2xl border border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground">
-                      还没有消息，开始你的第一条对话。
-                    </div>
+                    <Alert className="rounded-2xl border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground shadow-none">
+                      <AlertDescription className="text-muted-foreground">
+                        还没有消息，开始你的第一条对话。
+                      </AlertDescription>
+                    </Alert>
                   )}
                   {messages.map((message) => {
                     const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
@@ -974,7 +1063,8 @@ export default function ChatPage() {
                     )
                   })}
                 </ConversationContent>
-                <ConversationScrollButton />
+                <ConversationScrollButton className="bottom-6 right-6 left-auto translate-x-0 shadow-md" />
+                <ConversationScrollState onAtBottomChange={setIsAtBottom} />
               </Conversation>
 
                 <ChatComposer
@@ -987,6 +1077,8 @@ export default function ChatPage() {
                   onModelChange={setSelectedModelId}
                   disabled={streaming || watching}
                   selectedSkillName={selectedSkill?.name ?? null}
+                  collapsed={isComposerCollapsed}
+                  onFocusChange={setIsComposerFocused}
                 />
               </>
             )}
@@ -1027,6 +1119,44 @@ export default function ChatPage() {
               </CommandGroup>
             </CommandList>
           </Command>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={renameDialogOpen}
+        onOpenChange={(nextOpen) => {
+          setRenameDialogOpen(nextOpen)
+          if (!nextOpen) {
+            setRenameCandidate(null)
+            setRenameValue('')
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>重命名对话</DialogTitle>
+            <DialogDescription>为该对话设置一个新的名称。</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              handleConfirmRenameSession()
+            }}
+          >
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(event) => setRenameValue(event.target.value)}
+              placeholder="请输入新的对话名称"
+            />
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setRenameDialogOpen(false)}>
+                取消
+              </Button>
+              <Button type="submit">保存</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
