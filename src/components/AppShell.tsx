@@ -26,6 +26,7 @@ export default function AppShell() {
   const location = useLocation()
   const [panelOpen, setPanelOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
+  const scrollLockRef = useRef<{ body: string; root: string } | null>(null)
   const isAuthed = status === 'authenticated'
   const navItems = isAuthed ? authedNavItems : publicNavItems
   const email = user?.email ?? ''
@@ -36,6 +37,37 @@ export default function AppShell() {
       ? 'h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden px-0 py-6'
       : 'min-h-[calc(100vh-3.5rem)] px-[5%] pb-20 pt-8',
   ].join(' ')
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (location.pathname === '/login') return
+
+    if (isChatRoute) {
+      if (!scrollLockRef.current) {
+        scrollLockRef.current = {
+          body: document.body.style.overflow,
+          root: document.documentElement.style.overflow,
+        }
+      }
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+      return () => {
+        const previous = scrollLockRef.current
+        if (!previous) return
+        document.body.style.overflow = previous.body
+        document.documentElement.style.overflow = previous.root
+        scrollLockRef.current = null
+      }
+    }
+
+    if (document.body.style.overflow === 'hidden') {
+      document.body.style.overflow = ''
+    }
+    if (document.documentElement.style.overflow === 'hidden') {
+      document.documentElement.style.overflow = ''
+    }
+    scrollLockRef.current = null
+  }, [isChatRoute, location.pathname])
 
   useEffect(() => {
     if (!panelOpen) return
