@@ -36,6 +36,35 @@ uv run uvicorn app.main:app --reload
 
 后端访问：`http://127.0.0.1:8000`
 
+## Docker 部署
+
+使用 Docker Compose（推荐）：
+
+```bash
+docker compose up --build
+```
+
+服务启动后访问：`http://localhost:7860`
+
+注意事项：
+
+- 默认使用 SQLite，并把数据库写入容器内的 `/app/backend/data/app.db`，数据会保存在 `wendui-data` 卷中。
+- 如需调用模型能力，请通过环境变量提供 `PROVIDERS` 与对应的 API Key（例如 `OPENAI_API_KEY`、`MINIMAX_API_KEY`）。
+- 生产环境请务必覆盖 `SECRET_KEY`。
+
+单次构建/运行：
+
+```bash
+docker build -t wendui:local .
+docker run --rm -p 7860:7860 \\
+  -e SECRET_KEY=change-me \\
+  -e CORS_ORIGINS='*' \\
+  -e DB_URL='sqlite:///./data/app.db' \\
+  -e OPENAI_API_KEY= \\
+  -e MINIMAX_API_KEY= \\
+  wendui:local
+```
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh

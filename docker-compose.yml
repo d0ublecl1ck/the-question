@@ -1,0 +1,26 @@
+services:
+  wendui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7860:7860"
+    environment:
+      ENV: production
+      DEBUG: "false"
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: "*"
+      DB_URL: "sqlite:///./data/app.db"
+      AI_DEBUG_LOG_PATH: "reports/ai-debug.jsonl"
+      SECRET_KEY: "${SECRET_KEY:-change-me}"
+      PROVIDERS: "${PROVIDERS:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      MINIMAX_API_KEY: "${MINIMAX_API_KEY:-}"
+    volumes:
+      - wendui-data:/app/backend/data
+      - wendui-reports:/app/backend/reports
+    restart: unless-stopped
+
+volumes:
+  wendui-data:
+  wendui-reports:
