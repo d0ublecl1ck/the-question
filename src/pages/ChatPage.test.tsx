@@ -71,6 +71,7 @@ beforeEach(() => {
 })
 
 it('renders chat page with composer', async () => {
+  const user = userEvent.setup()
   vi.mocked(useCreateChatSessionMutation).mockReturnValue([
     vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
     { isLoading: false, reset: vi.fn() },
@@ -136,6 +137,16 @@ it('renders chat page with composer', async () => {
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('mx-auto')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('max-w-4xl')
   expect(screen.getByTestId('chat-right-panel')).toHaveClass('pt-[20vh]')
+  expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
+  const sidebar = screen.getByRole('complementary')
+  expect(sidebar).toHaveClass('border-r')
+  expect(sidebar).toHaveClass('pl-4')
+  expect(sidebar).not.toHaveClass('rounded-[28px]')
+  const collapseButton = screen.getByRole('button', { name: '收起侧边栏' })
+  await user.click(collapseButton)
+  expect(screen.queryByText('历史对话')).not.toBeInTheDocument()
+  const expandButton = screen.getByRole('button', { name: '展开侧边栏' })
+  await user.click(expandButton)
   expect(screen.getAllByText('历史对话').length).toBeGreaterThan(0)
   expect(screen.queryByText('以访客身份探索？登录以获取完整体验')).not.toBeInTheDocument()
   expect(await screen.findByPlaceholderText('输入内容，回车发送')).toBeInTheDocument()
@@ -379,7 +390,9 @@ it('renames a session from history list', async () => {
   const user = userEvent.setup()
   await user.click(await screen.findByRole('button', { name: '重命名' }))
   const dialog = await screen.findByRole('dialog')
-  await user.type(within(dialog).getByPlaceholderText('请输入新的对话名称'), '新的标题')
+  const renameInput = within(dialog).getByPlaceholderText('请输入新的对话名称')
+  await user.clear(renameInput)
+  await user.type(renameInput, '新的标题')
   await user.click(within(dialog).getByRole('button', { name: '保存' }))
 
   await waitFor(() => {
