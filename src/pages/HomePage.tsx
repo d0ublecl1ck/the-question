@@ -9,7 +9,7 @@ import expertPainter from '@/assets/experts/expert-painter.png'
 import expertArchitect from '@/assets/experts/expert-architect.png'
 import expertWriter from '@/assets/experts/expert-writer.png'
 import watchaLogo from '@/assets/Watcha.svg'
-import { LogoCloud } from '@/components/ui/logo-cloud-3'
+import { LogoCloud } from '@/components/ui/logo-cloud'
 import { ModelScope } from '@lobehub/icons'
 import { registerTranslations } from '@/lib/i18n'
 

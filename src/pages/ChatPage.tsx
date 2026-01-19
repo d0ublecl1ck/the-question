@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent, type MouseEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/components/ui/badge'
@@ -107,6 +107,17 @@ registerTranslations('chat', {
       cancel: '取消',
       save: '保存',
     },
+    navigator: {
+      ariaLabel: '消息导航',
+      headerLabel: '消息',
+      jumpLabel: '跳转到第 {{index}} 条消息（{{role}}）',
+      fallbackGenerating: '正在生成…',
+      fallbackEmpty: '空消息',
+      roleShort: {
+        user: 'Y',
+        assistant: 'A',
+      },
+    },
     toasts: {
       skillNotLoaded: '技能未加载，请稍后重试',
       skillChosen: '已选择技能：{{name}}',
@@ -119,6 +130,7 @@ registerTranslations('chat', {
       draftUpdateFailed: '更新沉淀建议失败',
       renameEmpty: '请输入新的对话名称',
       renameFailed: '重命名失败',
+      messageNotFound: '未找到对应消息',
     },
   },
   en: {
@@ -172,6 +184,17 @@ registerTranslations('chat', {
       cancel: 'Cancel',
       save: 'Save',
     },
+    navigator: {
+      ariaLabel: 'Message navigator',
+      headerLabel: 'message',
+      jumpLabel: 'Jump to message {{index}} ({{role}})',
+      fallbackGenerating: 'Generating…',
+      fallbackEmpty: 'Empty message',
+      roleShort: {
+        user: 'Y',
+        assistant: 'A',
+      },
+    },
     toasts: {
       skillNotLoaded: 'Skill not loaded. Please try again.',
       skillChosen: 'Skill selected: {{name}}',
@@ -184,6 +207,7 @@ registerTranslations('chat', {
       draftUpdateFailed: 'Failed to update draft suggestion.',
       renameEmpty: 'Please enter a new chat name.',
       renameFailed: 'Rename failed.',
+      messageNotFound: 'Message not found.',
     },
   },
 })
@@ -271,6 +295,109 @@ const arePeekEqual = (prev: Record<string, string>, next: Record<string, string>
   return true
 }
 
+const MESSAGE_PREVIEW_LIMIT = 10
+const CODE_FENCE_PREFIX_REGEX = /^```[a-zA-Z0-9_-]*\s*/
+const HTML_COMMENT_PREFIX_REGEX = /^<!--[\s\S]*?-->\s*/i
+const CLARIFICATION_PREFIX_REGEX = /^<\!-{1,2}\s*Clarification chain\s*-{1,2}>\s*/i
+const STRUCTURAL_ONLY_REGEX = /^[\[\]\{\}\s,]*$/
+const CLARIFY_KEYWORD_REGEX = /(clarify_chain|clarify_chain_response|clarification chain)/i
+const CLARIFY_QUESTION_REGEX = /"question"\s*:\s*"([^"]+)"/
+
+const stripPreviewPrefix = (value: string, shouldStrip: boolean) => {
+  let next = value.trimStart()
+  if (!shouldStrip) return next.trim()
+  let prev = ''
+  while (next && next !== prev) {
+    prev = next
+    next = next.replace(CLARIFICATION_PREFIX_REGEX, '')
+    next = next.replace(HTML_COMMENT_PREFIX_REGEX, '')
+    next = next.replace(CODE_FENCE_PREFIX_REGEX, '')
+    next = next.trimStart()
+  }
+  return next.trim()
+}
+
+const extractClarifyJson = (value: string) => {
+  const normalized = value
+    .replace(HTML_COMMENT_PREFIX_REGEX, '')
+    .replace(CODE_FENCE_PREFIX_REGEX, '')
+    .trim()
+  const start = normalized.indexOf('{')
+  const end = normalized.lastIndexOf('}')
+  if (start === -1 || end === -1 || end <= start) return null
+  return normalized.slice(start, end + 1)
+}
+
+const getQuestionFromArray = (items: unknown) => {
+  if (!Array.isArray(items)) return null
+  const first = items[0] as { question?: unknown } | undefined
+  if (!first || typeof first !== 'object') return null
+  return typeof first.question === 'string' ? first.question : null
+}
+
+const extractClarifyQuestion = (content: string) => {
+  if (!CLARIFY_KEYWORD_REGEX.test(content)) return ''
+  const jsonPayload = extractClarifyJson(content)
+  if (jsonPayload) {
+    try {
+      const parsed = JSON.parse(jsonPayload) as {
+        clarify_chain?: Array<{ question?: string }>
+        clarify_chain_response?: {
+          single_choice?: Array<{ question?: string }>
+          ranking?: Array<{ question?: string }>
+          free_text?: Array<{ question?: string }>
+        }
+      }
+      const chainQuestion = getQuestionFromArray(parsed.clarify_chain)
+      if (chainQuestion) return chainQuestion
+      const response = parsed.clarify_chain_response
+      const responseQuestion =
+        getQuestionFromArray(response?.single_choice) ||
+        getQuestionFromArray(response?.ranking) ||
+        getQuestionFromArray(response?.free_text)
+      if (responseQuestion) return responseQuestion
+    } catch {
+      // fallback below
+    }
+  }
+  const match = content.match(CLARIFY_QUESTION_REGEX)
+  return match?.[1] ?? ''
+}
+
+const buildPreviewSource = (content: string, shouldStrip: boolean) => {
+  if (!shouldStrip) return content
+  const clarifyQuestion = extractClarifyQuestion(content)
+  if (clarifyQuestion) return clarifyQuestion
+  const lines = content.split(/\r?\n/)
+  for (let i = 0; i < lines.length; i += 1) {
+    const firstLine = stripPreviewPrefix(lines[i] ?? '', shouldStrip)
+    if (!firstLine || STRUCTURAL_ONLY_REGEX.test(firstLine)) continue
+    const merged = [
+      firstLine,
+      ...lines
+        .slice(i + 1)
+        .map((line) => stripPreviewPrefix(line, shouldStrip))
+        .filter((line) => !!line && !STRUCTURAL_ONLY_REGEX.test(line)),
+    ]
+      .filter(Boolean)
+      .join(' ')
+    return merged
+  }
+  return stripPreviewPrefix(content, shouldStrip)
+}
+
+const isClarifyChainMessage = (content: string) => CLARIFY_KEYWORD_REGEX.test(content)
+
+const buildMessagePreview = (content: string, limit = MESSAGE_PREVIEW_LIMIT) => {
+  const trimmed = buildPreviewSource(content, isClarifyChainMessage(content)).replace(/\s+/g, ' ').trim()
+  if (!trimmed) return ''
+  const chars = Array.from(trimmed)
+  if (chars.length <= limit) return trimmed
+  return chars.slice(0, limit).join('')
+}
+
+const buildMessageAnchorId = (messageId: string) => `message-${messageId}`
+
 export default function ChatPage() {
   const { t, i18n } = useTranslation('chat')
   const token = useAppSelector((state) => state.auth.token)
@@ -301,11 +428,15 @@ export default function ChatPage() {
   const [dismissedDraftSuggestionIds, setDismissedDraftSuggestionIds] = useState<string[]>([])
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [isComposerFocused, setIsComposerFocused] = useState(false)
+  const [isNavigatorExpanded, setIsNavigatorExpanded] = useState(false)
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const isRootChat = location.pathname === '/chat'
   const hasDraft = draft.trim().length > 0
   const isComposerCollapsed = !isRootChat && !isAtBottom && !isComposerFocused && !hasDraft
-  const defaultTitle = t('session.defaultTitle')
   const messagesRef = useRef<ChatMessage[]>([])
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  const scrollRafRef = useRef<number | null>(null)
   const lastAppliedDraftRef = useRef<string | null>(null)
   const pendingAssistantIdRef = useRef<string | null>(null)
   const streamAssistantIdRef = useRef<string | null>(null)
@@ -313,13 +444,14 @@ export default function ChatPage() {
   const completedStreamIdsRef = useRef<Set<string>>(new Set())
   const watchAbortRef = useRef<AbortController | null>(null)
   const watchAttemptedRef = useRef<Set<string>>(new Set())
-  const defaultTitleSet = new Set([
-    i18n.getFixedT('zh', 'chat')('session.defaultTitle'),
-    i18n.getFixedT('en', 'chat')('session.defaultTitle'),
-  ])
+  const defaultTitle = t('session.defaultTitle')
   const isDefaultTitle = (value: string | null | undefined) => {
-    if (!value) return false
-    return defaultTitleSet.has(value.trim())
+    if (!value) return true
+    const normalized = value.trim()
+    if (!normalized) return true
+    const zhDefault = i18n.getFixedT('zh', 'chat')('session.defaultTitle')
+    const enDefault = i18n.getFixedT('en', 'chat')('session.defaultTitle')
+    return normalized === zhDefault || normalized === enDefault
   }
 
   useEffect(() => {
@@ -435,6 +567,83 @@ export default function ChatPage() {
       return title.includes(keyword) || preview.includes(keyword)
     })
   }, [sessions, sessionPeek, sessionQuery])
+  const messageNavItems = useMemo(
+    () =>
+      messages.map((message, index) => ({
+        id: message.id,
+        preview: buildMessagePreview(message.content),
+        role: message.role,
+        index: index + 1,
+      })),
+    [messages],
+  )
+  const hasMessageNavigator = !isRootChat && messageNavItems.length > 1
+  const activeMessageIndex = useMemo(
+    () => messageNavItems.findIndex((item) => item.id === activeMessageId),
+    [activeMessageId, messageNavItems],
+  )
+
+  const handleJumpToMessage = useCallback(
+    (messageId: string) => {
+      const element = document.getElementById(buildMessageAnchorId(messageId))
+      if (!element) {
+        dispatch(enqueueAlert({ description: t('toasts.messageNotFound'), variant: 'destructive' }))
+        return
+      }
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setActiveMessageId(messageId)
+    },
+    [dispatch],
+  )
+
+  const handleNavigatorFocus = useCallback(() => {
+    setIsNavigatorExpanded(true)
+  }, [])
+
+  const handleNavigatorBlur = useCallback((event: FocusEvent<HTMLDivElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return
+    setIsNavigatorExpanded(false)
+  }, [])
+
+  const handleNavigatorMouseEnter = useCallback(() => {
+    setIsNavigatorExpanded(true)
+  }, [])
+
+  const handleNavigatorMouseLeave = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    const activeElement = document.activeElement
+    if (activeElement && event.currentTarget.contains(activeElement)) return
+    setIsNavigatorExpanded(false)
+  }, [])
+
+  const updateMessageNavigator = useCallback(() => {
+    const container =
+      scrollContainerRef.current ??
+      (document.querySelector('[data-chat-scroll="true"]') as HTMLDivElement | null)
+    if (!container) return
+    scrollContainerRef.current = container
+    const scrollTop = container.scrollTop
+    const maxScroll = container.scrollHeight - container.clientHeight
+    const nextProgress = maxScroll > 0 ? Math.min(1, Math.max(0, scrollTop / maxScroll)) : 0
+    setScrollProgress((prev) => (prev === nextProgress ? prev : nextProgress))
+    if (messages.length === 0) {
+      setActiveMessageId((prev) => (prev === null ? prev : null))
+      return
+    }
+    const containerRect = container.getBoundingClientRect()
+    const cutoff = scrollTop + 120
+    let nextActiveId = messages[0]?.id ?? null
+    for (const message of messages) {
+      const element = document.getElementById(buildMessageAnchorId(message.id))
+      if (!element) continue
+      const offset = element.getBoundingClientRect().top - containerRect.top + scrollTop
+      if (offset <= cutoff) {
+        nextActiveId = message.id
+      } else {
+        break
+      }
+    }
+    setActiveMessageId((prev) => (prev === nextActiveId ? prev : nextActiveId))
+  }, [messages])
 
   const replaceMessageId = useCallback((fromId: string, toId: string) => {
     if (fromId === toId) return
@@ -558,6 +767,35 @@ export default function ChatPage() {
   }, [messages])
 
   useEffect(() => {
+    if (!hasMessageNavigator) {
+      setActiveMessageId(null)
+      setScrollProgress(0)
+      return
+    }
+    const container = document.querySelector('[data-chat-scroll="true"]') as HTMLDivElement | null
+    if (!container) return
+    scrollContainerRef.current = container
+    const handleScroll = () => {
+      if (scrollRafRef.current !== null) return
+      scrollRafRef.current = window.requestAnimationFrame(() => {
+        scrollRafRef.current = null
+        updateMessageNavigator()
+      })
+    }
+    updateMessageNavigator()
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleScroll)
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+      if (scrollRafRef.current !== null) {
+        window.cancelAnimationFrame(scrollRafRef.current)
+        scrollRafRef.current = null
+      }
+    }
+  }, [hasMessageNavigator, updateMessageNavigator])
+
+  useEffect(() => {
     if (!token || !sessionId || streaming) return
     const lastMessage = messages[messages.length - 1]
     if (!lastMessage || lastMessage.role !== 'assistant') return
@@ -669,7 +907,7 @@ export default function ChatPage() {
     }
     const trimmedContent = content.trim()
     const activeSession = sessions.find((session) => session.id === activeSessionId)
-    if (activeSession && (!activeSession.title || isDefaultTitle(activeSession.title))) {
+    if (activeSession && isDefaultTitle(activeSession.title)) {
       shouldUpdateTitle = true
     }
     const userMessage: ChatMessage = {
@@ -824,11 +1062,11 @@ export default function ChatPage() {
   const handleAcceptDraftSuggestion = useCallback(
     async (suggestion: SkillDraftSuggestion) => {
       if (!sessionId) return
-      const modelId = selectedModelId ?? models[0]?.id ?? null
-      if (!modelId) {
-        dispatch(enqueueAlert({ description: t('toasts.modelUnavailable'), variant: 'destructive' }))
-        return
-      }
+    const modelId = selectedModelId ?? models[0]?.id ?? null
+    if (!modelId) {
+      dispatch(enqueueAlert({ description: t('toasts.modelUnavailable'), variant: 'destructive' }))
+      return
+    }
       setDismissedDraftSuggestionIds((prev) => [...prev, suggestion.id])
       try {
         const result = await acceptSkillDraftSuggestion({
@@ -981,7 +1219,7 @@ export default function ChatPage() {
         isSidebarCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)]' : 'lg:grid-cols-[280px_minmax(0,1fr)]',
       ].join(' ')}
     >
-      <h2 className="sr-only">{t('loginGate.title')}</h2>
+      <h2 className="sr-only">{t('session.defaultTitle')}</h2>
       <aside
         className={[
           'hidden h-full min-h-0 flex-col border-r border-border/60 text-sm text-muted-foreground lg:flex',
@@ -1026,11 +1264,11 @@ export default function ChatPage() {
                 <ScrollArea className="min-h-0 flex-1 pr-2" scrollbarClassName="w-[5px] p-0">
                   <div className="space-y-1 text-sm">
                     {filteredSessions.length === 0 && (
-                      <Alert className="rounded-2xl border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground shadow-none">
-                        <AlertDescription className="text-xs text-muted-foreground">
-                          {t('session.emptyHistory')}
-                        </AlertDescription>
-                      </Alert>
+                        <Alert className="rounded-2xl border-dashed border-border/70 px-3 py-2 text-xs text-muted-foreground shadow-none">
+                          <AlertDescription className="text-xs text-muted-foreground">
+                            {t('session.emptyHistory')}
+                          </AlertDescription>
+                        </Alert>
                     )}
                     {filteredSessions.map((session) => {
                       const sessionTitle = session.title?.trim()
@@ -1160,59 +1398,189 @@ export default function ChatPage() {
               </>
             ) : (
               <>
-              <Conversation className="mt-6 min-h-0 flex-1">
-                <ConversationContent className="flex flex-col gap-4">
-                  {messages.length === 0 && viewStatus === 'ready' && (
-                    <Alert className="rounded-2xl border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground shadow-none">
-                      <AlertDescription className="text-muted-foreground">
-                        {t('emptyMessages')}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {messages.map((message) => {
-                    const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
-                    const suggestion =
-                      message.role === 'assistant' ? suggestionByMessageId.get(message.id) : null
-                    const suggestionSkill = suggestion ? skillById[suggestion.skill_id] ?? null : null
-                    const draftSuggestion =
-                      message.role === 'assistant' ? draftSuggestionByMessageId.get(message.id) : null
-                    return (
-                      <Message key={message.id} from={message.role}>
-                        <div className="flex w-full flex-col gap-2">
-                          <ChatBubble
-                            role={message.role}
-                            content={message.content}
-                            skillName={badgeSkill?.name ?? undefined}
-                            messageId={message.id}
-                            onClarifyComplete={handleClarifyComplete}
-                          />
-                          {suggestion && (
-                            <SkillSuggestionCard
-                              skill={suggestionSkill}
-                              reason={suggestion.reason ?? null}
-                              onUse={() => handleUseSuggestion(suggestion)}
-                              onDismiss={() => handleDismissSuggestion(suggestion)}
-                              onReject={() => handleRejectSuggestion(suggestion)}
+              <div className="relative mt-6 min-h-0 flex-1">
+                <Conversation className="min-h-0 flex-1" data-chat-scroll="true">
+                  <ConversationContent className="flex flex-col gap-4">
+                    {messages.length === 0 && viewStatus === 'ready' && (
+                      <Alert className="rounded-2xl border-dashed border-border/60 bg-white/60 p-4 text-sm text-muted-foreground shadow-none">
+                        <AlertDescription className="text-muted-foreground">
+                          {t('emptyMessages')}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {messages.map((message, index) => {
+                      const badgeSkill = message.skill_id ? skillById[message.skill_id] : null
+                      const suggestion =
+                        message.role === 'assistant' ? suggestionByMessageId.get(message.id) : null
+                      const suggestionSkill = suggestion ? skillById[suggestion.skill_id] ?? null : null
+                      const draftSuggestion =
+                        message.role === 'assistant' ? draftSuggestionByMessageId.get(message.id) : null
+                      return (
+                        <Message
+                          key={message.id}
+                          from={message.role}
+                          id={buildMessageAnchorId(message.id)}
+                          data-message-index={index + 1}
+                        >
+                          <div className="flex w-full flex-col gap-2">
+                            <ChatBubble
+                              role={message.role}
+                              content={message.content}
+                              skillName={badgeSkill?.name ?? undefined}
+                              messageId={message.id}
+                              onClarifyComplete={handleClarifyComplete}
                             />
-                          )}
-                          {draftSuggestion && (
-                            <SkillDraftSuggestionCard
-                              goal={draftSuggestion.goal}
-                              constraints={draftSuggestion.constraints ?? null}
-                              reason={draftSuggestion.reason ?? null}
-                              onAccept={() => handleAcceptDraftSuggestion(draftSuggestion)}
-                              onDismiss={() => handleDismissDraftSuggestion(draftSuggestion)}
-                              onReject={() => handleRejectDraftSuggestion(draftSuggestion)}
+                            {suggestion && (
+                              <SkillSuggestionCard
+                                skill={suggestionSkill}
+                                reason={suggestion.reason ?? null}
+                                onUse={() => handleUseSuggestion(suggestion)}
+                                onDismiss={() => handleDismissSuggestion(suggestion)}
+                                onReject={() => handleRejectSuggestion(suggestion)}
+                              />
+                            )}
+                            {draftSuggestion && (
+                              <SkillDraftSuggestionCard
+                                goal={draftSuggestion.goal}
+                                constraints={draftSuggestion.constraints ?? null}
+                                reason={draftSuggestion.reason ?? null}
+                                onAccept={() => handleAcceptDraftSuggestion(draftSuggestion)}
+                                onDismiss={() => handleDismissDraftSuggestion(draftSuggestion)}
+                                onReject={() => handleRejectDraftSuggestion(draftSuggestion)}
+                              />
+                            )}
+                          </div>
+                        </Message>
+                      )
+                    })}
+                  </ConversationContent>
+                  <ConversationScrollButton className="bottom-6 right-6 left-auto translate-x-0 shadow-md" />
+                  <ConversationScrollState onAtBottomChange={setIsAtBottom} />
+                </Conversation>
+                {hasMessageNavigator && (
+                  <div className="pointer-events-none absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 lg:block">
+                    <div
+                      className={[
+                        'pointer-events-auto flex items-center gap-3 bg-transparent transition-all duration-200',
+                        isNavigatorExpanded ? 'w-72 px-2 py-3' : 'w-10 px-1.5 py-2',
+                      ].join(' ')}
+                      onMouseEnter={handleNavigatorMouseEnter}
+                      onMouseLeave={handleNavigatorMouseLeave}
+                      onFocus={handleNavigatorFocus}
+                      onBlur={handleNavigatorBlur}
+                      aria-expanded={isNavigatorExpanded}
+                      role="navigation"
+                      aria-label={t('navigator.ariaLabel')}
+                      tabIndex={0}
+                      data-testid="message-navigator"
+                    >
+                      <div className="relative flex h-44 w-4 items-center justify-center">
+                        <div className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 rounded-full bg-border/60" />
+                        <div
+                          className="absolute left-1/2 top-0 w-[2px] -translate-x-1/2 rounded-full bg-foreground/70 transition-[height] duration-200"
+                          style={{ height: `${Math.round(scrollProgress * 100)}%` }}
+                        />
+                        {messageNavItems.map((item, index) => {
+                          const total = messageNavItems.length
+                          const percent = total === 1 ? 0 : (index / (total - 1)) * 100
+                          const isActive = item.id === activeMessageId
+                          const dotColor =
+                            item.role === 'user'
+                              ? isActive
+                                ? 'bg-primary shadow-[0_0_0_3px_rgba(59,130,246,0.15)]'
+                                : 'bg-primary/70'
+                              : isActive
+                                ? 'bg-foreground shadow-[0_0_0_3px_rgba(15,23,42,0.12)]'
+                                : 'bg-foreground/70'
+                          return (
+                            <button
+                              key={`dot-${item.id}`}
+                              type="button"
+                              className={[
+                                'absolute left-1/2 -translate-x-1/2 rounded-full transition-all',
+                                isActive ? 'h-2.5 w-2.5' : 'h-2 w-2',
+                                dotColor,
+                              ].join(' ')}
+                              style={{ top: `calc(${percent}% - ${isActive ? 5 : 4}px)` }}
+                              onClick={() => handleJumpToMessage(item.id)}
+                              aria-label={t('navigator.jumpLabel', {
+                                index: item.index,
+                                role:
+                                  item.role === 'user'
+                                    ? t('navigator.roleShort.user')
+                                    : t('navigator.roleShort.assistant'),
+                              })}
                             />
-                          )}
+                          )
+                        })}
+                        {!isNavigatorExpanded && (
+                          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-foreground px-1.5 py-0.5 text-[10px] text-white shadow-sm">
+                            {messageNavItems.length}
+                          </div>
+                        )}
+                      </div>
+
+                        {isNavigatorExpanded && (
+                          <div className="flex min-w-0 flex-1 flex-col gap-2">
+                            <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+                              <span>{t('navigator.headerLabel')}</span>
+                              <span>
+                                {activeMessageIndex >= 0
+                                  ? `${activeMessageIndex + 1}/${messageNavItems.length}`
+                                  : messageNavItems.length}
+                              </span>
+                            </div>
+                            <div className="max-h-44 space-y-1 overflow-y-auto pr-1">
+                          {messageNavItems.map((item) => {
+                            const isActive = item.id === activeMessageId
+                            const fallback =
+                              item.role === 'assistant'
+                                ? t('navigator.fallbackGenerating')
+                                : t('navigator.fallbackEmpty')
+                            const roleLabel =
+                              item.role === 'user'
+                                ? t('navigator.roleShort.user')
+                                : t('navigator.roleShort.assistant')
+                            return (
+                              <button
+                                key={`nav-${item.id}`}
+                                type="button"
+                                className={[
+                                  'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left text-xs transition',
+                                    isActive
+                                      ? 'bg-muted text-foreground'
+                                      : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+                                  ].join(' ')}
+                                onClick={() => handleJumpToMessage(item.id)}
+                              >
+                                <span
+                                  className={[
+                                    'h-1.5 w-1.5 rounded-full',
+                                    item.role === 'user' ? 'bg-primary' : 'bg-foreground/60',
+                                  ].join(' ')}
+                                />
+                                <span className="min-w-0 flex-1 truncate">{item.preview || fallback}</span>
+                                <span
+                                  className={[
+                                    'rounded-full border px-1.5 py-0.5 text-[10px]',
+                                    item.role === 'user'
+                                      ? 'border-primary/30 text-primary'
+                                      : 'border-border/70 text-muted-foreground',
+                                  ].join(' ')}
+                                >
+                                  {roleLabel}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/70">{item.index}</span>
+                              </button>
+                            )
+                          })}
+                          </div>
                         </div>
-                      </Message>
-                    )
-                  })}
-                </ConversationContent>
-                <ConversationScrollButton className="bottom-6 right-6 left-auto translate-x-0 shadow-md" />
-                <ConversationScrollState onAtBottomChange={setIsAtBottom} />
-              </Conversation>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
                 <ChatComposer
                   value={draft}

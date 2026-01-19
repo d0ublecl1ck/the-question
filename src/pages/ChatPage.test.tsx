@@ -511,6 +511,138 @@ it('navigates to the session route and shows messages when selecting history', a
   expect(await screen.findByText('历史消息')).toBeInTheDocument()
 })
 
+it('shows message navigator previews on hover', async () => {
+  const user = userEvent.setup()
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [{ id: 'session-1', title: '历史对话' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([previewTrigger, { isFetching: false, reset: vi.fn() }, { lastArg: { sessionId: 'session-1' } }])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [
+      { id: 'm1', role: 'user', content: '1234567890abcdef', skill_id: null },
+      { id: 'm2', role: 'assistant', content: 'Hello second message', skill_id: null },
+    ],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/chat/session-1']}>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  expect(await screen.findByText('1234567890abcdef')).toBeInTheDocument()
+  const navigator = await screen.findByTestId('message-navigator')
+  await user.hover(navigator)
+  expect(within(navigator).getByText('1234567890')).toBeInTheDocument()
+  expect(within(navigator).getByText('Y')).toBeInTheDocument()
+  expect(within(navigator).getByText('A')).toBeInTheDocument()
+})
+
+it('skips special prefixes in message previews', async () => {
+  const user = userEvent.setup()
+  vi.mocked(useCreateChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useCreateChatSessionMutation>)
+  vi.mocked(useUpdateChatSessionTitleMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({ id: 's1', title: '对话' }),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useUpdateChatSessionTitleMutation>)
+  vi.mocked(useDeleteChatSessionMutation).mockReturnValue([
+    vi.fn().mockResolvedValue({}),
+    { isLoading: false, reset: vi.fn() },
+  ] as ReturnType<typeof useDeleteChatSessionMutation>)
+  vi.mocked(useListChatSessionsQuery).mockReturnValue({
+    data: [{ id: 'session-1', title: '历史对话' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatSessionsQuery>)
+  const previewTrigger = vi.fn().mockResolvedValue({ data: [] })
+  vi.mocked(useLazyListChatMessagesQuery).mockReturnValue([previewTrigger, { isFetching: false, reset: vi.fn() }, { lastArg: { sessionId: 'session-1' } }])
+  vi.mocked(useListChatMessagesQuery).mockReturnValue({
+    data: [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content:
+          '<!-- Clarification chain -->\n{\n  \"clarify_chain\": [\n    {\n      \"type\": \"single_choice\",\n      \"question\": \"你要设计啥\",\n      \"choices\": [\"是\", \"否\"]\n    }\n  ]\n}',
+        skill_id: null,
+      },
+      {
+        id: 'm2',
+        role: 'user',
+        content:
+          '```json\n{\n  \"clarify_chain_response\": {\n    \"single_choice\": [\n      {\n        \"question\": \"目标用户是谁\",\n        \"answer\": \"办公人员\"\n      }\n    ]\n  }\n}\n```',
+        skill_id: null,
+      },
+      { id: 'm3', role: 'assistant', content: '```json {', skill_id: null },
+    ],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListChatMessagesQuery>)
+  vi.mocked(useListSkillsQuery).mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListSkillsQuery>)
+  vi.mocked(useListAiModelsQuery).mockReturnValue({
+    data: [{ id: 'gpt-5.2-2025-12-11', name: 'GPT-5.2', host: 'openai' }],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  } as ReturnType<typeof useListAiModelsQuery>)
+
+  render(
+    <Provider store={store}>
+      <MemoryRouter initialEntries={['/chat/session-1']}>
+        <ChatPage />
+      </MemoryRouter>
+    </Provider>,
+  )
+
+  const navigator = await screen.findByTestId('message-navigator')
+  await user.hover(navigator)
+  expect(within(navigator).getByText('你要设计啥')).toBeInTheDocument()
+  expect(within(navigator).getByText('目标用户是谁')).toBeInTheDocument()
+  expect(within(navigator).getByText('```json {')).toBeInTheDocument()
+})
+
 it('renders login entry when unauthenticated', () => {
   store.dispatch(clearAuth())
   vi.mocked(useCreateChatSessionMutation).mockReturnValue([
