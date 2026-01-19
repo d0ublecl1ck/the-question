@@ -13,7 +13,7 @@ SESSION="${AGENT_BROWSER_SESSION:-wendui}"
 EMAIL="${AGENT_BROWSER_EMAIL:-agent+$(date +%s)@example.com}"
 PASSWORD="${AGENT_BROWSER_PASSWORD:-Test12345!}"
 MESSAGE="${AGENT_BROWSER_MESSAGE:-帮我做个方案}"
-SCREENSHOT_PATH="${AGENT_BROWSER_SCREENSHOT:-./backend/reports/agent-browser-clarify.png}"
+SCREENSHOT_PATH="${AGENT_BROWSER_SCREENSHOT:-./.context/agent-browser-clarify.png}"
 
 # 强制有界面模式（非无头）
 AB_SESSION=(--session "$SESSION" --headed)
