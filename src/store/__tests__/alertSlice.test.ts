@@ -17,5 +17,14 @@ it('enqueues alert with defaults', () => {
   const latest = alerts[alerts.length - 1]
   expect(latest?.description).toBe('测试提示')
   expect(latest?.title).toBe('提示')
-  expect(latest?.variant).toBe('default')
+  expect(latest?.variant).toBe('secondary')
+})
+
+it('enqueues destructive alert with fallback title', () => {
+  store.dispatch(enqueueAlert({ description: '失败', variant: 'destructive', durationMs: 0 }))
+  const alerts = store.getState().alert.alerts
+  const latest = alerts[alerts.length - 1]
+  expect(latest?.description).toBe('失败')
+  expect(latest?.title).toBe('操作失败')
+  expect(latest?.variant).toBe('destructive')
 })
