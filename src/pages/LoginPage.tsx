@@ -219,7 +219,7 @@ export default function LoginPage() {
               />
             </div>
             <p
-              className="max-w-sm self-end text-sm leading-relaxed text-slate-600"
+              className="max-w-sm self-start text-sm leading-relaxed text-slate-600"
               data-testid="login-brand-copy"
             >
               {t('brand.description')}

@@ -66,7 +66,7 @@ it('renders split layout with brand panel', () => {
   expect(screen.getByTestId('login-brand-panel')).toBeInTheDocument()
 })
 
-it('aligns brand paragraph to the logo edge', () => {
+it('aligns brand paragraph with the tagline edge', () => {
   vi.mocked(useLoginWithProfileMutation).mockReturnValue([
     vi.fn(),
     { isLoading: false, reset: vi.fn() },
@@ -82,7 +82,7 @@ it('aligns brand paragraph to the logo edge', () => {
       </MemoryRouter>
     </Provider>,
   )
-  expect(screen.getByTestId('login-brand-copy')).toHaveClass('self-end')
+  expect(screen.getByTestId('login-brand-copy')).toHaveClass('self-start')
 })
 
 it('disables page scroll while mounted', () => {
