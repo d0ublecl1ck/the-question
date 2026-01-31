@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 type ApiEnv = {
   DEV?: boolean
   PROD?: boolean
